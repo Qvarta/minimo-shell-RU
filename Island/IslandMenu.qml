@@ -96,8 +96,16 @@ Item {
                 onClipboard: root.showClipboard()
                 onNotes: root.page = "notes" } }
         Reveal { step: 4; width: parent.width; height: actions.implicitHeight
-            ActionsSection { id: actions; anchors.horizontalCenter: parent.horizontalCenter; onDone: root.done()
-                onSettings: { root.done(); SettingsState.show() } } }
+            ActionsSection { id: actions; anchors.horizontalCenter: parent.horizontalCenter; onDone: root.done() } }
+    }
+
+    // Botón de Ajustes en la esquina superior derecha del menú (fuera del flujo de columnas).
+    MenuButton {
+        icon: "settings"; label: I18n.tr("Ajustes")
+        anchors.top: parent.top; anchors.topMargin: 20
+        anchors.right: parent.right; anchors.rightMargin: 5
+        visible: root.open && root.page === "menu"
+        onActivated: { actions.reset(); root.done(); SettingsState.show() }
     }
 
     WorkspacesView {
