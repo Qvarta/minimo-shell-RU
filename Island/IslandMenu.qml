@@ -99,9 +99,8 @@ Item {
             ActionsSection { id: actions; anchors.horizontalCenter: parent.horizontalCenter; onDone: root.done() } }
     }
 
-    // Botón de Ajustes en la esquina superior derecha del menú (fuera del flujo de columnas).
     MenuButton {
-        icon: "settings"; label: I18n.tr("Ajustes")
+        icon: "settings"
         anchors.top: parent.top; anchors.topMargin: 20
         anchors.right: parent.right; anchors.rightMargin: 5
         visible: root.open && root.page === "menu"
