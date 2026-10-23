@@ -17,6 +17,9 @@ Singleton {
     property int weatherUpdateFrequency: 30 * 60 // 30 minutes expressed in seconds
     property bool isFetchingWeather: false
 
+    // Погода живёт только в памяти — в location.json не пишется
+    property var weather: null
+
     readonly property alias data: adapter
     readonly property alias location: adapter
     readonly property bool weatherEnabled: adapter.weatherEnabled
@@ -25,32 +28,32 @@ Singleton {
     // Безопасные геттеры для UI — возвращают null/"" пока данных нет
     // ------------------------------------------------------------------
     readonly property var currentWeather: {
-        const w = adapter.weather;
+        const w = root.weather;
         return (w && w.current_weather) ? w.current_weather : null;
     }
 
     readonly property var currentWeatherUnits: {
-        const w = adapter.weather;
+        const w = root.weather;
         return (w && w.current_weather_units) ? w.current_weather_units : null;
     }
 
     readonly property var current: {
-        const w = adapter.weather;
+        const w = root.weather;
         return (w && w.current) ? w.current : null;
     }
 
     readonly property var currentUnits: {
-        const w = adapter.weather;
+        const w = root.weather;
         return (w && w.current_units) ? w.current_units : null;
     }
 
     readonly property var daily: {
-        const w = adapter.weather;
+        const w = root.weather;
         return (w && w.daily) ? w.daily : null;
     }
 
     readonly property var dailyUnits: {
-        const w = adapter.weather;
+        const w = root.weather;
         return (w && w.daily_units) ? w.daily_units : null;
     }
 
@@ -64,7 +67,7 @@ Singleton {
     property string stableName: ""
 
     // ------------------------------------------------------------------
-    // location.json — единый конфиг + кэш
+    // location.json — конфиг + лёгкий кэш (без weather)
     // ------------------------------------------------------------------
     FileView {
         id: locationFileView
@@ -98,7 +101,7 @@ Singleton {
             property string longitude: ""
             property string resolvedName: ""
             property int weatherLastFetch: 0
-            property var weather: null
+            // weather здесь больше нет — не пишется в файл
         }
     }
 
@@ -146,7 +149,7 @@ Singleton {
         adapter.longitude = "";
         adapter.resolvedName = "";
         adapter.weatherLastFetch = 0;
-        adapter.weather = null;
+        root.weather = null;
         locationFileView.writeAdapter();
         update();
     }
@@ -161,7 +164,7 @@ Singleton {
         adapter.longitude = "";
         adapter.resolvedName = "";
         adapter.weatherLastFetch = 0;
-        adapter.weather = null;
+        root.weather = null;
         update();
     }
 
@@ -221,7 +224,7 @@ Singleton {
         }
 
         const nowSec = Math.floor(Date.now() / 1000);
-        const needsWeatherUpdate = (adapter.weatherLastFetch === 0) || (adapter.weather === null) || (nowSec >= adapter.weatherLastFetch + weatherUpdateFrequency);
+        const needsWeatherUpdate = (adapter.weatherLastFetch === 0) || (root.weather === null) || (nowSec >= adapter.weatherLastFetch + weatherUpdateFrequency);
 
         if (needsWeatherUpdate) {
             isFetchingWeather = true;
@@ -271,13 +274,15 @@ Singleton {
                             return;
                         }
 
-                        // Save core data
-                        data.weather = weatherData;
-                        data.weatherLastFetch = Math.floor(Date.now() / 1000);
+                        // Save core data — только в памяти
+                        root.weather = weatherData;
+                        adapter.weatherLastFetch = Math.floor(Date.now() / 1000);
 
                         // Update stable display values only when complete and successful
-                        root.stableLatitude = data.latitude = weatherData.latitude.toString();
-                        root.stableLongitude = data.longitude = weatherData.longitude.toString();
+                        root.stableLatitude = weatherData.latitude.toString();
+                        root.stableLongitude = weatherData.longitude.toString();
+                        adapter.latitude = root.stableLatitude;
+                        adapter.longitude = root.stableLongitude;
                         root.coordinatesReady = true;
 
                         isFetchingWeather = false;
