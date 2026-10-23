@@ -7,13 +7,12 @@ import "../../Common/confirm.js" as Confirm
 import "../../Services"
 import ".."
 
-// Energía y Ajustes. Cerrar sesión / Reiniciar / Apagar piden confirmación con UNA sola
+// Energía. Cerrar sesión / Reiniciar / Apagar piden confirmación con UNA sola
 // máquina de estados (Common/confirm.js): solo una puede estar armada; el segundo clic
 // ejecuta una vez y los clics siguientes se ignoran durante 2 s.
 Row {
     id: root
     signal done()
-    signal settings()
 
     readonly property var commands: ({
         reboot: "systemctl reboot",
@@ -43,5 +42,4 @@ Row {
     MenuButton { icon: "logout"; label: I18n.tr("Cerrar sesión"); armed: root.armed === "logout"; onActivated: root.press("logout") }
     MenuButton { icon: "restart"; label: I18n.tr("Reiniciar"); armed: root.armed === "reboot"; onActivated: root.press("reboot") }
     MenuButton { icon: "power"; label: I18n.tr("Apagar"); armed: root.armed === "poweroff"; onActivated: root.press("poweroff") }
-    MenuButton { icon: "settings"; label: I18n.tr("Ajustes"); onActivated: { root.reset(); root.settings() } }
 }
