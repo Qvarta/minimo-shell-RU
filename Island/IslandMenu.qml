@@ -15,8 +15,8 @@ Item {
     property bool open: false
     readonly property bool searchFocused: search.hasFocus
     property alias character: chr
-    property string page: "menu"   // "menu" | "desks" | "clip" | "cal" | "notes"
-    implicitHeight: (page === "desks" ? desks.implicitHeight : page === "clip" ? clip.implicitHeight : page === "cal" ? cal.implicitHeight : page === "notes" ? notes.implicitHeight : col.implicitHeight) + 40
+    property string page: "menu"   // "menu" | "desks" | "clip" | "cal" | "notes" | "weather"
+    implicitHeight: (page === "desks" ? desks.implicitHeight : page === "clip" ? clip.implicitHeight : page === "cal" ? cal.implicitHeight : page === "notes" ? notes.implicitHeight : page === "weather" ? weather.implicitHeight : col.implicitHeight) + 40
 
     function showClipboard() { clip.refresh(); page = "clip" }
 
@@ -79,7 +79,8 @@ Item {
                         MouseArea { id: dateMouse; anchors.fill: parent; anchors.margins: -4; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
                             onClicked: { cal.reset(); root.page = "cal" } }
                     }
-                    WeatherSection { font.family: Theme.font; font.pixelSize: 12 }
+                    WeatherSection { font.family: Theme.font; font.pixelSize: 12
+                        onClicked: root.page = "weather" }
                 }
             }
         }
@@ -158,6 +159,20 @@ Item {
         opacity: root.page === "notes" ? 1 : 0
         visible: opacity > 0
         enabled: root.page === "notes"
+        Behavior on x { NumberAnimation { duration: 320; easing.type: Easing.OutQuint } }
+        Behavior on opacity { NumberAnimation { duration: 220 } }
+        onBack: root.page = "menu"
+    }
+
+    WeatherView {
+        id: weather
+        x: root.page === "weather" ? 20 : root.width * 0.3
+        y: 20
+        width: root.width - 40
+        locale: I18n.locale
+        opacity: root.page === "weather" ? 1 : 0
+        visible: opacity > 0
+        enabled: root.page === "weather"
         Behavior on x { NumberAnimation { duration: 320; easing.type: Easing.OutQuint } }
         Behavior on opacity { NumberAnimation { duration: 220 } }
         onBack: root.page = "menu"
