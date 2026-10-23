@@ -136,7 +136,7 @@ Item {
         id: tile
         property string label
         property string value
-        width: (parent.width - parent.horizontalSpacing) / 2
+        width: (parent.width - parent.columnSpacing) / 2
         height: 46
         radius: Theme.radiusField
         color: Theme.surface
@@ -238,8 +238,8 @@ Item {
         Grid {
             width: parent.width
             columns: 2
-            horizontalSpacing: 8
-            verticalSpacing: 8
+            columnSpacing: 8
+            rowSpacing: 8
             visible: root.cur !== null
 
             DetailTile {
