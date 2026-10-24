@@ -25,7 +25,7 @@ Item {
     readonly property bool vpnActive: trayItems.some(i => !!i && root.nameOf(i).toLowerCase().includes("vpn"))
 
     function cleanId(s) {
-        return (s || "").replace(/_status_icon_\\d+$/i, "").replace(/[-_ ]\\d+$/, "").replace(/[_-]+/g, " ").trim()
+        return (s || "").replace(/_status_icon_\d+$/i, "").replace(/[-_ ]\d+$/, "").replace(/[_-]+/g, " ").trim()
     }
     function entryOf(i) {
         for (const k of [cleanId(i.id), i.id, i.title, i.tooltipTitle]) {
@@ -39,7 +39,7 @@ Item {
         const e = entryOf(i)
         if (e && e.name) return e.name
         const n = i.title || i.tooltipTitle || cleanId(i.id)
-        return n.replace(/\\b\\w/g, c => c.toUpperCase())
+        return n.replace(/\b\w/g, c => c.toUpperCase())
     }
 
     SystemClock { id: clock; precision: SystemClock.Minutes }
