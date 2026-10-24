@@ -4,7 +4,7 @@ import QtQuick
 import Quickshell.Widgets
 import Quickshell
 import Quickshell.Io
-import " ../Common"
+import "../Common"
 import "../Character"
 
 // Estado compacto: personaje + hora (HH:mm).
