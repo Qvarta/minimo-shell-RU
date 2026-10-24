@@ -16,7 +16,6 @@ Column {
     signal notes
     spacing: 18
 
-    readonly property var sliders: QuickItems.pinnedSliders
     readonly property var buttons: QuickItems.pinnedButtons
     readonly property string screenshotDirAbs: (Quickshell.env("HOME") || "/tmp") + "/Pictures/Screenshots"
 
