@@ -15,8 +15,8 @@ Item {
     property bool open: false
     readonly property bool searchFocused: search.hasFocus
     property alias character: chr
-    property string page: "menu"   // "menu" | "desks" | "clip" | "cal" | "notes" | "weather"
-    implicitHeight: (page === "desks" ? desks.implicitHeight : page === "clip" ? clip.implicitHeight : page === "cal" ? cal.implicitHeight : page === "notes" ? notes.implicitHeight : page === "weather" ? weather.implicitHeight : col.implicitHeight) + 40
+    property string page: "menu"   // "menu" | "desks" | "clip" | "cal" | "pinned" | "notes" | "weather"
+    implicitHeight: (page === "desks" ? desks.implicitHeight : page === "clip" ? clip.implicitHeight : page === "cal" ? cal.implicitHeight : page === "pinned" ? pinnedView.implicitHeight : page === "notes" ? notes.implicitHeight : page === "weather" ? weather.implicitHeight : col.implicitHeight) + 40
 
     function showClipboard() { clip.refresh(); page = "clip" }
 
@@ -88,16 +88,13 @@ Item {
             SearchSection { id: search; width: parent.width; onLaunched: root.done() } }
         Reveal { step: 2; width: parent.width; height: media.implicitHeight; visible: media.player !== null
             MediaSection { id: media; width: parent.width } }
-        // La visibilidad se decide con los datos, NO con `pinned.visible`: el `visible` de un hijo
-        // es false mientras el menú está oculto, y atarlo al padre lo dejaba en false para siempre.
-        Reveal { step: 3; width: parent.width; height: pinned.implicitHeight
-            visible: QuickItems.pinnedSliders.length + QuickItems.pinnedButtons.length > 0
-            PinnedSection { id: pinned; width: parent.width
-                onDone: root.done(); onDesktops: { desks.refresh(); root.page = "desks" }
-                onClipboard: root.showClipboard()
-                onNotes: root.page = "notes" } }
-        Reveal { step: 4; width: parent.width; height: actions.implicitHeight
-            ActionsSection { id: actions; anchors.horizontalCenter: parent.horizontalCenter; onDone: root.done() } }
+        Reveal { step: 3; width: parent.width; height: actions.implicitHeight
+            ActionsSection {
+                id: actions
+                anchors.horizontalCenter: parent.horizontalCenter
+                onDone: root.done()
+                onPinned: root.page = "pinned"
+            } }
     }
 
     MenuButton {
@@ -149,6 +146,23 @@ Item {
         Behavior on x { NumberAnimation { duration: 320; easing.type: Easing.OutQuint } }
         Behavior on opacity { NumberAnimation { duration: 220 } }
         onBack: root.page = "menu"
+    }
+
+    PinnedView {
+        id: pinnedView
+        x: root.page === "pinned" ? 20 : root.width * 0.3
+        y: 20
+        width: root.width - 40
+        opacity: root.page === "pinned" ? 1 : 0
+        visible: opacity > 0
+        enabled: root.page === "pinned"
+        Behavior on x { NumberAnimation { duration: 320; easing.type: Easing.OutQuint } }
+        Behavior on opacity { NumberAnimation { duration: 220 } }
+        onBack: root.page = "menu"
+        onDone: root.done()
+        onDesktops: { desks.refresh(); root.page = "desks" }
+        onClipboard: root.showClipboard()
+        onNotes: root.page = "notes"
     }
 
     NotesView {
