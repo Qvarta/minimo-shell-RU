@@ -91,7 +91,7 @@ Column {
         rowSpacing: 4
         Repeater {
             model: root.buttons
-            delegate: MenuButton {
+            delegate: PinnedButton {
                 id: b
                 required property string modelData
                 readonly property var item: QuickItems.builtins.find(x => x.id === modelData) ?? QuickItems.custom(modelData)
