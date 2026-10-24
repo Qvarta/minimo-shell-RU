@@ -3,8 +3,8 @@
 import QtQuick
 import Quickshell.Widgets
 import Quickshell
-import Quickshell.Services.SystemTray
-import "../Common"
+import Quickshell.Io
+import " ../Common"
 import "../Character"
 
 // Estado compacto: personaje + hora (HH:mm).
@@ -21,25 +21,25 @@ Item {
     // Notificación en curso (la isla la muestra junto al personaje, sin taparlo).
     readonly property var notif: Notifs.current   // cola en Common/Notifs.qml
     readonly property bool notifQuiet: notif !== null && Notifs.fromFocused(notif)
-    readonly property var trayItems: SystemTray.items.values
-    readonly property bool vpnActive: trayItems.some(i => !!i && root.nameOf(i).toLowerCase().includes("vpn"))
+    property bool vpnActive: false
 
-    function cleanId(s) {
-        return (s || "").replace(/_status_icon_\d+$/i, "").replace(/[-_ ]\d+$/, "").replace(/[_-]+/g, " ").trim()
-    }
-    function entryOf(i) {
-        for (const k of [cleanId(i.id), i.id, i.title, i.tooltipTitle]) {
-            if (!k) continue
-            const e = DesktopEntries.heuristicLookup(k) || DesktopEntries.byId(k.toLowerCase().replace(/ /g, "-"))
-            if (e) return e
+    // Проверяем внешний IP: VPN включён, если адрес начинается с "45".
+    Process {
+        id: vpnCheck
+        command: ["curl", "-fsS", "--max-time", "5", "https://ifconfig.me/ip"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const ip = text.trim()
+                root.vpnActive = ip.startsWith("45")
+            }
         }
-        return null
     }
-    function nameOf(i) {
-        const e = entryOf(i)
-        if (e && e.name) return e.name
-        const n = i.title || i.tooltipTitle || cleanId(i.id)
-        return n.replace(/\b\w/g, c => c.toUpperCase())
+    Component.onCompleted: vpnCheck.running = true
+    Timer {
+        interval: 30000
+        running: true
+        repeat: true
+        onTriggered: if (!vpnCheck.running) vpnCheck.running = true
     }
 
     SystemClock { id: clock; precision: SystemClock.Minutes }
@@ -127,7 +127,7 @@ Item {
                 elide: Text.ElideRight
                 textFormat: Text.PlainText
                 text: !root.notif ? "" : (root.notif.summary || root.notif.appName)
-                      + (!root.notifQuiet && root.notif.body ? "  ·  " + root.notif.body.replace(/\s+/g, " ") : "")
+                      + (!root.notifQuiet && root.notif.body ? "  ·  " + root.notif.body.replace(/\\s+/g, " ") : "")
                 color: root.notifQuiet ? Theme.textSecondary : Theme.textPrimary
                 font.family: Theme.font; font.pixelSize: 13; font.weight: root.notifQuiet ? Font.Normal : Font.Medium
             }
