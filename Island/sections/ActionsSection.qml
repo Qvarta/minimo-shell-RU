@@ -13,6 +13,7 @@ import ".."
 Row {
     id: root
     signal done()
+    signal pinned()
 
     readonly property var commands: ({
         reboot: "systemctl reboot",
@@ -42,4 +43,5 @@ Row {
     MenuButton { icon: "logout"; label: I18n.tr("Cerrar sesión"); armed: root.armed === "logout"; onActivated: root.press("logout") }
     MenuButton { icon: "restart"; label: I18n.tr("Reiniciar"); armed: root.armed === "reboot"; onActivated: root.press("reboot") }
     MenuButton { icon: "power"; label: I18n.tr("Apagar"); armed: root.armed === "poweroff"; onActivated: root.press("poweroff") }
+    MenuButton { icon: "pin"; label: I18n.tr("Закреплённое"); onActivated: root.pinned() }
 }
