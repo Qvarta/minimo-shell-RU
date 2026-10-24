@@ -83,7 +83,7 @@ Item {
             anchors.rightMargin: 12
             anchors.verticalCenter: parent.verticalCenter
             text: btn.label
-            color: btn.active ? Theme.onAccent : Theme.textPrimary
+            color: btn.active ? Theme.textPrimary : Theme.textSecondary
             font.family: Theme.font
             font.pixelSize: 13
             font.weight: btn.active ? Font.DemiBold : Font.Normal
