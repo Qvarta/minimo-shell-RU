@@ -3,6 +3,7 @@
 import QtQuick
 import Quickshell.Widgets
 import Quickshell
+import Quickshell.Services.SystemTray
 import "../Common"
 import "../Character"
 
@@ -20,6 +21,27 @@ Item {
     // Notificación en curso (la isla la muestra junto al personaje, sin taparlo).
     readonly property var notif: Notifs.current   // cola en Common/Notifs.qml
     readonly property bool notifQuiet: notif !== null && Notifs.fromFocused(notif)
+    readonly property var trayItems: SystemTray.items.values
+    readonly property bool vpnActive: trayItems.some(i => !!i && root.nameOf(i).toLowerCase().includes("vpn"))
+
+    function cleanId(s) {
+        return (s || "").replace(/_status_icon_\d+$/i, "").replace(/[-_ ]\d+$/, "").replace(/[_-]+/g, " ").trim()
+    }
+    function entryOf(i) {
+        for (const k of [cleanId(i.id), i.id, i.title, i.tooltipTitle]) {
+            if (!k) continue
+            const e = DesktopEntries.heuristicLookup(k) || DesktopEntries.byId(k.toLowerCase().replace(/ /g, "-"))
+            if (e) return e
+        }
+        return null
+    }
+    function nameOf(i) {
+        const e = entryOf(i)
+        if (e && e.name) return e.name
+        const n = i.title || i.tooltipTitle || cleanId(i.id)
+        return n.replace(/\b\w/g, c => c.toUpperCase())
+    }
+
     SystemClock { id: clock; precision: SystemClock.Minutes }
 
     Row {
@@ -38,6 +60,16 @@ Item {
             font.pixelSize: 15
             font.weight: Font.Medium
             font.features: { "tnum": 1 }
+        }
+        Text {
+            visible: !root.notif && root.vpnActive
+            enabled: false
+            anchors.verticalCenter: parent.verticalCenter
+            text: "VPN"
+            color: Theme.textSecondary
+            font.family: Theme.font
+            font.pixelSize: 13
+            font.weight: Font.Medium
         }
         // Grabando: punto rojo que late + tiempo transcurrido.
         Row {
