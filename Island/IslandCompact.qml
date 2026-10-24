@@ -4,7 +4,6 @@ import QtQuick
 import Quickshell.Widgets
 import Quickshell
 import Quickshell.Io
-import Quickshell.Services.SystemTray
 import "../Common"
 import "../Character"
 
