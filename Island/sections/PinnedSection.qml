@@ -114,7 +114,7 @@ Column {
     Grid {
         anchors.horizontalCenter: parent.horizontalCenter
         visible: root.buttons.length > 0
-        columns: QuickItems.columns
+        columns: 1
         rowSpacing: 4
         Repeater {
             model: root.buttons
