@@ -127,7 +127,7 @@ Item {
                 elide: Text.ElideRight
                 textFormat: Text.PlainText
                 text: !root.notif ? "" : (root.notif.summary || root.notif.appName)
-                      + (!root.notifQuiet && root.notif.body ? "  ·  " + root.notif.body.replace(/\\s+/g, " ") : "")
+                      + (!root.notifQuiet && root.notif.body ? "  ·  " + root.notif.body.replace(/\s+/g, " ") : "")
                 color: root.notifQuiet ? Theme.textSecondary : Theme.textPrimary
                 font.family: Theme.font; font.pixelSize: 13; font.weight: root.notifQuiet ? Font.Normal : Font.Medium
             }
