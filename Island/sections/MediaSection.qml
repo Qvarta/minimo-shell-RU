@@ -26,19 +26,19 @@ Item {
     implicitHeight: visible ? 64 : 0
 
     onVisibleChanged: {
-        console.log("[MediaDebug] MediaSection visible changed:",
+        console.warn("[MediaDebug] MediaSection visible changed:",
                     "visible=", visible, "implicitHeight=", implicitHeight,
                     "player=", player ? player.identity : "<none>")
     }
 
     onPlayerChanged: {
-        console.log("[MediaDebug] MediaSection player changed:",
+        console.warn("[MediaDebug] MediaSection player changed:",
                     "player=", player ? player.identity : "<none>",
                     "players.count=", players ? players.length : "<no length>",
                     "visible=", visible, "width=", width, "height=", height,
                     "trackTitle=", player ? player.trackTitle : "",
                     "trackArtUrl=", player ? player.trackArtUrl : "")
-        console.log("[MediaSection] active player changed:",
+        console.warn("[MediaSection] active player changed:",
                     player ? player.identity : "<none>",
                     "dbusName=", player ? player.dbusName : "",
                     "visible=", visible,
@@ -47,17 +47,17 @@ Item {
     }
 
     Component.onCompleted: {
-        console.log("[MediaDebug] MediaSection instantiated:",
+        console.warn("[MediaDebug] MediaSection instantiated:",
                     "objectName=", objectName, "parent=", parent,
                     "visible=", visible, "enabled=", enabled,
                     "size=", width, "x", height, "implicitHeight=", implicitHeight,
                     "players=", players, "player=", player ? player.identity : "<none>")
-        console.log("[MediaSection] component ready; players=", players.length,
+        console.warn("[MediaSection] component ready; players=", players.length,
                     "activePlayer=", player ? player.identity : "<none>",
                     "visible=", visible)
         for (let i = 0; i < players.length; ++i) {
             const p = players[i]
-            console.log("[MediaSection] player[", i, "] identity=", p.identity,
+            console.warn("[MediaSection] player[", i, "] identity=", p.identity,
                         "dbusName=", p.dbusName,
                         "playing=", p.isPlaying,
                         "state=", p.playbackState,
@@ -80,7 +80,7 @@ Item {
         readonly property bool hasArt: cover.status === Image.Ready
 
         onHasArtChanged: {
-            console.log("[MediaSection] art.hasArt changed:", hasArt,
+            console.warn("[MediaSection] art.hasArt changed:", hasArt,
                         "cover.status=", cover.status,
                         "cover.source=", cover.source,
                         "cover.error=", cover.status === Image.Error ? cover.source : "")
@@ -115,19 +115,19 @@ Item {
             layer.mipmap: true
             layer.textureSize: Qt.size(width * 2, height * 2)
 
-            onVisibleChanged: console.log("[MediaDebug] coverLayer visible changed:", visible)
-            onWidthChanged: console.log("[MediaDebug] coverLayer width changed:", width)
-            onHeightChanged: console.log("[MediaDebug] coverLayer height changed:", height)
+            onVisibleChanged: console.warn("[MediaDebug] coverLayer visible changed:", visible)
+            onWidthChanged: console.warn("[MediaDebug] coverLayer width changed:", width)
+            onHeightChanged: console.warn("[MediaDebug] coverLayer height changed:", height)
 
             Component.onCompleted: {
-                console.log("[MediaDebug] coverLayer state:",
+                console.warn("[MediaDebug] coverLayer state:",
                             "visible=", visible, "opacity=", opacity,
                             "layer.enabled=", layer.enabled,
                             "layer.smooth=", layer.smooth,
                             "size=", width, "x", height,
                             "art.hasArt=", art.hasArt,
                             "root.visible=", root.visible)
-                console.log("[MediaSection] coverLayer ready; visible=", visible,
+                console.warn("[MediaSection] coverLayer ready; visible=", visible,
                             "layer.enabled=", layer.enabled,
                             "size=", width, "x", height)
             }
@@ -156,11 +156,11 @@ Item {
                 }
 
                 onSourceChanged: {
-                    console.log("[MediaSection] cover source changed:", source,
+                    console.warn("[MediaSection] cover source changed:", source,
                                 "player=", root.player ? root.player.identity : "<none>")
                 }
                 onStatusChanged: {
-                    console.log("[MediaSection] cover status:", statusName(status),
+                    console.warn("[MediaSection] cover status:", statusName(status),
                                 "source=", source,
                                 "progress=", progress,
                                 "implicitSize=", implicitWidth, "x", implicitHeight,
@@ -169,11 +169,11 @@ Item {
                 }
                 onProgressChanged: function(progress) {
                     if (progress > 0 && progress < 1)
-                        console.log("[MediaSection] cover loading progress:", progress,
+                        console.warn("[MediaSection] cover loading progress:", progress,
                                     "source=", source)
                 }
                 Component.onCompleted: {
-                    console.log("[MediaSection] cover image created; source=", source,
+                    console.warn("[MediaSection] cover image created; source=", source,
                                 "status=", statusName(status),
                                 "asynchronous=", asynchronous,
                                 "sourceSize=", sourceSize.width, "x", sourceSize.height)
@@ -192,12 +192,12 @@ Item {
         MultiEffect {
             anchors.fill: parent
             visible: art.hasArt
-            onVisibleChanged: console.log("[MediaDebug] MultiEffect visible changed:",
+            onVisibleChanged: console.warn("[MediaDebug] MultiEffect visible changed:",
                                           visible, "art.hasArt=", art.hasArt,
                                           "coverLayer.visible=", coverLayer.visible,
                                           "layer.enabled=", coverLayer.layer.enabled)
             Component.onCompleted: {
-                console.log("[MediaDebug] MultiEffect ready:",
+                console.warn("[MediaDebug] MultiEffect ready:",
                             "visible=", visible, "size=", width, "x", height,
                             "source=", source, "maskEnabled=", maskEnabled,
                             "maskSource=", maskSource)
