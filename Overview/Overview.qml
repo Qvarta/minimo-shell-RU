@@ -20,6 +20,9 @@ PanelWindow {
     property real t: open ? 1 : 0
     Behavior on t { NumberAnimation { duration: 220; easing.type: Easing.OutQuint } }
 
+    // IMPORTANTE: "Hyprland.*" solo dentro de la rama del ternario que se
+    // evalúa; cualificar el objeto en una sesión niri dispara la conexión al
+    // socket IPC y el WARN "$HYPRLAND_INSTANCE_SIGNATURE is unset".
     screen: Quickshell.screens.find(s => s.name === (isNiri ? "" : (Hyprland.focusedMonitor ? Hyprland.focusedMonitor.name : ""))) ?? Quickshell.screens[0]
     visible: open || t > 0.01
     anchors { top: true; bottom: true; left: true; right: true }

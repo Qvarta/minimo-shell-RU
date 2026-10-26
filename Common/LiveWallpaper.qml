@@ -68,12 +68,17 @@ Singleton {
             root.covered = ws ? Niri.windowCountInWorkspace(ws.id) > 0 : Niri.windows.length > 0
             return
         }
+        // (Solo se llega aquí en sesión Hyprland: en niri se retorna arriba.)
         const mons = Hyprland.monitors.values
         root.covered = mons.length > 0 && mons.every(m => m.activeWorkspace && m.activeWorkspace.toplevels.values.length > 0)
     }
+    // El bloque de Hyprland se instancia SOLO en sesión Hyprland: crear el
+    // objeto (aunque esté deshabilitado) hace que Quickshell intente conectar
+    // al socket IPC y lance el WARN "$HYPRLAND_INSTANCE_SIGNATURE is unset".
     Connections {
+        active: !root.isNiri
         target: Hyprland
-        enabled: root.active && DisplayState.livePauseCovered && !root.isNiri
+        enabled: root.active && DisplayState.livePauseCovered
         function onRawEvent(ev) {
             const n = ev.name
             if (n === "openwindow" || n === "closewindow" || n === "movewindowv2" || n === "workspacev2" || n === "focusedmonv2") refresh.restart()

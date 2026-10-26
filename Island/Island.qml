@@ -29,6 +29,10 @@ PanelWindow {
     // En niri (Services/Niri.qml) no hay relación monitor↔workspace por socket: se cuenta
     // el escritorio enfocado según Compositor/Workspaces.
     readonly property bool isNiri: Compositor.isNiri && !Compositor.isHyprland
+    // IMPORTANTE: "Hyprland.*" solo dentro de la rama del ternario que se
+    // evalúa. Instanciar/cualificar el objeto Hyprland en una sesión niri hace
+    // que Quickshell intente conectar al socket IPC y lance el WARN
+    // "$HYPRLAND_INSTANCE_SIGNATURE is unset. Cannot connect to hyprland."
     readonly property var monitorWs: DisplayState.islandSmartHide
         ? (isNiri ? { id: Workspaces.activeId } : (Hyprland.monitorFor(win.screen)?.activeWorkspace ?? null))
         : null
@@ -85,9 +89,13 @@ PanelWindow {
     // compositor: socket Hyprland o socket niri vía Services/Niri.qml).
     onHideWantedChanged: syncHide()
     // Tras cerrar/mover ventanas se refresca la lista de toplevels (un evento, sin sondeo).
+    // En niri NO debe instanciarse ningún objeto que cualifique "Hyprland"
+    // (ni Connections deshabilitado): eso dispara la conexión al socket IPC y
+    // el WARN "$HYPRLAND_INSTANCE_SIGNATURE is unset. Cannot connect to hyprland."
     Connections {
+        active: DisplayState.islandSmartHide && !win.isNiri
         target: Hyprland
-        enabled: DisplayState.islandSmartHide && !win.isNiri
+        enabled: DisplayState.islandSmartHide
         function onRawEvent(ev) {
             const n = ev.name
             if (n === "closewindow" || n === "movewindowv2" || n === "openwindow") toplevelsLater.restart()
