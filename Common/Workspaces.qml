@@ -4,7 +4,6 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Hyprland
-import Quickshell.Io
 import "../Services"
 
 // Workspaces de la sesión activa: Hyprland (socket IPC / dispatch Lua 0.56)
@@ -95,20 +94,6 @@ Singleton {
         lastWheel = now
         dispatchWs(deltaY > 0 ? "r-1" : "r+1")
     }
-    // Reordenar: `order` es la nueva secuencia de IDs; el contenido del escritorio que
-    // quedó en la posición i pasa al ID i-ésimo original. Ignora si ya hay uno en curso.
-    // (Solo Hyprland: niri no permite reordenar escritorios vía IPC.)
-    function reorder(order) {
-        if (isNiri) { reordered(); return }
-        const ids = list.map(w => w.id)
-        if (reorderProc.running || order.length !== ids.length || order.every((id, i) => id === ids[i])) { reordered(); return }
-        reorderProc.command = [Qt.resolvedUrl("../scripts/reorder-ws.py").toString().replace("file://", ""),
-                               ids.join(","), order.join(","), String(activeId)]
-        reorderProc.running = true
-        lastSwitch = Date.now()
-    }
-    signal reordered()
-    Process { id: reorderProc; onExited: { Hyprland.refreshWorkspaces(); Hyprland.refreshToplevels(); root.reordered() } }
     function goTo(id) { dispatchWs(String(id)) }
     function goEmpty() { if (!isNiri) dispatchWs("emptynm") }
 }
