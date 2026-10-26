@@ -17,6 +17,8 @@ Singleton {
     property int weatherUpdateFrequency: 30 * 60 // 30 minutes expressed in seconds
     property bool isFetchingWeather: false
     property int requestGeneration: 0
+    property int retryAttempt: 0
+    readonly property var retryDelays: [30 * 1000, 60 * 1000, 2 * 60 * 1000, 5 * 60 * 1000]
 
     // Прогноз и координаты хранятся только в памяти.
     property var weather: null
@@ -172,6 +174,8 @@ Singleton {
         if (city === "") return false
 
         root.requestGeneration += 1
+        retryTimer.stop()
+        root.retryAttempt = 0
         saveTimer.stop()
         adapter.name = city
         adapter.latitude = ""
@@ -201,15 +205,22 @@ Singleton {
         return `${lat}, ${lon}`;
     }
 
-    // Update timer runs when weather is enabled
+    // Refresh the forecast periodically; initial loading and city changes call update() directly.
     Timer {
-        id: updateTimer
-        interval: 20 * 1000
+        id: weatherRefreshTimer
+        interval: root.weatherUpdateFrequency * 1000
         running: root.weatherEnabled
         repeat: true
-        onTriggered: {
-            update();
-        }
+        onTriggered: root.update()
+    }
+
+    // Retry failed network requests with bounded backoff: 30s, 1m, 2m, then 5m.
+    Timer {
+        id: retryTimer
+        interval: 30 * 1000
+        running: false
+        repeat: false
+        onTriggered: root.update()
     }
 
     Timer {
@@ -283,6 +294,8 @@ Singleton {
             root.stableLongitude = adapter.longitude;
             root.stableName = `${name}, ${country}`;
             root.coordinatesReady = true;
+            root.retryAttempt = 0;
+            retryTimer.stop();
 
             isFetchingWeather = false;
             root.updateWeatherData();
@@ -325,6 +338,7 @@ Singleton {
         var xhr = new XMLHttpRequest();
         var startedAt = Date.now();
         var networkFailureLogged = false;
+        var networkFailureHandled = false;
 
         function logNetworkFailure(source) {
             if (networkFailureLogged)
@@ -337,13 +351,22 @@ Singleton {
                          + ", elapsedMs=" + (Date.now() - startedAt));
         }
 
+        function handleNetworkFailure(source) {
+            if (networkFailureHandled)
+                return;
+            networkFailureHandled = true;
+            logNetworkFailure(source);
+            if (requestId === root.requestGeneration) {
+                isFetchingWeather = false;
+                root.scheduleRetry();
+            }
+        }
+
         console.info("[Weather][geocode] request started, requestId=" + requestId
                      + ", endpoint=api.noctalia.dev");
 
         xhr.onerror = function () {
-            logNetworkFailure("onerror");
-            if (requestId === root.requestGeneration)
-                isFetchingWeather = false;
+            handleNetworkFailure("onerror");
         };
         xhr.onreadystatechange = function () {
             if (xhr.readyState !== XMLHttpRequest.DONE)
@@ -359,8 +382,7 @@ Singleton {
                 return;
             }
             if (xhr.status === 0) {
-                logNetworkFailure("DONE/status 0");
-                isFetchingWeather = false;
+                handleNetworkFailure("DONE/status 0");
                 return;
             }
             if (xhr.status === 200) {
@@ -393,6 +415,7 @@ Singleton {
         var xhr = new XMLHttpRequest();
         var startedAt = Date.now();
         var networkFailureLogged = false;
+        var networkFailureHandled = false;
 
         function logNetworkFailure(source) {
             if (networkFailureLogged)
@@ -403,6 +426,17 @@ Singleton {
                          + ", status=" + xhr.status
                          + ", readyState=" + xhr.readyState
                          + ", elapsedMs=" + (Date.now() - startedAt));
+        }
+
+        function handleNetworkFailure(source) {
+            if (networkFailureHandled)
+                return;
+            networkFailureHandled = true;
+            logNetworkFailure(source);
+            if (requestId === root.requestGeneration) {
+                isFetchingWeather = false;
+                root.scheduleRetry();
+            }
         }
 
         console.info("[Weather][forecast] request started, requestId=" + requestId
@@ -427,8 +461,7 @@ Singleton {
                 return;
             }
             if (xhr.status === 0) {
-                logNetworkFailure("DONE/status 0");
-                isFetchingWeather = false;
+                handleNetworkFailure("DONE/status 0");
                 return;
             }
             if (xhr.status === 200) {
@@ -454,6 +487,8 @@ Singleton {
                     root.coordinatesReady = true;
 
                     isFetchingWeather = false;
+                    root.retryAttempt = 0;
+                    retryTimer.stop();
                     console.info("[Weather][forecast] response parsed successfully, requestId=" + requestId);
                 } catch (e) {
                     console.error("[Weather][forecast] response parse failed, requestId=" + requestId + ":", e);
@@ -469,10 +504,21 @@ Singleton {
         xhr.send();
     }
 
+    // Schedule retries after request errors with a maximum delay of five minutes.
+    function scheduleRetry() {
+        const delayIndex = Math.min(root.retryAttempt, root.retryDelays.length - 1);
+        retryTimer.interval = root.retryDelays[delayIndex];
+        root.retryAttempt = Math.min(root.retryAttempt + 1, root.retryDelays.length - 1);
+        retryTimer.restart();
+        console.info("[Weather] retry scheduled in " + Math.round(retryTimer.interval / 1000)
+                     + "s (attempt " + root.retryAttempt + ")");
+    }
+
     // --------------------------------
     function errorCallback(module, message) {
         console.error(module, message);
         isFetchingWeather = false;
+        scheduleRetry();
     }
 
     // --------------------------------
