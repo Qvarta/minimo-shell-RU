@@ -25,45 +25,6 @@ Item {
     visible: player !== null
     implicitHeight: visible ? 64 : 0
 
-    // Función para validar URLs de carátulas.
-    // Разрешаем http/https И локальные пути (file:// и обычные абсолютные пути):
-    // многие Mpris-плееры (Spotify, mpDris2 и т.п.) отдают обложку как локальный
-    // файл или file:// URL, и их отбрасывание ломало бы отображение обложек.
-    // Отбрасываем только заведомо нерабочие схемы (mpris://, data: и прочие).
-    readonly property var _rejectedUrlSchemes: ["mpris:", "data:", "gopher:", "ftp:", "smb:", "unknown:"]
-
-    function normalizeArtUrl(url) {
-        if (!url || url === "") return ""
-        let s = String(url)
-        // strip url(...) wrapper, если бэкенд отдаёт его в таком виде
-        const m = s.match(/^url\((.*)\)$/)
-        if (m) s = m[1].replace(/^["']|["']$/g, "")
-        return s
-    }
-
-    function isValidArtUrl(url) {
-        const s = root.normalizeArtUrl(url)
-        if (s === "") return false
-        const lower = s.toLowerCase()
-        // Отклоняем нерабочие схемы (например mpris:// — по такому адресу
-        // QML Image не может ничего скачать и ругается «Connection closed»)
-        for (const sch of root._rejectedUrlSchemes) {
-            if (lower.startsWith(sch)) return false
-        }
-        return true
-    }
-
-    // URL carátula ya validado/normalizado; vacío si no es descargable.
-    // Centralizado en una propiedad para que la imagen y el resto reaccionen igual.
-    readonly property string artSource: player && isValidArtUrl(player.trackArtUrl)
-                                        ? normalizeArtUrl(player.trackArtUrl) : ""
-
-    // Si la última carga de carátula falló (cover.status == Image.Error), se
-    // bloquea ese mismo source hasta que cambie de pista/reproductor, para no
-    // reintentar la conexión en bucle ni repetir el WARN "Connection closed".
-    property string _failedArtSource: ""
-    onArtSourceChanged: if (artSource !== _failedArtSource) _failedArtSource = ""
-
     Timer {
         running: root.visible && root.player !== null && root.player.isPlaying
         interval: 1000; repeat: true
@@ -110,30 +71,13 @@ Item {
                 anchors.centerIn: parent
                 width: parent.width; height: parent.height
                 rotation: art.angle
-                // source pasa por la validación centralizada (artSource):
-                // URLs no descargables (mpris://, data:, ...) quedan en "" y
-                // QML Image no intenta conectar -> desaparece el WARN
-                // "Connection closed". Además, si una URL ya falló antes, se
-                // mantiene bloqueada (_failedArtSource) para no reintentar.
-                source: root.artSource !== "" && root.artSource !== root._failedArtSource
-                        ? root.artSource : ""
+                source: root.player ? root.player.trackArtUrl : ""
                 fillMode: Image.PreserveAspectCrop
                 asynchronous: true
                 smooth: true
                 mipmap: true
                 antialiasing: true
                 sourceSize: Qt.size(art.width * 2, art.height * 2)
-
-                // Manejo de errores de carga de imagen: si la descarga falla
-                // (servidor caído, timeout, imagen corrupta), se registra el
-                // source como fallido para no reintentar en bucle y se muestra
-                // el fallback (art.hasArt == false).
-                onStatusChanged: {
-                    if (cover.status === Image.Error && root.artSource !== "") {
-                        console.warn("Error al cargar la carátula del track:", root.artSource)
-                        root._failedArtSource = root.artSource
-                    }
-                }
             }
         }
         Item {
