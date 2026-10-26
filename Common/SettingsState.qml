@@ -7,11 +7,11 @@ import Quickshell.Io
 
 // Estado de la ventana de Ajustes. Desde Hyprland / terminal:
 //   qs -p ~/Proyectos/minimo-os/minimo-shell ipc call settings toggle
-//   qs -p ~/Proyectos/minimo-os/minimo-shell ipc call settings section pantalla
+//   qs -p ~/Proyectos/minimo-os/minimo-shell ipc call settings section wallpapers
 Singleton {
     id: root
     property bool open: false
-    property string section: "personalizacion"   // "personalizacion" | "pantalla" | "atajos" | "minimo"
+    property string section: "wallpapers"   // "wallpapers" | "personalizacion" | "pantalla" | "atajos" | "minimo"
     function toggle() { open = !open }
     function show() { open = true }
     function hide() { open = false }
