@@ -25,6 +25,23 @@ Item {
     visible: player !== null
     implicitHeight: visible ? 64 : 0
 
+    // Función para validar URLs de carátulas - filtrar esquemas no estándar
+    function isValidArtUrl(url) {
+        if (!url || url === "") return false
+        // Solo permitir URLs http/https válidas
+        const lower = url.toLowerCase()
+        if (lower.startsWith("http://") || lower.startsWith("https://")) {
+            try {
+                new URL(url)
+                return true
+            } catch (e) {
+                return false
+            }
+        }
+        // Rechazar mpris://, file://, data: y otros esquemas no estándar
+        return false
+    }
+
     Timer {
         running: root.visible && root.player !== null && root.player.isPlaying
         interval: 1000; repeat: true
@@ -71,13 +88,20 @@ Item {
                 anchors.centerIn: parent
                 width: parent.width; height: parent.height
                 rotation: art.angle
-                source: root.player ? root.player.trackArtUrl : ""
+                source: root.player && root.isValidArtUrl(root.player.trackArtUrl) ? root.player.trackArtUrl : ""
                 fillMode: Image.PreserveAspectCrop
                 asynchronous: true
                 smooth: true
                 mipmap: true
                 antialiasing: true
                 sourceSize: Qt.size(art.width * 2, art.height * 2)
+                
+                // Manejo de errores de carga de imagen
+                onStatusChanged: {
+                    if (cover.status === Image.Error) {
+                        console.warn("Error al cargar la carátula del track:", cover.source)
+                    }
+                }
             }
         }
         Item {
