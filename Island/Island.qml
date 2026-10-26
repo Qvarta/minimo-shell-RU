@@ -78,10 +78,7 @@ PanelWindow {
         else if (!hovered) hideTimer.restart()
     }
     Timer { id: unfocusLater; interval: 150; onTriggered: { menu.opened(); pill.forceActiveFocus() } }
-    Component.onCompleted: {
-        console.warn("[BootDebug] Island.qml loaded")
-        hideTimer.restart()
-    }
+
     // Si se desactiva el auto-ocultar, la isla queda siempre visible.
     Connections {
         target: DisplayState
@@ -227,7 +224,6 @@ PanelWindow {
         // Rueda sobre la isla compacta: escritorio anterior/siguiente.
         onWheel: w => { if (!win.open) Workspaces.wheel(w.angleDelta.y) }
     }
-
 
     // Sombra suave y difusa detrás de la tarjeta (no recorta, no recibe input).
     Rectangle {
