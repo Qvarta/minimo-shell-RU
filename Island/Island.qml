@@ -78,7 +78,10 @@ PanelWindow {
         else if (!hovered) hideTimer.restart()
     }
     Timer { id: unfocusLater; interval: 150; onTriggered: { menu.opened(); pill.forceActiveFocus() } }
-    Component.onCompleted: hideTimer.restart()
+    Component.onCompleted: {
+        console.warn("[BootDebug] Island.qml loaded")
+        hideTimer.restart()
+    }
     // Si se desactiva el auto-ocultar, la isla queda siempre visible.
     Connections {
         target: DisplayState
