@@ -29,6 +29,7 @@ PanelWindow {
 
     readonly property var sections: [
         { id: "personalizacion", label: I18n.tr("Personalization"), icon: "brush" },
+        { id: "ubicacion", label: I18n.tr("Weather location"), icon: "globe" },
         { id: "wallpapers", label: I18n.tr("Wallpaper"), icon: "desktops" },
         { id: "pantalla", label: I18n.tr("Display"), icon: "display" },
         { id: "atajos", label: I18n.tr("Shortcuts"), icon: "keyboard" },
@@ -108,7 +109,7 @@ PanelWindow {
             Text {
                 id: heading
                 x: 36; y: 26
-                text: SettingsState.section === "wallpapers" ? I18n.tr("Wallpaper") : SettingsState.section === "pantalla" ? I18n.tr("Display") : SettingsState.section === "atajos" ? I18n.tr("Keyboard shortcuts") : SettingsState.section === "minimo" ? I18n.tr("About") : I18n.tr("Personalization")
+                text: SettingsState.section === "wallpapers" ? I18n.tr("Wallpaper") : SettingsState.section === "pantalla" ? I18n.tr("Display") : SettingsState.section === "atajos" ? I18n.tr("Keyboard shortcuts") : SettingsState.section === "minimo" ? I18n.tr("About") : SettingsState.section === "ubicacion" ? I18n.tr("Weather location") : I18n.tr("Personalization")
                 color: Theme.textPrimary; font.family: Theme.font; font.pixelSize: 22; font.weight: Font.DemiBold
             }
             Flickable {
@@ -116,7 +117,7 @@ PanelWindow {
                 anchors.top: heading.bottom; anchors.topMargin: 18
                 anchors.left: parent.left; anchors.right: parent.right; anchors.bottom: parent.bottom
                 anchors.leftMargin: 36; anchors.rightMargin: 36
-                contentHeight: (SettingsState.section === "wallpapers" ? wallpapers.implicitHeight : SettingsState.section === "pantalla" ? display.implicitHeight : SettingsState.section === "atajos" ? shortcuts.implicitHeight : SettingsState.section === "minimo" ? about.implicitHeight : personal.implicitHeight) + 32
+                contentHeight: (SettingsState.section === "wallpapers" ? wallpapers.implicitHeight : SettingsState.section === "pantalla" ? display.implicitHeight : SettingsState.section === "atajos" ? shortcuts.implicitHeight : SettingsState.section === "minimo" ? about.implicitHeight : SettingsState.section === "ubicacion" ? locationPage.implicitHeight : personal.implicitHeight) + 32
                 clip: true
                 boundsBehavior: Flickable.StopAtBounds
                 // Volver arriba solo al cambiar de sección (no cuando la página crece al cargar).
@@ -134,6 +135,11 @@ PanelWindow {
                     id: personal
                     width: flick.width
                     visible: SettingsState.section === "personalizacion"
+                }
+                LocationPage {
+                    id: locationPage
+                    width: flick.width
+                    visible: SettingsState.section === "ubicacion"
                 }
                 AboutPage {
                     id: about

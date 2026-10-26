@@ -46,10 +46,32 @@ Singleton {
     // Empuja el tema al singleton Theme (sin dependencia inversa: evita init cíclico).
     onThemeChanged: Theme.dark = theme === "dark"
     function save() {
-        file.setText(JSON.stringify({ wallpaper: root.wallpaper, wallpaperHistory: root.wallpaperHistory,
-                                     islandAutoHide: root.islandAutoHide, islandSmartHide: root.islandSmartHide, characterAnimated: root.characterAnimated,
-                                     sleepMinutes: root.sleepMinutes, theme: root.theme, language: root.language,
-                                     liveWallpaper: root.liveWallpaper, livePauseCovered: root.livePauseCovered }, null, 2))
+        // Merge settings into the existing state so Weather's city is never discarded.
+        var state = {}
+        if (file.loaded) {
+            const raw = file.text()
+            if (raw.trim() !== "") {
+                try {
+                    state = JSON.parse(raw)
+                    if (!state || typeof state !== "object" || Array.isArray(state))
+                        throw new Error("state.json root must be an object")
+                } catch (e) {
+                    console.error("DisplayState: refusing to overwrite invalid state.json:", e)
+                    return
+                }
+            }
+        }
+        state.wallpaper = root.wallpaper
+        state.wallpaperHistory = root.wallpaperHistory
+        state.islandAutoHide = root.islandAutoHide
+        state.islandSmartHide = root.islandSmartHide
+        state.characterAnimated = root.characterAnimated
+        state.sleepMinutes = root.sleepMinutes
+        state.theme = root.theme
+        state.language = root.language
+        state.liveWallpaper = root.liveWallpaper
+        state.livePauseCovered = root.livePauseCovered
+        file.setText(JSON.stringify(state, null, 2))
     }
 
     readonly property string stateDir: Quickshell.env("HOME") + "/.config/minimo-os"
@@ -63,6 +85,8 @@ Singleton {
         id: file
         blockLoading: false
         printErrors: false
+        watchChanges: true
+        onFileChanged: reload()
         onLoaded: {
             try {
                 const s = JSON.parse(text())
