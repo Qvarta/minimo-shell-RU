@@ -22,9 +22,10 @@ PanelWindow {
     WlrLayershell.namespace: "minimo-settings"
     WlrLayershell.keyboardFocus: open ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
 
-    onOpenChanged: if (open) { card.forceActiveFocus(); personal.refresh(); display.refresh() }
+    onOpenChanged: if (open) { card.forceActiveFocus(); wallpapers.refresh(); personal.refresh(); display.refresh() }
 
     readonly property var sections: [
+        { id: "wallpapers", label: I18n.tr("Wallpaper"), icon: "desktops" },
         { id: "personalizacion", label: I18n.tr("Personalization"), icon: "brush" },
         { id: "pantalla", label: I18n.tr("Display"), icon: "display" },
         { id: "atajos", label: I18n.tr("Shortcuts"), icon: "keyboard" },
@@ -104,7 +105,7 @@ PanelWindow {
             Text {
                 id: heading
                 x: 36; y: 26
-                text: SettingsState.section === "pantalla" ? I18n.tr("Display") : SettingsState.section === "atajos" ? I18n.tr("Keyboard shortcuts") : SettingsState.section === "minimo" ? I18n.tr("About") : I18n.tr("Personalization")
+                text: SettingsState.section === "wallpapers" ? I18n.tr("Wallpaper") : SettingsState.section === "pantalla" ? I18n.tr("Display") : SettingsState.section === "atajos" ? I18n.tr("Keyboard shortcuts") : SettingsState.section === "minimo" ? I18n.tr("About") : I18n.tr("Personalization")
                 color: Theme.textPrimary; font.family: Theme.font; font.pixelSize: 22; font.weight: Font.DemiBold
             }
             Flickable {
@@ -112,17 +113,22 @@ PanelWindow {
                 anchors.top: heading.bottom; anchors.topMargin: 18
                 anchors.left: parent.left; anchors.right: parent.right; anchors.bottom: parent.bottom
                 anchors.leftMargin: 36; anchors.rightMargin: 36
-                contentHeight: (SettingsState.section === "pantalla" ? display.implicitHeight : SettingsState.section === "atajos" ? shortcuts.implicitHeight : SettingsState.section === "minimo" ? about.implicitHeight : personal.implicitHeight) + 32
+                contentHeight: (SettingsState.section === "wallpapers" ? wallpapers.implicitHeight : SettingsState.section === "pantalla" ? display.implicitHeight : SettingsState.section === "atajos" ? shortcuts.implicitHeight : SettingsState.section === "minimo" ? about.implicitHeight : personal.implicitHeight) + 32
                 clip: true
                 boundsBehavior: Flickable.StopAtBounds
                 // Volver arriba solo al cambiar de sección (no cuando la página crece al cargar).
                 Connections { target: SettingsState; function onSectionChanged() { flick.contentY = 0 } }
 
+                WallpapersPage {
+                    id: wallpapers
+                    width: flick.width
+                    visible: SettingsState.section === "wallpapers"
+                    onPickerOpened: SettingsState.hide()
+                }
                 PersonalizationPage {
                     id: personal
                     width: flick.width
                     visible: SettingsState.section === "personalizacion"
-                    onPickerOpened: SettingsState.hide()
                 }
                 AboutPage {
                     id: about
