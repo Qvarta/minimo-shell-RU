@@ -22,7 +22,10 @@ PanelWindow {
     WlrLayershell.namespace: "minimo-settings"
     WlrLayershell.keyboardFocus: open ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
 
-    onOpenChanged: if (open) { card.forceActiveFocus(); wallpapers.refresh(); personal.refresh(); display.refresh() }
+    // Al reabrir la ventana se refrescan solo las páginas que leen datos externos.
+    // (PersonalizationPage no expone refresh(): sus controles son declarativos.)
+    function refreshPages() { wallpapers.refresh(); display.refresh() }
+    onOpenChanged: if (open) { card.forceActiveFocus(); win.refreshPages() }
 
     readonly property var sections: [
         { id: "personalizacion", label: I18n.tr("Personalization"), icon: "brush" },
@@ -123,7 +126,9 @@ PanelWindow {
                     id: wallpapers
                     width: flick.width
                     visible: SettingsState.section === "wallpapers"
-                    onPickerOpened: SettingsState.hide()
+                    onPickerOpened: SettingsState.hide()   // el selector (zenity) necesita el foco/teclado
+                    // Al volver de cerrar la ventana (p. ej. tras usar el selector), re-escanear la galería.
+                    onVisibleChanged: if (visible && win.open) win.refreshPages()
                 }
                 PersonalizationPage {
                     id: personal
