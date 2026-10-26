@@ -89,16 +89,20 @@ PanelWindow {
     // compositor: socket Hyprland o socket niri vía Services/Niri.qml).
     onHideWantedChanged: syncHide()
     // Tras cerrar/mover ventanas se refresca la lista de toplevels (un evento, sin sondeo).
-    // En niri NO debe instanciarse ningún objeto que cualifique "Hyprland"
-    // (ni Connections deshabilitado): eso dispara la conexión al socket IPC y
+    // En niri NO debe instanciarse ningún objeto que cualifique "Hyprland" (ni un
+    // Connections con enabled/active:false): eso dispara la conexión al socket IPC y
     // el WARN "$HYPRLAND_INSTANCE_SIGNATURE is unset. Cannot connect to hyprland."
-    Connections {
+    // Por eso el bloque va dentro de un Loader: su contenido solo se crea si active=true.
+    Loader {
         active: DisplayState.islandSmartHide && !win.isNiri
-        target: Hyprland
-        enabled: DisplayState.islandSmartHide
-        function onRawEvent(ev) {
-            const n = ev.name
-            if (n === "closewindow" || n === "movewindowv2" || n === "openwindow") toplevelsLater.restart()
+        sourceComponent: Component {
+            Connections {
+                target: Hyprland
+                function onRawEvent(ev) {
+                    const n = ev.name
+                    if (n === "closewindow" || n === "movewindowv2" || n === "openwindow") toplevelsLater.restart()
+                }
+            }
         }
     }
     // En niri el servicio ya mantiene la lista de ventanas por su EventStream.
@@ -109,7 +113,7 @@ PanelWindow {
         function onWorkspaceChanged() { win.syncHide() }
     }
     // Una sola actualización por ráfaga de eventos, fuera del manejador de eventos de Hyprland.
-    Timer { id: toplevelsLater; interval: 120; onTriggered: Hyprland.refreshToplevels() }
+    Timer { id: toplevelsLater; interval: 120; onTriggered: if (!win.isNiri) Hyprland.refreshToplevels() }
     function syncHide() {
         if (!hideWanted) { hideTimer.stop(); shown = true }
         else if (!hovered && !open) hideTimer.restart()
