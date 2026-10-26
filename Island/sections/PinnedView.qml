@@ -88,7 +88,6 @@ Item {
 
         property string icon
         property string label
-        property string letter: ""
         property bool active: false
 
         signal activated()
@@ -137,19 +136,8 @@ Item {
                 Icon {
                     anchors.centerIn: parent
                     name: btn.icon
-                    visible: btn.letter === ""
                     size: 19
                     tone: btn.active ? "white" : "dark"
-                }
-
-                Text {
-                    anchors.centerIn: parent
-                    visible: btn.letter !== ""
-                    text: btn.letter
-                    color: btn.active ? Theme.onAccent : Theme.textPrimary
-                    font.family: Theme.font
-                    font.pixelSize: 16
-                    font.weight: Font.Medium
                 }
             }
 
