@@ -96,13 +96,11 @@ Item {
         return t.charAt(0).toUpperCase() + t.slice(1)
     }
 
-    // Иконки в assets только базовые (sun/moon/drop/cloudy нет): сопоставляем символы погоды им.
+    // Имена символов Weather совпадают с именами SVG в assets/icons/src/.
+    // Передаём их напрямую в Icon, иначе облака, туман, снег и другие
+    // погодные состояния ошибочно отображаются как globe.
     function iconForCode(code, isDay) {
-        const sym = Weather.weatherSymbolFromCode(code, isDay)
-        if (sym === "clear-day") return "sun"
-        if (sym === "clear-night") return "moon"
-        if (sym === "rain" || sym === "thunderstorm") return "drop"
-        return "globe"
+        return Weather.weatherSymbolFromCode(Number(code), isDay)
     }
 
     // Сокращённое название дня недели по дате Open-Meteo ("2026-10-29" -> "Чт")
