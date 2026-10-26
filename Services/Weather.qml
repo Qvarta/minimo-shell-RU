@@ -236,8 +236,12 @@ Singleton {
     function geocodeLocation(locationName, callback, errorCallback) {
         var geoUrl = "https://api.noctalia.dev/geocode?city=" + encodeURIComponent(locationName);
         var xhr = new XMLHttpRequest();
+        // Статус 0 означает, что запрос не был завершён сетью (офлайн, DNS, TLS).
+        // Не выводим это как ошибку — просто молча выходим.
+        xhr.onerror = function () { isFetchingWeather = false; };
         xhr.onreadystatechange = function () {
             if (xhr.readyState === XMLHttpRequest.DONE) {
+                if (xhr.status === 0) { isFetchingWeather = false; return; }
                 if (xhr.status === 200) {
                     try {
                         var geoData = JSON.parse(xhr.responseText);
@@ -262,8 +266,12 @@ Singleton {
     function fetchWeatherData(latitude, longitude, errorCallback) {
         var url = "https://api.open-meteo.com/v1/forecast?latitude=" + latitude + "&longitude=" + longitude + "&current_weather=true&current=relativehumidity_2m,surface_pressure,is_day&daily=temperature_2m_max,temperature_2m_min,weathercode,sunset,sunrise,wind_direction_10m_dominant,wind_speed_10m_max,relative_humidity_2m_mean,surface_pressure_mean&timezone=auto&wind_speed_unit=ms";
         var xhr = new XMLHttpRequest();
+        // Статус 0 означает, что запрос не был завершён сетью (офлайн, DNS, TLS).
+        // Не выводим это как ошибку — но обязательно сбрасываем флаг загрузки.
+        xhr.onerror = function () { isFetchingWeather = false; };
         xhr.onreadystatechange = function () {
             if (xhr.readyState === XMLHttpRequest.DONE) {
+                if (xhr.status === 0) { isFetchingWeather = false; return; }
                 if (xhr.status === 200) {
                     var text = xhr.responseText || "";
                     try {
