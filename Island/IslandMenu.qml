@@ -11,6 +11,7 @@ import "sections"
 // Menú de la isla expandida: compone las secciones con entrada escalonada.
 Item {
     id: root
+    Component.onCompleted: console.warn("[BootDebug] IslandMenu.qml loaded")
     signal done()
     property bool open: false
     readonly property bool searchFocused: search.hasFocus
