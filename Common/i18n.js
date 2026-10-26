@@ -370,7 +370,7 @@ for (var legacyKey in en) {
 var weatherTranslations = {
     "Today": ["Hoy", "Сегодня"],
     "Weather": ["Clima", "Погода"],
-    "Weather location": ["Ubicación del clima", "Местоположение погоды"],
+    "Weather location": ["Ubicación del clima", "Местоположение"],
     "City": ["Ciudad", "Город"],
     "Enter a city": ["Ingresá una ciudad", "Введите город"],
     "Saved": ["Guardado", "Сохранено"],
@@ -382,7 +382,7 @@ var weatherTranslations = {
     "Humidity": ["Humedad", "Влажность"],
     "Sunrise": ["Amanecer", "Восход"],
     "Sunset": ["Atardecer", "Закат"],
-    "Daylight duration": ["Duración del día", "Продолжительность светового дня"],
+    "Daylight duration": ["Duración del día", "Продолжительность дня"],
     "Forecast": ["Pronóstico", "Прогноз"],
     "Clear sky": ["Despejado", "Ясно"],
     "Mostly clear": ["Mayormente despejado", "Преимущественно ясно"],
