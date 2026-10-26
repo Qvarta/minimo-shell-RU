@@ -7,7 +7,7 @@ import "../Common"
 
 // Miniatura de un fondo. Al pasar el mouse aparece un botón para quitarlo: el primer clic
 // lo arma (negro, "Eliminar"/"Quitar"), el segundo dentro de 3 s confirma.
-// `owned`: está en ~/Imágenes/Fondos → se manda a la papelera; si no, solo se quita de la lista.
+// `owned`: está en ~/Pictures/Wallpapers/Local → se manda a la papelera; si no, solo se quita de la lista.
 Item {
     id: tile
     required property string modelData
