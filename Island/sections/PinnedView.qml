@@ -26,9 +26,6 @@ Item {
             const nameFormat = "screenshot-%Y-%m-%d_%H-%M-%S";
             p.command = ["sh", "-c", "mkdir -p '" + root.screenshotDirAbs + "' && wayshot -g --silent --file-name-format '" + nameFormat + "' '" + root.screenshotDirAbs + "'"];
         } else {
-            // Логика scripts/screenshot.sh: mkdir, выбор области через slurp,
-            // захват через grim (отмена выделения не является ошибкой: exit 0),
-            // wl-copy как image/png и уведомление только если файл непустой.
             const script = 'd="$1"; mkdir -p "$d" || exit 1; ' + 'f="$d/captura-$(date +%Y%m%d-%H%M%S-%3N).png"; ' + 'g=$(slurp) || exit 0; grim -g "$g" "$f" || exit 1; ' + '[ -s "$f" ] || exit 1; ' + 'wl-copy --type image/png < "$f"; ';
             p.command = ["sh", "-c", script, "screenshot", root.screenshotDirAbs];
         }
