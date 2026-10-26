@@ -25,6 +25,8 @@ Singleton {
 
     readonly property alias data: adapter
     readonly property alias location: adapter
+    // Expose the configured city name for WeatherView.qml (`Weather.name`).
+    property alias name: adapter.name
     readonly property bool weatherEnabled: adapter.weatherEnabled
 
     // ------------------------------------------------------------------
