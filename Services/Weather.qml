@@ -13,12 +13,14 @@ Singleton {
         return home ? home + "/.config/minimo-os/" : "";
     }
 
-    property string locationFile: cacheDir ? cacheDir + "location.json" : ""
+    property string stateFile: cacheDir ? cacheDir + "state.json" : ""
     property int weatherUpdateFrequency: 30 * 60 // 30 minutes expressed in seconds
     property bool isFetchingWeather: false
 
-    // Погода живёт только в памяти — в location.json не пишется
+    // Прогноз и координаты хранятся только в памяти.
     property var weather: null
+    property bool loadingState: false
+    property bool stateFileLoadFailed: false
 
     readonly property alias data: adapter
     readonly property alias location: adapter
@@ -67,42 +69,98 @@ Singleton {
     property string stableName: ""
 
     // ------------------------------------------------------------------
-    // location.json — конфиг + лёгкий кэш (без weather)
-    // ------------------------------------------------------------------
+    // state.json — сохраняем только имя города в ключе weather.name.
+    // Остальные настройки оболочки сохраняются при обновлении файла.
+    QtObject {
+        id: adapter
+        property string name: "Москва"
+        property bool weatherEnabled: true
+        property string latitude: ""
+        property string longitude: ""
+        property string resolvedName: ""
+        property int weatherLastFetch: 0
+
+        onNameChanged: {
+            if (!root.loadingState)
+                saveTimer.start();
+        }
+    }
+
     FileView {
-        id: locationFileView
-        path: root.locationFile
+        id: stateFileView
+        path: root.stateFile
         printErrors: false
-        onAdapterUpdated: saveTimer.start()
+        watchChanges: true
+
         onLoaded: {
-            // Если файл был пустым/без ключевых полей — заполняем дефолтами
-            if (adapter.name === "") {
-                writeDefaultLocation();
+            root.stateFileLoadFailed = false;
+            root.loadCityFromState();
+        }
+        onLoadFailed: {
+            root.stateFileLoadFailed = true;
+            root.loadingState = true;
+            adapter.name = "Москва";
+            root.loadingState = false;
+            root.saveCityName();
+            root.update();
+        }
+        onFileChanged: reload()
+    }
+
+    function loadCityFromState() {
+        var state = {};
+        const raw = stateFileView.text();
+
+        if (raw.trim() !== "") {
+            try {
+                state = JSON.parse(raw);
+                if (!state || typeof state !== "object" || Array.isArray(state))
+                    throw new Error("state.json root must be an object");
+            } catch (e) {
+                console.error("[Weather] Cannot parse state.json:", e);
+                // Не перезаписываем существующий файл с повреждённым JSON.
+                root.loadingState = true;
+                adapter.name = "Москва";
+                root.loadingState = false;
+                root.update();
                 return;
             }
+        }
 
-            if (adapter.latitude !== "" && adapter.longitude !== "" && adapter.weatherLastFetch > 0) {
-                root.stableLatitude = adapter.latitude;
-                root.stableLongitude = adapter.longitude;
-                root.stableName = adapter.resolvedName;
-                root.coordinatesReady = true;
+        const savedCity = state.weather && typeof state.weather.name === "string"
+            ? state.weather.name.trim() : "";
+
+        root.loadingState = true;
+        adapter.name = savedCity !== "" ? savedCity : "Москва";
+        root.loadingState = false;
+
+        if (savedCity === "")
+            root.saveCityName();
+
+        root.update();
+    }
+
+    function saveCityName() {
+        if (!root.stateFile || (!stateFileView.loaded && !root.stateFileLoadFailed))
+            return;
+
+        var state = {};
+        const raw = stateFileView.loaded ? stateFileView.text() : "";
+
+        if (raw.trim() !== "") {
+            try {
+                state = JSON.parse(raw);
+                if (!state || typeof state !== "object" || Array.isArray(state))
+                    throw new Error("state.json root must be an object");
+            } catch (e) {
+                console.error("[Weather] Refusing to overwrite invalid state.json:", e);
+                return;
             }
-            update();
-        }
-        onLoadFailed: function (error) {
-            writeDefaultLocation();
         }
 
-        JsonAdapter {
-            id: adapter
-            property string name: ""
-            property bool weatherEnabled: true
-            property string latitude: ""
-            property string longitude: ""
-            property string resolvedName: ""
-            property int weatherLastFetch: 0
-            // weather здесь больше нет — не пишется в файл
-        }
+        // Persist only the city name; do not persist coordinates, forecast or cache.
+        state.weather = { name: adapter.name };
+        stateFileView.setText(JSON.stringify(state, null, 2) + "\n");
     }
 
     // Formatted coordinates for UI display
@@ -130,7 +188,7 @@ Singleton {
         id: saveTimer
         running: false
         interval: 1000
-        onTriggered: locationFileView.writeAdapter()
+        onTriggered: root.saveCityName()
     }
 
     Component.onCompleted: {
@@ -139,19 +197,6 @@ Singleton {
 
     function init() {
         // no-op
-    }
-
-    // Запись дефолтного location.json, если файла не было
-    function writeDefaultLocation() {
-        adapter.name = "Москва";
-        adapter.weatherEnabled = true;
-        adapter.latitude = "";
-        adapter.longitude = "";
-        adapter.resolvedName = "";
-        adapter.weatherLastFetch = 0;
-        root.weather = null;
-        locationFileView.writeAdapter();
-        update();
     }
 
     function resetWeather() {
