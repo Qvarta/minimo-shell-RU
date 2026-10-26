@@ -25,6 +25,30 @@ Item {
     visible: player !== null
     implicitHeight: visible ? 64 : 0
 
+    onPlayerChanged: {
+        console.log("[MediaSection] active player changed:",
+                    player ? player.identity : "<none>",
+                    "dbusName=", player ? player.dbusName : "",
+                    "visible=", visible,
+                    "trackTitle=", player ? player.trackTitle : "",
+                    "trackArtUrl=", player ? player.trackArtUrl : "")
+    }
+
+    Component.onCompleted: {
+        console.log("[MediaSection] component ready; players=", players.length,
+                    "activePlayer=", player ? player.identity : "<none>",
+                    "visible=", visible)
+        for (let i = 0; i < players.length; ++i) {
+            const p = players[i]
+            console.log("[MediaSection] player[", i, "] identity=", p.identity,
+                        "dbusName=", p.dbusName,
+                        "playing=", p.isPlaying,
+                        "state=", p.playbackState,
+                        "title=", p.trackTitle,
+                        "artUrl=", p.trackArtUrl)
+        }
+    }
+
     Timer {
         running: root.visible && root.player !== null && root.player.isPlaying
         interval: 1000; repeat: true
@@ -37,6 +61,13 @@ Item {
         width: 48; height: 48
         anchors.verticalCenter: parent.verticalCenter
         readonly property bool hasArt: cover.status === Image.Ready
+
+        onHasArtChanged: {
+            console.log("[MediaSection] art.hasArt changed:", hasArt,
+                        "cover.status=", cover.status,
+                        "cover.source=", cover.source,
+                        "cover.error=", cover.status === Image.Error ? cover.source : "")
+        }
         property real angle: 0
 
         NumberAnimation {
@@ -66,6 +97,13 @@ Item {
             layer.smooth: true
             layer.mipmap: true
             layer.textureSize: Qt.size(width * 2, height * 2)
+
+            Component.onCompleted: {
+                console.log("[MediaSection] coverLayer ready; visible=", visible,
+                            "layer.enabled=", layer.enabled,
+                            "size=", width, "x", height)
+            }
+
             Image {
                 id: cover
                 anchors.centerIn: parent
@@ -78,6 +116,40 @@ Item {
                 mipmap: true
                 antialiasing: true
                 sourceSize: Qt.size(art.width * 2, art.height * 2)
+
+                function statusName(status) {
+                    switch (status) {
+                    case Image.Null: return "Null"
+                    case Image.Ready: return "Ready"
+                    case Image.Loading: return "Loading"
+                    case Image.Error: return "Error"
+                    default: return "Unknown(" + status + ")"
+                    }
+                }
+
+                onSourceChanged: {
+                    console.log("[MediaSection] cover source changed:", source,
+                                "player=", root.player ? root.player.identity : "<none>")
+                }
+                onStatusChanged: {
+                    console.log("[MediaSection] cover status:", statusName(status),
+                                "source=", source,
+                                "progress=", progress,
+                                "implicitSize=", implicitWidth, "x", implicitHeight,
+                                "size=", width, "x", height,
+                                "errorString=", status === Image.Error ? "Image failed to load; check URL/provider logs" : "")
+                }
+                onProgressChanged: {
+                    if (progress > 0 && progress < 1)
+                        console.log("[MediaSection] cover loading progress:", progress,
+                                    "source=", source)
+                }
+                Component.onCompleted: {
+                    console.log("[MediaSection] cover image created; source=", source,
+                                "status=", statusName(status),
+                                "asynchronous=", asynchronous,
+                                "sourceSize=", sourceSize.width, "x", sourceSize.height)
+                }
             }
         }
         Item {
