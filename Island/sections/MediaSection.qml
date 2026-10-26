@@ -139,7 +139,7 @@ Item {
                                 "size=", width, "x", height,
                                 "errorString=", status === Image.Error ? "Image failed to load; check URL/provider logs" : "")
                 }
-                onProgressChanged: {
+                onProgressChanged: function(progress) {
                     if (progress > 0 && progress < 1)
                         console.log("[MediaSection] cover loading progress:", progress,
                                     "source=", source)
