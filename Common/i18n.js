@@ -370,6 +370,10 @@ for (var legacyKey in en) {
 var weatherTranslations = {
     "Today": ["Hoy", "Сегодня"],
     "Weather": ["Clima", "Погода"],
+    "Weather location": ["Ubicación del clima", "Местоположение погоды"],
+    "City": ["Ciudad", "Город"],
+    "Enter a city": ["Ingresá una ciudad", "Введите город"],
+    "Saved": ["Guardado", "Сохранено"],
     "No weather data": ["Sin datos del clima", "Нет данных о погоде"],
     "Wind speed": ["Velocidad del viento", "Скорость ветра"],
     "Wind direction": ["Dirección del viento", "Направление ветра"],
