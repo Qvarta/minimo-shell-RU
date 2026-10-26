@@ -16,6 +16,7 @@ Singleton {
     property string stateFile: cacheDir ? cacheDir + "state.json" : ""
     property int weatherUpdateFrequency: 30 * 60 // 30 minutes expressed in seconds
     property bool isFetchingWeather: false
+    property int requestGeneration: 0
 
     // Прогноз и координаты хранятся только в памяти.
     property var weather: null
@@ -168,6 +169,7 @@ Singleton {
         const city = String(cityName || "").trim()
         if (city === "") return false
 
+        root.requestGeneration += 1
         saveTimer.stop()
         adapter.name = city
         adapter.latitude = ""
@@ -266,13 +268,11 @@ Singleton {
         }
 
         const requestedCity = adapter.name;
-        geocodeLocation(requestedCity, function (latitude, longitude, name, country) {
+        const requestId = root.requestGeneration;
+        geocodeLocation(requestedCity, requestId, function (latitude, longitude, name, country) {
             // Ignore a response for a city that was changed while the request was running.
-            if (requestedCity !== adapter.name) {
-                isFetchingWeather = false;
-                root.update();
+            if (requestId !== root.requestGeneration || requestedCity !== adapter.name)
                 return;
-            }
 
             adapter.resolvedName = requestedCity;
             adapter.latitude = latitude.toString();
@@ -284,7 +284,10 @@ Singleton {
 
             isFetchingWeather = false;
             root.updateWeatherData();
-        }, errorCallback);
+        }, function (module, message) {
+            if (requestId === root.requestGeneration)
+                errorCallback(module, message);
+        });
     }
 
     // Fetch weather data if enabled and coordinates are available
@@ -306,19 +309,26 @@ Singleton {
 
         if (needsWeatherUpdate) {
             isFetchingWeather = true;
-            fetchWeatherData(adapter.latitude, adapter.longitude, errorCallback);
+            const requestId = root.requestGeneration;
+            fetchWeatherData(adapter.latitude, adapter.longitude, requestId, function (module, message) {
+                if (requestId === root.requestGeneration)
+                    errorCallback(module, message);
+            });
         }
     }
 
     // Query geocoding API to convert location name to coordinates
-    function geocodeLocation(locationName, callback, errorCallback) {
+    function geocodeLocation(locationName, requestId, callback, errorCallback) {
         var geoUrl = "https://api.noctalia.dev/geocode?city=" + encodeURIComponent(locationName);
         var xhr = new XMLHttpRequest();
         // Статус 0 означает, что запрос не был завершён сетью (офлайн, DNS, TLS).
         // Не выводим это как ошибку — просто молча выходим.
-        xhr.onerror = function () { isFetchingWeather = false; };
+        xhr.onerror = function () {
+            if (requestId === root.requestGeneration) isFetchingWeather = false;
+        };
         xhr.onreadystatechange = function () {
             if (xhr.readyState === XMLHttpRequest.DONE) {
+                if (requestId !== root.requestGeneration) return;
                 if (xhr.status === 0) { isFetchingWeather = false; return; }
                 if (xhr.status === 200) {
                     try {
@@ -341,22 +351,19 @@ Singleton {
     }
 
     // Fetch weather data from Open-Meteo API
-    function fetchWeatherData(latitude, longitude, errorCallback) {
+    function fetchWeatherData(latitude, longitude, requestId, errorCallback) {
         var url = "https://api.open-meteo.com/v1/forecast?latitude=" + latitude + "&longitude=" + longitude + "&current_weather=true&current=relativehumidity_2m,surface_pressure,is_day&daily=temperature_2m_max,temperature_2m_min,weathercode,sunset,sunrise,wind_direction_10m_dominant,wind_speed_10m_max,relative_humidity_2m_mean,surface_pressure_mean&timezone=auto&wind_speed_unit=ms";
         var xhr = new XMLHttpRequest();
         // Статус 0 означает, что запрос не был завершён сетью (офлайн, DNS, TLS).
         // Не выводим это как ошибку — но обязательно сбрасываем флаг загрузки.
-        xhr.onerror = function () { isFetchingWeather = false; };
+        xhr.onerror = function () {
+            if (requestId === root.requestGeneration) isFetchingWeather = false;
+        };
         xhr.onreadystatechange = function () {
             if (xhr.readyState === XMLHttpRequest.DONE) {
+                if (requestId !== root.requestGeneration) return;
                 if (xhr.status === 0) { isFetchingWeather = false; return; }
                 if (xhr.status === 200) {
-                    // Ignore responses for coordinates invalidated by a city change.
-                    if (latitude !== adapter.latitude || longitude !== adapter.longitude) {
-                        isFetchingWeather = false;
-                        root.update();
-                        return;
-                    }
                     var text = xhr.responseText || "";
                     try {
                         var weatherData = JSON.parse(text);
