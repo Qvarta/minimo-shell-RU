@@ -71,7 +71,15 @@ Item {
                 anchors.centerIn: parent
                 width: parent.width; height: parent.height
                 rotation: art.angle
-                source: root.player ? root.player.trackArtUrl : ""
+                source: {
+                    var url = root.player ? root.player.trackArtUrl : ""
+                    if (!url) return ""
+                    // Permitir solo esquemas que QtQuick.Image puede cargar sin cerrar la conexión
+                    if (url.indexOf("http://") === 0 || url.indexOf("https://") === 0 ||
+                        url.indexOf("file://") === 0 || url.indexOf("data:") === 0)
+                        return url
+                    return ""
+                }
                 fillMode: Image.PreserveAspectCrop
                 asynchronous: true
                 smooth: true
