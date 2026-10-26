@@ -86,8 +86,36 @@ Item {
         }
         Reveal { step: 1; width: parent.width; height: search.implicitHeight
             SearchSection { id: search; width: parent.width; onLaunched: root.done() } }
-        Reveal { step: 2; width: parent.width; height: media.implicitHeight; visible: media.player !== null
-            MediaSection { id: media; width: parent.width } }
+        Reveal {
+            id: mediaReveal
+            step: 2
+            width: parent.width
+            height: media.implicitHeight
+            visible: media.player !== null
+            onVisibleChanged: console.log("[MediaDebug] IslandMenu media Reveal visibility:",
+                                          "visible=", visible, "opacity=", opacity,
+                                          "stage=", root.stage, "open=", root.open,
+                                          "page=", root.page, "height=", height,
+                                          "media.visible=", media.visible,
+                                          "media.player=", media.player ? media.player.identity : "<none>")
+            Component.onCompleted: {
+                console.log("[MediaDebug] IslandMenu media Reveal created:",
+                            "visible=", visible, "opacity=", opacity,
+                            "stage=", root.stage, "open=", root.open,
+                            "page=", root.page, "height=", height,
+                            "media.visible=", media.visible,
+                            "media.player=", media.player ? media.player.identity : "<none>")
+            }
+            MediaSection {
+                id: media
+                width: parent.width
+                onPlayerChanged: console.log("[MediaDebug] IslandMenu observed media.player:",
+                                             player ? player.identity : "<none>",
+                                             "media.visible=", visible,
+                                             "reveal.visible=", mediaReveal.visible,
+                                             "reveal.height=", mediaReveal.height)
+            }
+        }
         Reveal {
             step: 3
             width: parent.width
