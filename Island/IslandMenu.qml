@@ -11,7 +11,7 @@ import "sections"
 // Menú de la isla expandida: compone las secciones con entrada escalonada.
 Item {
     id: root
-    Component.onCompleted: console.warn("[BootDebug] IslandMenu.qml loaded")
+
     signal done()
     property bool open: false
     readonly property bool searchFocused: search.hasFocus
@@ -93,28 +93,11 @@ Item {
             width: parent.width
             height: media.implicitHeight
             visible: media.player !== null
-            onVisibleChanged: console.warn("[MediaDebug] IslandMenu media Reveal visibility:",
-                                          "visible=", visible, "opacity=", opacity,
-                                          "stage=", root.stage, "open=", root.open,
-                                          "page=", root.page, "height=", height,
-                                          "media.visible=", media.visible,
-                                          "media.player=", media.player ? media.player.identity : "<none>")
-            Component.onCompleted: {
-                console.warn("[MediaDebug] IslandMenu media Reveal created:",
-                            "visible=", visible, "opacity=", opacity,
-                            "stage=", root.stage, "open=", root.open,
-                            "page=", root.page, "height=", height,
-                            "media.visible=", media.visible,
-                            "media.player=", media.player ? media.player.identity : "<none>")
-            }
+
             MediaSection {
                 id: media
                 width: parent.width
-                onPlayerChanged: console.warn("[MediaDebug] IslandMenu observed media.player:",
-                                             player ? player.identity : "<none>",
-                                             "media.visible=", visible,
-                                             "reveal.visible=", mediaReveal.visible,
-                                             "reveal.height=", mediaReveal.height)
+
             }
         }
         Reveal {
