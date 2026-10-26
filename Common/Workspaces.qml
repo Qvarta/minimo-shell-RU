@@ -58,6 +58,11 @@ Singleton {
     Component.onCompleted: if (isNiri) syncNiriWorkspaces()
     onIsNiriChanged: if (isNiri) syncNiriWorkspaces()
 
+    // IMPORTANTE: el acceso a "Hyprland.*" debe quedar DENTRO del ternario.
+    // Si se evaluara aunque fuera una vez en niri, Quickshell intentaría
+    // conectar al socket IPC y lanzaría el WARN "$HYPRLAND_INSTANCE_SIGNATURE
+    // is unset. Cannot connect to hyprland." Los bindings solo registran la
+    // dependencia de la rama que realmente se evalúa.
     readonly property var list: isNiri
         ? niriWsData
         : Hyprland.workspaces.values.filter(w => w.id > 0).sort((a, b) => a.id - b.id)
