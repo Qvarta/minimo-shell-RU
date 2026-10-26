@@ -22,11 +22,11 @@ Item {
     function takeScreenshot(session) {
         const p = Qt.createQmlObject('import QtQuick; import Quickshell.Io; Process {}', root);
 
+        const nameFormat = "screenshot-%Y-%m-%d_%H-%M-%S";
         if (session === "niri") {
-            const nameFormat = "screenshot-%Y-%m-%d_%H-%M-%S";
             p.command = ["sh", "-c", "mkdir -p '" + root.screenshotDirAbs + "' && wayshot -g --silent --file-name-format '" + nameFormat + "' '" + root.screenshotDirAbs + "'"];
         } else {
-            const script = 'd="$1"; mkdir -p "$d" || exit 1; ' + 'f="$d/captura-$(date +%Y%m%d-%H%M%S-%3N).png"; ' + 'g=$(slurp) || exit 0; grim -g "$g" "$f" || exit 1; ' + '[ -s "$f" ] || exit 1; ' + 'wl-copy --type image/png < "$f"; ';
+            const script = 'd="$1"; mkdir -p "$d" || exit 1; ' + 'f="$d/$(date +\'' + nameFormat + '\').png"; ' + 'g=$(slurp) || exit 0; grim -g "$g" "$f" || exit 1; ' + '[ -s "$f" ] || exit 1; ' + 'wl-copy --type image/png < "$f"; ';
             p.command = ["sh", "-c", script, "screenshot", root.screenshotDirAbs];
         }
 
