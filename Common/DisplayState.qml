@@ -85,6 +85,8 @@ Singleton {
         id: file
         blockLoading: false
         printErrors: false
+        watchChanges: true
+        onFileChanged: reload()
         onLoaded: {
             try {
                 const s = JSON.parse(text())
