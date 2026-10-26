@@ -323,29 +323,64 @@ Singleton {
     function geocodeLocation(locationName, requestId, callback, errorCallback) {
         var geoUrl = "https://api.noctalia.dev/geocode?city=" + encodeURIComponent(locationName);
         var xhr = new XMLHttpRequest();
-        // Статус 0 означает, что запрос не был завершён сетью (офлайн, DNS, TLS).
-        // Не выводим это как ошибку — просто молча выходим.
+        var startedAt = Date.now();
+        var networkFailureLogged = false;
+
+        function logNetworkFailure(source) {
+            if (networkFailureLogged)
+                return;
+            networkFailureLogged = true;
+            console.warn("[Weather][geocode] network failure (" + source
+                         + "), requestId=" + requestId
+                         + ", status=" + xhr.status
+                         + ", readyState=" + xhr.readyState
+                         + ", elapsedMs=" + (Date.now() - startedAt));
+        }
+
+        console.info("[Weather][geocode] request started, requestId=" + requestId
+                     + ", endpoint=api.noctalia.dev");
+
         xhr.onerror = function () {
-            if (requestId === root.requestGeneration) isFetchingWeather = false;
+            logNetworkFailure("onerror");
+            if (requestId === root.requestGeneration)
+                isFetchingWeather = false;
         };
         xhr.onreadystatechange = function () {
-            if (xhr.readyState === XMLHttpRequest.DONE) {
-                if (requestId !== root.requestGeneration) return;
-                if (xhr.status === 0) { isFetchingWeather = false; return; }
-                if (xhr.status === 200) {
-                    try {
-                        var geoData = JSON.parse(xhr.responseText);
-                        if (geoData.lat != null) {
-                            callback(geoData.lat, geoData.lng, geoData.name, geoData.country);
-                        } else {
-                            errorCallback("Location", "could not resolve location name");
-                        }
-                    } catch (e) {
-                        errorCallback("Location", "Failed to parse geocoding data: " + e);
+            if (xhr.readyState !== XMLHttpRequest.DONE)
+                return;
+
+            console.info("[Weather][geocode] request finished, requestId=" + requestId
+                         + ", status=" + xhr.status
+                         + ", elapsedMs=" + (Date.now() - startedAt));
+
+            if (requestId !== root.requestGeneration) {
+                console.warn("[Weather][geocode] ignoring stale response, requestId=" + requestId
+                             + ", currentGeneration=" + root.requestGeneration);
+                return;
+            }
+            if (xhr.status === 0) {
+                logNetworkFailure("DONE/status 0");
+                isFetchingWeather = false;
+                return;
+            }
+            if (xhr.status === 200) {
+                try {
+                    var geoData = JSON.parse(xhr.responseText);
+                    if (geoData.lat != null) {
+                        console.info("[Weather][geocode] response parsed successfully, requestId=" + requestId);
+                        callback(geoData.lat, geoData.lng, geoData.name, geoData.country);
+                    } else {
+                        console.warn("[Weather][geocode] response has no coordinates, requestId=" + requestId);
+                        errorCallback("Location", "could not resolve location name");
                     }
-                } else {
-                    errorCallback("Location", "Geocoding error: " + xhr.status);
+                } catch (e) {
+                    console.error("[Weather][geocode] response parse failed, requestId=" + requestId + ":", e);
+                    errorCallback("Location", "Failed to parse geocoding data: " + e);
                 }
+            } else {
+                console.warn("[Weather][geocode] HTTP error, requestId=" + requestId
+                             + ", status=" + xhr.status);
+                errorCallback("Location", "Geocoding error: " + xhr.status);
             }
         };
         xhr.open("GET", geoUrl);
@@ -356,43 +391,78 @@ Singleton {
     function fetchWeatherData(latitude, longitude, requestId, errorCallback) {
         var url = "https://api.open-meteo.com/v1/forecast?latitude=" + latitude + "&longitude=" + longitude + "&current_weather=true&current=relativehumidity_2m,surface_pressure,is_day&daily=temperature_2m_max,temperature_2m_min,weathercode,sunset,sunrise,wind_direction_10m_dominant,wind_speed_10m_max,relative_humidity_2m_mean,surface_pressure_mean&timezone=auto&wind_speed_unit=ms";
         var xhr = new XMLHttpRequest();
-        // Статус 0 означает, что запрос не был завершён сетью (офлайн, DNS, TLS).
-        // Не выводим это как ошибку — но обязательно сбрасываем флаг загрузки.
+        var startedAt = Date.now();
+        var networkFailureLogged = false;
+
+        function logNetworkFailure(source) {
+            if (networkFailureLogged)
+                return;
+            networkFailureLogged = true;
+            console.warn("[Weather][forecast] network failure (" + source
+                         + "), requestId=" + requestId
+                         + ", status=" + xhr.status
+                         + ", readyState=" + xhr.readyState
+                         + ", elapsedMs=" + (Date.now() - startedAt));
+        }
+
+        console.info("[Weather][forecast] request started, requestId=" + requestId
+                     + ", endpoint=api.open-meteo.com");
+
         xhr.onerror = function () {
-            if (requestId === root.requestGeneration) isFetchingWeather = false;
+            logNetworkFailure("onerror");
+            if (requestId === root.requestGeneration)
+                isFetchingWeather = false;
         };
         xhr.onreadystatechange = function () {
-            if (xhr.readyState === XMLHttpRequest.DONE) {
-                if (requestId !== root.requestGeneration) return;
-                if (xhr.status === 0) { isFetchingWeather = false; return; }
-                if (xhr.status === 200) {
-                    var text = xhr.responseText || "";
-                    try {
-                        var weatherData = JSON.parse(text);
+            if (xhr.readyState !== XMLHttpRequest.DONE)
+                return;
 
-                        if (weatherData.latitude == null || weatherData.longitude == null) {
-                            errorCallback("Location", "Unexpected weather payload: " + text.slice(0, 200));
-                            return;
-                        }
+            console.info("[Weather][forecast] request finished, requestId=" + requestId
+                         + ", status=" + xhr.status
+                         + ", elapsedMs=" + (Date.now() - startedAt));
 
-                        // Save core data — только в памяти
-                        root.weather = weatherData;
-                        adapter.weatherLastFetch = Math.floor(Date.now() / 1000);
+            if (requestId !== root.requestGeneration) {
+                console.warn("[Weather][forecast] ignoring stale response, requestId=" + requestId
+                             + ", currentGeneration=" + root.requestGeneration);
+                return;
+            }
+            if (xhr.status === 0) {
+                logNetworkFailure("DONE/status 0");
+                isFetchingWeather = false;
+                return;
+            }
+            if (xhr.status === 200) {
+                var text = xhr.responseText || "";
+                try {
+                    var weatherData = JSON.parse(text);
 
-                        // Update stable display values only when complete and successful
-                        root.stableLatitude = weatherData.latitude.toString();
-                        root.stableLongitude = weatherData.longitude.toString();
-                        adapter.latitude = root.stableLatitude;
-                        adapter.longitude = root.stableLongitude;
-                        root.coordinatesReady = true;
-
-                        isFetchingWeather = false;
-                    } catch (e) {
-                        errorCallback("Location", "Failed to parse weather data: " + e + " | raw: " + text.slice(0, 200));
+                    if (weatherData.latitude == null || weatherData.longitude == null) {
+                        console.warn("[Weather][forecast] response missing coordinates, requestId=" + requestId);
+                        errorCallback("Location", "Unexpected weather payload: " + text.slice(0, 200));
+                        return;
                     }
-                } else {
-                    errorCallback("Location", "Weather fetch error: " + xhr.status + " | raw: " + (xhr.responseText || "").slice(0, 200));
+
+                    // Save core data — только в памяти
+                    root.weather = weatherData;
+                    adapter.weatherLastFetch = Math.floor(Date.now() / 1000);
+
+                    // Update stable display values only when complete and successful
+                    root.stableLatitude = weatherData.latitude.toString();
+                    root.stableLongitude = weatherData.longitude.toString();
+                    adapter.latitude = root.stableLatitude;
+                    adapter.longitude = root.stableLongitude;
+                    root.coordinatesReady = true;
+
+                    isFetchingWeather = false;
+                    console.info("[Weather][forecast] response parsed successfully, requestId=" + requestId);
+                } catch (e) {
+                    console.error("[Weather][forecast] response parse failed, requestId=" + requestId + ":", e);
+                    errorCallback("Location", "Failed to parse weather data: " + e + " | raw: " + text.slice(0, 200));
                 }
+            } else {
+                console.warn("[Weather][forecast] HTTP error, requestId=" + requestId
+                             + ", status=" + xhr.status);
+                errorCallback("Location", "Weather fetch error: " + xhr.status + " | raw: " + (xhr.responseText || "").slice(0, 200));
             }
         };
         xhr.open("GET", url);
