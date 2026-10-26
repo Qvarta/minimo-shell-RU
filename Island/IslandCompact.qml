@@ -33,7 +33,7 @@ Item {
     }
     Component.onCompleted: vpnCheck.running = true
     Timer {
-        interval: 5000
+        interval: 2000
         running: true
         repeat: true
         onTriggered: if (!vpnCheck.running) vpnCheck.running = true

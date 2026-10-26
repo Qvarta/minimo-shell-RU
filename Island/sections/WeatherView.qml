@@ -168,7 +168,7 @@ Item {
             Icon {
                 anchors.verticalCenter: parent.verticalCenter
                 name: root.cur ? root.iconForCode(root.cur.weathercode, root.isDay) : "sun"
-                size: 34
+                size: 56
             }
             Column {
                 anchors.verticalCenter: parent.verticalCenter
@@ -304,7 +304,7 @@ Item {
                                 id: dayIcon
                                 anchors.verticalCenter: parent.verticalCenter
                                 name: dayRow.codes ? root.iconForCode(dayRow.codes[dayRow.index], true) : "globe"
-                                size: 20
+                                size: 32
                             }
                             Column {
                                 anchors.left: parent.left
