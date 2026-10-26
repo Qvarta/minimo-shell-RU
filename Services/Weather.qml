@@ -163,6 +163,30 @@ Singleton {
         stateFileView.setText(JSON.stringify(state, null, 2) + "\n");
     }
 
+    // Change the configured city, persist it, and immediately refresh geocoding/weather.
+    function setCity(cityName) {
+        const city = String(cityName || "").trim()
+        if (city === "") return false
+
+        saveTimer.stop()
+        adapter.name = city
+        adapter.latitude = ""
+        adapter.longitude = ""
+        adapter.resolvedName = ""
+        adapter.weatherLastFetch = 0
+        root.weather = null
+        root.coordinatesReady = false
+        root.stableLatitude = ""
+        root.stableLongitude = ""
+        root.stableName = ""
+        root.isFetchingWeather = false
+        saveTimer.stop()
+
+        root.saveCityName()
+        root.update()
+        return true
+    }
+
     // Formatted coordinates for UI display
     readonly property string displayCoordinates: {
         if (!root.coordinatesReady || root.stableLatitude === "" || root.stableLongitude === "") {
@@ -241,8 +265,16 @@ Singleton {
             root.coordinatesReady = false;
         }
 
-        geocodeLocation(adapter.name, function (latitude, longitude, name, country) {
-            adapter.resolvedName = adapter.name;
+        const requestedCity = adapter.name;
+        geocodeLocation(requestedCity, function (latitude, longitude, name, country) {
+            // Ignore a response for a city that was changed while the request was running.
+            if (requestedCity !== adapter.name) {
+                isFetchingWeather = false;
+                root.update();
+                return;
+            }
+
+            adapter.resolvedName = requestedCity;
             adapter.latitude = latitude.toString();
             adapter.longitude = longitude.toString();
             root.stableLatitude = adapter.latitude;
@@ -251,6 +283,7 @@ Singleton {
             root.coordinatesReady = true;
 
             isFetchingWeather = false;
+            root.updateWeatherData();
         }, errorCallback);
     }
 
@@ -318,6 +351,12 @@ Singleton {
             if (xhr.readyState === XMLHttpRequest.DONE) {
                 if (xhr.status === 0) { isFetchingWeather = false; return; }
                 if (xhr.status === 200) {
+                    // Ignore responses for coordinates invalidated by a city change.
+                    if (latitude !== adapter.latitude || longitude !== adapter.longitude) {
+                        isFetchingWeather = false;
+                        root.update();
+                        return;
+                    }
                     var text = xhr.responseText || "";
                     try {
                         var weatherData = JSON.parse(text);
