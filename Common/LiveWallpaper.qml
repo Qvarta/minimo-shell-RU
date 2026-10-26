@@ -72,16 +72,22 @@ Singleton {
         const mons = Hyprland.monitors.values
         root.covered = mons.length > 0 && mons.every(m => m.activeWorkspace && m.activeWorkspace.toplevels.values.length > 0)
     }
-    // El bloque de Hyprland se instancia SOLO en sesión Hyprland: crear el
-    // objeto (aunque esté deshabilitado) hace que Quickshell intente conectar
-    // al socket IPC y lance el WARN "$HYPRLAND_INSTANCE_SIGNATURE is unset".
-    Connections {
-        active: !root.isNiri
-        target: Hyprland
-        enabled: root.active && DisplayState.livePauseCovered
-        function onRawEvent(ev) {
-            const n = ev.name
-            if (n === "openwindow" || n === "closewindow" || n === "movewindowv2" || n === "workspacev2" || n === "focusedmonv2") refresh.restart()
+    // El bloque de Hyprland se instancia SOLO en sesión Hyprland (Loader):
+    // cualificar "Hyprland" donde sea (incluso en un Connections con
+    // enabled:false) hace que Quickshell intente conectar al socket IPC y
+    // lance el WARN "$HYPRLAND_INSTANCE_SIGNATURE is unset".
+    Loader {
+        id: hyprConn
+        active: !root.isNiri && root.available
+        sourceComponent: Component {
+            Connections {
+                target: Hyprland
+                enabled: root.active && DisplayState.livePauseCovered
+                function onRawEvent(ev) {
+                    const n = ev.name
+                    if (n === "openwindow" || n === "closewindow" || n === "movewindowv2" || n === "workspacev2" || n === "focusedmonv2") refresh.restart()
+                }
+            }
         }
     }
     // En niri el EventStream de Services/Niri.qml ya emite los cambios.
@@ -91,8 +97,10 @@ Singleton {
         function onWindowListChanged() { Qt.callLater(root.evaluate) }
         function onWorkspaceChanged() { Qt.callLater(root.evaluate) }
     }
-    // Una sola actualización por ráfaga de eventos.
-    Timer { id: refresh; interval: 250; onTriggered: { Hyprland.refreshToplevels(); Qt.callLater(root.evaluate) } }
+    // Una sola actualización por ráfaga de eventos. "Hyprland" solo se
+    // cualifica en sesión Hyprland (en niri el Loader no se instancia y este
+    // timer nunca se dispara, pero el guard evita cualquier conexión accidental).
+    Timer { id: refresh; interval: 250; onTriggered: { if (!root.isNiri) Hyprland.refreshToplevels(); Qt.callLater(root.evaluate) } }
     onActiveChanged: if (active) { if (isNiri) Qt.callLater(evaluate); else refresh.restart() }
 
     function isAnimated(path) {
