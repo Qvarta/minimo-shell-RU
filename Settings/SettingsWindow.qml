@@ -25,8 +25,8 @@ PanelWindow {
     onOpenChanged: if (open) { card.forceActiveFocus(); wallpapers.refresh(); personal.refresh(); display.refresh() }
 
     readonly property var sections: [
-        { id: "wallpapers", label: I18n.tr("Wallpaper"), icon: "desktops" },
         { id: "personalizacion", label: I18n.tr("Personalization"), icon: "brush" },
+        { id: "wallpapers", label: I18n.tr("Wallpaper"), icon: "desktops" },
         { id: "pantalla", label: I18n.tr("Display"), icon: "display" },
         { id: "atajos", label: I18n.tr("Shortcuts"), icon: "keyboard" },
         { id: "minimo", label: "Minimo OS", icon: "info" }
