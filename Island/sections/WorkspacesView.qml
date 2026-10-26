@@ -76,6 +76,7 @@ Item {
                 delegate: Rectangle {
                     id: tile
                     required property var modelData
+                    required property int index
                     readonly property bool active: modelData.id === Workspaces.activeId
                     readonly property int slot: index
                     width: grid.tileW; height: grid.tileH; radius: 14
