@@ -11,20 +11,20 @@ Column {
     spacing: 20
     signal pickerOpened()       // el selector de archivos necesita el teclado
 
-    readonly property string mainDir: Quickshell.env("HOME") + "/Imágenes/Fondos"
+    readonly property string mainDir: Quickshell.env("HOME") + "/Pictures/Wallpapers/Local"
     property var images: []
 
     function refresh() { scan.running = false; scan.running = true }
     Component.onCompleted: refresh()
 
     // Solo fondos reales: el actual, los elegidos antes y los que el usuario agregó a
-    // ~/Imágenes/Fondos (sin los de ejemplo "minimo-*"). Se descartan archivos inexistentes.
+    // ~/Pictures/Wallpapers/Local (sin los de ejemplo "minimo-*"). Se descartan archivos inexistentes.
     Process {
         id: scan
         property var found: []
         command: ["sh", "-c",
-            'mkdir -p "$HOME/Imágenes/Fondos"; for f in "$@"; do [ -f "$f" ] && echo "$f" || echo "!$f"; done; ' +
-            'for d in "$HOME/Imágenes/Fondos" "$HOME/Pictures/Wallpapers"; do [ -d "$d" ] && find "$d" -maxdepth 1 -type f ! -name "minimo-*" \\( -iname "*.png" -o -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.webp" \\) | sort; done',
+            'mkdir -p "$HOME/Pictures/Wallpapers/Local"; for f in "$@"; do [ -f "$f" ] && echo "$f" || echo "!$f"; done; ' +
+            'for d in "$HOME/Pictures/Wallpapers/Local" "$HOME/Pictures/Wallpapers"; do [ -d "$d" ] && find "$d" -maxdepth 1 -type f ! -name "minimo-*" \\( -iname "*.png" -o -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.webp" \\) | sort; done',
             "sh"].concat(DisplayState.wallpaper ? [DisplayState.wallpaper] : []).concat(DisplayState.wallpaperHistory)
         stdout: SplitParser { onRead: line => scan.found.push(line) }
         onStarted: found = []
@@ -35,7 +35,7 @@ Column {
             if (missing.some(p => DisplayState.wallpaperHistory.indexOf(p) >= 0)) DisplayState.forgetWallpapers(missing)
         }
     }
-    // Quitar un fondo: los de ~/Imágenes/Fondos van a la papelera (gio trash; si no está, se borran);
+    // Quitar un fondo: los de ~/Pictures/Wallpapers/Local van a la papelera (gio trash; si no está, se borran);
     // los de otras carpetas solo salen de la lista. Si era el actual, queda sin fondo.
     function remove(path, owned) {
         DisplayState.removeWallpaper(path)
@@ -79,7 +79,7 @@ Column {
     }
 
     LiveWallpaperCard { width: parent.width; onPickerOpened: root.pickerOpened() }
-    Text { text: I18n.tr("Folder: ~/Imágenes/Fondos"); color: Theme.textSecondary; font.family: Theme.font; font.pixelSize: 11 }
+    Text { text: I18n.tr("Folder: ~/Pictures/Wallpapers/Local"); color: Theme.textSecondary; font.family: Theme.font; font.pixelSize: 11 }
 
     SectionTitle { text: I18n.tr("Appearance") }
     Rectangle {
