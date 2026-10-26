@@ -1,14 +1,10 @@
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Diego Ledesma (TRN1) — Minimo OS
 pragma ComponentBehavior: Bound
 import QtQuick
 import "../../Common"
 import "../../Services"
 
-// Погода внутри острова (открывается кликом по строке погоды):
-// текущая погода + детали (скорость ветра, направление ветра, давление, влажность,
-// восход/закат, долгота дня) + прогноз на неделю. Все даты — в виде дня недели.
-// Данные берутся из Weather (Open-Meteo current_weather/current/daily).
+
 Item {
     id: root
     signal back()
@@ -18,7 +14,6 @@ Item {
     // Текущая погода (null пока данные не загружены)
     readonly property var cur: Weather.currentWeather
     readonly property var curUnits: Weather.currentWeatherUnits
-    // Дополнительные текущие поля (relativehumidity_2m, surface_pressure, is_day)
     readonly property var curExtra: Weather.current
     readonly property var curExtraUnits: Weather.currentUnits
     readonly property var daily: Weather.daily
@@ -28,13 +23,11 @@ Item {
     // Прогноз максимум на 7 дней
     readonly property int daysCount: daily && daily.time ? Math.min(daily.time.length, 7) : 0
 
-    // Число из значения Open-Meteo (может быть строкой с юнитом, напр. "7.2")
     function num(v) {
         if (v === undefined || v === null) return NaN
         return Number(String(v).replace(",", "."))
     }
 
-    // Единицы измерения скорости ветра — берём напрямую из current_weather_units.windspeed
     readonly property string windUnit: {
         const u = curUnits ? String(curUnits.windspeed ?? "") : ""
         if (u === "") return "m/s"
@@ -42,13 +35,11 @@ Item {
         return u
     }
 
-    // Единицы давления из daily_units (по умолчанию гПа)
     readonly property string pressureUnit: {
         const u = dailyUnits ? String(dailyUnits.surface_pressure_mean ?? "") : ""
         return u !== "" ? u : "hPa"
     }
 
-    // Компасное сокращение направления ветра по азимуту (север = 0°, по часовой)
     function dirName(deg) {
         if (deg === undefined || deg === null || isNaN(Number(deg))) return ""
         const names = [I18n.tr("N"), I18n.tr("NE"), I18n.tr("E"), I18n.tr("SE"),
@@ -57,7 +48,6 @@ Item {
         return names[i]
     }
 
-    // Время из ISO-строки Open-Meteo ("2026-10-24T07:12" или "07:12") -> "HH:MM"
     function timeLabel(iso) {
         if (!iso) return "--:--"
         const s = String(iso)
@@ -65,7 +55,6 @@ Item {
         return t.substring(0, 5)
     }
 
-    // Восход / закат сегодня: сначала current_sun_times (если API вернул), затем daily[0]
     function sunriseLabel() {
         const w = Weather.data ? Weather.data.current_sun_times : null
         if (w && w.sunrise) return timeLabel(w.sunrise)
@@ -78,7 +67,6 @@ Item {
         return daily && daily.sunset && daily.sunset.length > 0 ? timeLabel(daily.sunset[0]) : "--:--"
     }
 
-    // Долгота дня "6 ч 42 мин" по времени восхода/заката
     readonly property string dayLength: {
         const sr = timeLabel(sunriseLabel())
         const ss = timeLabel(sunsetLabel())
@@ -90,31 +78,24 @@ Item {
         return I18n.tr("%1 h %2 min", Math.floor(m / 60), m % 60)
     }
 
-    // Текущая дата — одним днём недели ("Суббота")
     readonly property string todayWeekday: {
         const t = root.locale.dayName(new Date().getDay(), Locale.LongFormat)
         return t.charAt(0).toUpperCase() + t.slice(1)
     }
 
-    // Имена символов Weather совпадают с именами SVG в assets/icons/src/.
-    // Передаём их напрямую в Icon, иначе облака, туман, снег и другие
-    // погодные состояния ошибочно отображаются как globe.
     function iconForCode(code, isDay) {
         return Weather.weatherSymbolFromCode(Number(code), isDay)
     }
 
-    // Сокращённое название дня недели по дате Open-Meteo ("2026-10-29" -> "Чт")
     function shortDayName(iso) {
         if (!iso) return ""
         const d = new Date(iso + "T00:00:00")
         if (isNaN(d.getTime())) return ""
         const s = locale.dayName(d.getDay(), Locale.ShortFormat)
         if (!s) return ""
-        // Нормализуем регистр под русскую локаль: первая заглавная, остальные строчные
         return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()
     }
 
-    // Сегодня — «Сегодня», остальные — сокращённый день недели ("Пн", "Вт", …)
     function dayRowLabel(iso, index) {
         if (index === 0) return I18n.tr("Today")
         return shortDayName(iso)
@@ -164,7 +145,7 @@ Item {
         width: parent.width
         spacing: 14
 
-        // Заголовок: назад + название места + сегодня (день недели)
+        // Заголовок
         Item {
             width: parent.width; height: 46
             RoundButton { anchors.verticalCenter: parent.verticalCenter; icon: "back"; onClicked: root.back() }
@@ -204,7 +185,7 @@ Item {
                 }
                 Text {
                     visible: text !== ""
-                    text: Weather.stableName
+                    text: Weather.name
                     color: Theme.textSecondary; font.family: Theme.font; font.pixelSize: 11
                 }
             }

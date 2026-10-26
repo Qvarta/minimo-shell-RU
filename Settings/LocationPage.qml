@@ -4,7 +4,6 @@ import QtQuick
 import "../Common"
 import "../Services"
 
-// Configure the city used by the weather service.
 Column {
     id: root
     spacing: 20
@@ -30,7 +29,7 @@ Column {
         }
     }
 
-    SectionTitle { text: I18n.tr("Weather location") }
+    // SectionTitle { text: I18n.tr("Weather location") }
 
     Text {
         width: parent.width
