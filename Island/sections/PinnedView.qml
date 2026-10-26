@@ -128,22 +128,22 @@ Item {
                 anchors.left: parent.left
                 anchors.leftMargin: 10
                 anchors.verticalCenter: parent.verticalCenter
-                width: 34
-                height: 34
-                radius: 17
+                width: 40
+                height: 40
+                radius: 20
                 color: btn.active ? Theme.fill : Theme.hover
 
                 Icon {
                     anchors.centerIn: parent
                     name: btn.icon
-                    size: 19
+                    size: 24
                     tone: btn.active ? "white" : "dark"
                 }
             }
 
             Text {
                 anchors.left: parent.left
-                anchors.leftMargin: 56
+                anchors.leftMargin: 62
                 anchors.right: parent.right
                 anchors.rightMargin: 12
                 anchors.verticalCenter: parent.verticalCenter
