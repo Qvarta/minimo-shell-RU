@@ -372,6 +372,7 @@ var weatherTranslations = {
     "Weather": ["Clima", "Погода"],
     "Weather location": ["Ubicación del clima", "Местоположение"],
     "City": ["Ciudad", "Город"],
+    "Enter the location": ["Ingresá la ubicación", "Введите местоположение"],
     "Enter a city": ["Ingresá una ciudad", "Введите город"],
     "Saved": ["Guardado", "Сохранено"],
     "Save": ["Guardar", "Сохранить"],

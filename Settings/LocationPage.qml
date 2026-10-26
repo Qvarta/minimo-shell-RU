@@ -34,7 +34,7 @@ Column {
     Text {
         width: parent.width
         wrapMode: Text.WordWrap
-        text: I18n.tr("City")
+        text: I18n.tr("Enter the location")
         color: Theme.textPrimary
         font.family: Theme.font
         font.pixelSize: 14
