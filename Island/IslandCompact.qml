@@ -23,12 +23,12 @@ Item {
     readonly property bool notifQuiet: notif !== null && Notifs.fromFocused(notif)
     property bool vpnActive: false
 
-    // VPN is considered active when the public IP returned by ifconfig.me starts with "45".
+    // VPN is active when an interface whose name contains "amn" is present in ip link output.
     Process {
         id: vpnCheck
-        command: ["curl", "-fsS", "--max-time", "5", "https://ifconfig.me/ip"]
+        command: ["ip", "link", "show"]
         stdout: StdioCollector {
-            onStreamFinished: root.vpnActive = text.trim().startsWith("45")
+            onStreamFinished: root.vpnActive = text.split("\n").some(line => line.includes("amn"))
         }
     }
     Component.onCompleted: vpnCheck.running = true
