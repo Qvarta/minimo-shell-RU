@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Diego Ledesma (TRN1) — Minimo OS
+singleton Network 1.0 Network.qml
+singleton Weather 1.0 Weather.qml
+singleton Bluetooth 1.0 Bluetooth.qml
+singleton Brightness 1.0 Brightness.qml
+singleton Niri 1.0 Niri.qml
+singleton Compositor 1.0 Compositor.qml
