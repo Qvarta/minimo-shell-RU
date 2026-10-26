@@ -12,7 +12,6 @@ import "Services"
 
 // Minimo OS shell root: fondo de pantalla e isla por monitor.
 ShellRoot {
-    Component.onCompleted: console.warn("[BootDebug] shell.qml loaded")
 
     property var compositor: Compositor
     property var niriService: Niri

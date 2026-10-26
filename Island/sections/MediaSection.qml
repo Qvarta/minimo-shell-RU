@@ -25,47 +25,6 @@ Item {
     visible: player !== null
     implicitHeight: visible ? 64 : 0
 
-    onVisibleChanged: {
-        console.warn("[MediaDebug] MediaSection visible changed:",
-                    "visible=", visible, "implicitHeight=", implicitHeight,
-                    "player=", player ? player.identity : "<none>")
-    }
-
-    onPlayerChanged: {
-        console.warn("[MediaDebug] MediaSection player changed:",
-                    "player=", player ? player.identity : "<none>",
-                    "players.count=", players ? players.length : "<no length>",
-                    "visible=", visible, "width=", width, "height=", height,
-                    "trackTitle=", player ? player.trackTitle : "",
-                    "trackArtUrl=", player ? player.trackArtUrl : "")
-        console.warn("[MediaSection] active player changed:",
-                    player ? player.identity : "<none>",
-                    "dbusName=", player ? player.dbusName : "",
-                    "visible=", visible,
-                    "trackTitle=", player ? player.trackTitle : "",
-                    "trackArtUrl=", player ? player.trackArtUrl : "")
-    }
-
-    Component.onCompleted: {
-        console.warn("[MediaDebug] MediaSection instantiated:",
-                    "objectName=", objectName, "parent=", parent,
-                    "visible=", visible, "enabled=", enabled,
-                    "size=", width, "x", height, "implicitHeight=", implicitHeight,
-                    "players=", players, "player=", player ? player.identity : "<none>")
-        console.warn("[MediaSection] component ready; players=", players.length,
-                    "activePlayer=", player ? player.identity : "<none>",
-                    "visible=", visible)
-        for (let i = 0; i < players.length; ++i) {
-            const p = players[i]
-            console.warn("[MediaSection] player[", i, "] identity=", p.identity,
-                        "dbusName=", p.dbusName,
-                        "playing=", p.isPlaying,
-                        "state=", p.playbackState,
-                        "title=", p.trackTitle,
-                        "artUrl=", p.trackArtUrl)
-        }
-    }
-
     Timer {
         running: root.visible && root.player !== null && root.player.isPlaying
         interval: 1000; repeat: true
@@ -79,12 +38,6 @@ Item {
         anchors.verticalCenter: parent.verticalCenter
         readonly property bool hasArt: cover.status === Image.Ready
 
-        onHasArtChanged: {
-            console.warn("[MediaSection] art.hasArt changed:", hasArt,
-                        "cover.status=", cover.status,
-                        "cover.source=", cover.source,
-                        "cover.error=", cover.status === Image.Error ? cover.source : "")
-        }
         property real angle: 0
 
         NumberAnimation {
@@ -115,23 +68,6 @@ Item {
             layer.mipmap: true
             layer.textureSize: Qt.size(width * 2, height * 2)
 
-            onVisibleChanged: console.warn("[MediaDebug] coverLayer visible changed:", visible)
-            onWidthChanged: console.warn("[MediaDebug] coverLayer width changed:", width)
-            onHeightChanged: console.warn("[MediaDebug] coverLayer height changed:", height)
-
-            Component.onCompleted: {
-                console.warn("[MediaDebug] coverLayer state:",
-                            "visible=", visible, "opacity=", opacity,
-                            "layer.enabled=", layer.enabled,
-                            "layer.smooth=", layer.smooth,
-                            "size=", width, "x", height,
-                            "art.hasArt=", art.hasArt,
-                            "root.visible=", root.visible)
-                console.warn("[MediaSection] coverLayer ready; visible=", visible,
-                            "layer.enabled=", layer.enabled,
-                            "size=", width, "x", height)
-            }
-
             Image {
                 id: cover
                 anchors.centerIn: parent
@@ -155,29 +91,6 @@ Item {
                     }
                 }
 
-                onSourceChanged: {
-                    console.warn("[MediaSection] cover source changed:", source,
-                                "player=", root.player ? root.player.identity : "<none>")
-                }
-                onStatusChanged: {
-                    console.warn("[MediaSection] cover status:", statusName(status),
-                                "source=", source,
-                                "progress=", progress,
-                                "implicitSize=", implicitWidth, "x", implicitHeight,
-                                "size=", width, "x", height,
-                                "errorString=", status === Image.Error ? "Image failed to load; check URL/provider logs" : "")
-                }
-                onProgressChanged: function(progress) {
-                    if (progress > 0 && progress < 1)
-                        console.warn("[MediaSection] cover loading progress:", progress,
-                                    "source=", source)
-                }
-                Component.onCompleted: {
-                    console.warn("[MediaSection] cover image created; source=", source,
-                                "status=", statusName(status),
-                                "asynchronous=", asynchronous,
-                                "sourceSize=", sourceSize.width, "x", sourceSize.height)
-                }
             }
         }
         Item {
@@ -192,16 +105,7 @@ Item {
         MultiEffect {
             anchors.fill: parent
             visible: art.hasArt
-            onVisibleChanged: console.warn("[MediaDebug] MultiEffect visible changed:",
-                                          visible, "art.hasArt=", art.hasArt,
-                                          "coverLayer.visible=", coverLayer.visible,
-                                          "layer.enabled=", coverLayer.layer.enabled)
-            Component.onCompleted: {
-                console.warn("[MediaDebug] MultiEffect ready:",
-                            "visible=", visible, "size=", width, "x", height,
-                            "source=", source, "maskEnabled=", maskEnabled,
-                            "maskSource=", maskSource)
-            }
+
             source: coverLayer
             maskEnabled: true
             maskSource: circleMask
