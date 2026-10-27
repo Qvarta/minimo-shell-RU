@@ -67,7 +67,7 @@ Item {
                 Text {
                     visible: Clipboard.pins.length > 0
                     leftPadding: 14; bottomPadding: 2
-                    text: I18n.tr("Pinned"); color: Theme.textSecondary; font.family: Theme.font; font.pixelSize: 12; font.weight: Font.DemiBold
+                    text: I18n.tr("Pinned items"); color: Theme.textSecondary; font.family: Theme.font; font.pixelSize: 12; font.weight: Font.DemiBold
                 }
                 Repeater {
                     model: Clipboard.pins

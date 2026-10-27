@@ -16,8 +16,8 @@ Item {
     property bool open: false
     readonly property bool searchFocused: search.hasFocus
     property alias character: chr
-    property string page: "menu"   // "menu" | "clip" | "cal" | "pinned" | "notes" | "weather" | "radio"
-    implicitHeight: (page === "clip" ? clip.implicitHeight : page === "cal" ? cal.implicitHeight : page === "pinned" ? pinnedView.implicitHeight : page === "notes" ? notes.implicitHeight : page === "weather" ? weather.implicitHeight : page === "radio" ? radio.implicitHeight : col.implicitHeight) + 40
+    property string page: "menu"   // "menu" | "clip" | "cal" | "quickactions" | "notes" | "weather" | "radio"
+    implicitHeight: (page === "clip" ? clip.implicitHeight : page === "cal" ? cal.implicitHeight : page === "quickactions" ? quickActionsView.implicitHeight : page === "notes" ? notes.implicitHeight : page === "weather" ? weather.implicitHeight : page === "radio" ? radio.implicitHeight : col.implicitHeight) + 40
 
     function showClipboard() { clip.refresh(); page = "clip" }
 
@@ -135,7 +135,7 @@ Item {
                 id: actions
                 anchors.horizontalCenter: parent.horizontalCenter
                 onDone: root.done()
-                onPinned: root.page = "pinned"
+                onQuickActions: root.page = "quickactions"
             } }
     }
 
@@ -176,14 +176,14 @@ Item {
         onBack: root.page = "menu"
     }
 
-    PinnedView {
-        id: pinnedView
-        x: root.page === "pinned" ? 20 : root.width * 0.3
+    QuickActionsView {
+        id: quickActionsView
+        x: root.page === "quickactions" ? 20 : root.width * 0.3
         y: 20
         width: root.width - 40
-        opacity: root.page === "pinned" ? 1 : 0
+        opacity: root.page === "quickactions" ? 1 : 0
         visible: opacity > 0
-        enabled: root.page === "pinned"
+        enabled: root.page === "quickactions"
         Behavior on x { NumberAnimation { duration: 320; easing.type: Easing.OutQuint } }
         Behavior on opacity { NumberAnimation { duration: 220 } }
         onBack: root.page = "menu"
