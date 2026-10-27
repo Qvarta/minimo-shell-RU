@@ -160,7 +160,8 @@ function braceDelta(source) {
 }
 
 function isBindingHeader(code) {
-    return code.indexOf("{") > 0 && code.indexOf("}") < 0;
+    const open = code.indexOf("{");
+    return open > 0 && (code.indexOf("}") < 0 || code.indexOf("}") > open);
 }
 
 function bindingCombo(header) {
