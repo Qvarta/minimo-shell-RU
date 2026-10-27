@@ -14,9 +14,13 @@ Item {
     signal clipboard()
     signal notes()
     signal radio()
-    // Кнопка радио: локальное действие (не проходит через QuickItems.builtins).
-    readonly property var extraButtons: [{ id: "radio", label: I18n.tr("Radio"), icon: "music" }]
-    readonly property var builtins: QuickItems.builtins.concat(extraButtons)
+    // Встроенные закреплённые действия. Кнопка радио — локальное действие,
+    // добавляется сверх builtins.
+    readonly property var builtins: [
+        { id: "capture", label: I18n.tr("Screenshot"), icon: "capture" },
+        { id: "notes", label: I18n.tr("Notes"), icon: "note" },
+        { id: "clipboard", label: I18n.tr("Clipboard"), icon: "clipboard" }
+    ].concat([{ id: "radio", label: I18n.tr("Radio"), icon: "music" }])
     readonly property var buttons: ["capture", "notes", "clipboard", "radio"]
     implicitHeight: col.implicitHeight
 
