@@ -20,6 +20,7 @@ Item {
     implicitHeight: (page === "clip" ? clip.implicitHeight : page === "cal" ? cal.implicitHeight : page === "quickactions" ? quickActionsView.implicitHeight : page === "notes" ? notes.implicitHeight : page === "weather" ? weather.implicitHeight : page === "radio" ? radio.implicitHeight : col.implicitHeight) + 40
 
     function showClipboard() { clip.refresh(); page = "clip" }
+    function showQuickActions() { page = "quickactions" }
 
     // El buscador no se enfoca solo: se activa al hacerle clic.
     function opened() { search.reset() }
