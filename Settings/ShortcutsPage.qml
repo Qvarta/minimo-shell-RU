@@ -3,14 +3,12 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
-import Quickshell.Io
 import "../Common"
 import "../Services"
 
 // Горячие клавиши: список биндов, прочитанных из конфигурации niri.
-// Получением клавиш занимается ShortcutRow.getShortcuts() — парсер, перенесённый
-// из плагина niri-cheatsheet (нокалиа-шелл), который читает binds.kdl и раскладывает
-// его на категории [{ title, binds: [{ keys, desc }] }].
+// Получением и парсингом клавиш занимается ShortcutRow.getShortcuts() —
+// самостоятельный парсер (logic/niribinds.js), не зависящий от внешних плагинов.
 Rectangle {
     id: root
     radius: Theme.radiusCard
@@ -23,41 +21,17 @@ Rectangle {
     readonly property string configDir: (Quickshell.env("XDG_CONFIG_HOME") || (Quickshell.env("HOME") + "/.config")) + "/niri"
     readonly property var configCandidates: [configDir + "/binds.kdl", configDir + "/config.kdl"]
 
-    // Если плагин niri-cheatsheet установлен и уже распарсил конфиг, используем его кэш.
-    readonly property string cheatsheetSettings: Qt.resolvedUrl("../niri-cheatsheet/settings.json").toString().replace("file://", "")
-
     property var groups: []
     property bool loaded: false
 
     // При открытии вкладки один раз загружаем список клавиш.
-    onShownChanged: if (shown && !loaded) {
-        if (pluginSettings.loaded) parseConfig(0);
-        else pluginSettings.reload();
-    }
+    onShownChanged: if (shown && !loaded) parseConfig(0)
 
     // Невидимая строка-«пробник»: используется только ради метода getShortcuts().
     ShortcutRow {
         id: rowProbe
         visible: false
         width: 0; height: 0
-    }
-
-    // Читаем settings.json плагина как обычный JSON-файл.
-    FileView {
-        id: pluginSettings
-        path: root.cheatsheetSettings
-        onLoadedChanged: {
-            if (!loaded) return;
-            try {
-                const obj = JSON.parse(text());
-                if (obj && obj.cheatsheetData && obj.cheatsheetData.length > 0) {
-                    root.groups = obj.cheatsheetData;
-                    root.loaded = true;
-                    return;
-                }
-            } catch (e) { /* нет кэша — парсим конфиг niri напрямую */ }
-            parseConfig(0);
-        }
     }
 
     // Пробуем кандидаты конфига по очереди; результат приходит через onDone.
