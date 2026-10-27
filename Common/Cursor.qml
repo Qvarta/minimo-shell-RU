@@ -6,7 +6,7 @@ import Quickshell
 import Quickshell.Io
 import "../Services"
 
-// Положение курсора: Hyprland использует IPC-скрипт, Niri — события MouseArea
+// Положение курсора: Hyprland использует IPC-скрипт, остальные сессии — MouseArea
 // на слое обоев (для пустого рабочего стола).
 Singleton {
     id: root
@@ -21,9 +21,9 @@ Singleton {
 
     Process {
         id: proc
-        running: root.users > 0 && !Compositor.isNiri
-        // Если процесс падает, перезапускаем его только в сессии Hyprland.
-        onExited: if (root.users > 0 && !Compositor.isNiri) relaunch.restart()
+        running: root.users > 0 && Compositor.session === "hyprland"
+        // Перезапуск IPC-скрипта нужен только в сессии Hyprland.
+        onExited: if (root.users > 0 && Compositor.session === "hyprland") relaunch.restart()
         command: [Qt.resolvedUrl("../scripts/cursorpos.py").toString().replace("file://", "")]
         stdout: SplitParser {
             onRead: line => {
@@ -38,6 +38,6 @@ Singleton {
     Timer {
         id: relaunch
         interval: 2000
-        onTriggered: if (root.users > 0 && !Compositor.isNiri) { proc.running = false; proc.running = true }
+        onTriggered: if (root.users > 0 && Compositor.session === "hyprland") { proc.running = false; proc.running = true }
     }
 }

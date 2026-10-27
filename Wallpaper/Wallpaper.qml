@@ -16,7 +16,6 @@ PanelWindow {
     WlrLayershell.layer: WlrLayer.Background
     WlrLayershell.namespace: "minimo-wallpaper"
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
-    // En Niri, el fondo también recibe movimiento del puntero sobre el escritorio vacío.
     // MouseArea не принимает кнопки, чтобы не перехватывать клики.
     visible: !LiveWallpaper.running
 
@@ -44,12 +43,11 @@ PanelWindow {
     onVisibleChanged: { if (!visible) { imgA.source = ""; imgB.source = "" } else if (path) show(path) }
     Component.onCompleted: if (path) show(path)
 
-    // Нужен только под Niri: над окнами приложений события по-прежнему получает приложение.
-    // На пустом рабочем столе слой обоев получает движение мыши.
+    // Для всех сессий, кроме Hyprland: отслеживаем курсор на пустом рабочем столе.
     MouseArea {
         id: pointer
         anchors.fill: parent
-        enabled: Compositor.isNiri
+        enabled: Compositor.session !== "hyprland"
         hoverEnabled: true
         acceptedButtons: Qt.NoButton
         onPositionChanged: mouse => win.updateCursor(mouse.x, mouse.y)
