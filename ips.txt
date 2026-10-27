@@ -1,0 +1,3 @@
+qs -c minimo-shell ipc call island quickactions
+qs -c minimo-shell ipc call launcher toggle
+qs -c minimo-shell ipc call settings toggle

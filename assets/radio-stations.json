@@ -9,6 +9,10 @@
       "url": "http://emgregion.hostingradio.ru:8064/moscow.retrofm.mp3"
     },
     {
+ 		"name": "Ретро Хит",
+    	"url": "http://retro.volna.top/Retro"
+    },
+    {
       "name": "Питер-FM",
       "url": "http://78.140.208.20:8801/pfm_spb"
     },
@@ -91,6 +95,14 @@
     {
       "name": "Kiss FM",
       "url": "http://a7.radioheart.io:8015/RH73674"
+    },
+    {
+      "name": "Royal",
+      "url": "https://c22.radioboss.fm/stream/186"
+    },
+    {
+      "name": "Cumbias Inmortales",
+      "url": "https://panel.retrolandigital.com/listen/cumbias_inmortales_radio/listen"
     }
   ]
 }
