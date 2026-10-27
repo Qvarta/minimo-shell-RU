@@ -360,6 +360,7 @@ for (var legacyKey in en) {
 
 // Weather labels use explicit, unambiguous English keys.
 var weatherTranslations = {
+    "Niri shortcuts not found. Check ~/.config/niri/binds.kdl.\\n\\nFormat: add a standalone comment // Category, then put each binding on one line: Mod+M { spawn \\"spotify\\"; } // Description. The binding name goes after the closing brace }.": ["No se encontraron los atajos de Niri. Revisá el archivo ~/.config/niri/binds.kdl.\\n\\nFormato: agregá un comentario independiente // Categoría y luego poné cada atajo en una sola línea: Mod+M { spawn \\"spotify\\"; } // Descripción. El nombre del atajo va después de la llave de cierre }.", "Не удалось найти бинды Niri. Проверьте файл ~/.config/niri/binds.kdl.\\n\\nФормат: отдельный комментарий // Категория, затем каждый бинд на одной строке: Mod+M { spawn \\"spotify\\"; } // Описание. Название бинда указывается после закрывающей фигурной скобки }."] ,
     "Today": ["Hoy", "Сегодня"],
     "Weather": ["Clima", "Погода"],
     "Weather location": ["Ubicación del clima", "Местоположение"],
