@@ -49,9 +49,8 @@ Item {
     }
 
     function notifyScreenshot() {
-        const lang = DisplayState.language;
-        const t1 = lang === "en" ? "Screenshot saved" : lang === "ru" ? "Снимок сохранён" : "Captura guardada";
-        const t2 = lang === "en" ? "Copied to the clipboard" : lang === "ru" ? "Скопирован в буфер обмена" : "Copiada al portapapeles";
+        const t1 = I18n.tr("Screenshot saved");
+        const t2 = I18n.tr("Copied to the clipboard");
         const script = 'q=$(ls -t "$1"/*.png 2>/dev/null | head -n1); q=$(printf "%s" "$q" | sed "s/\x27/\\\\\x27/g"); ' + 'gdbus call --session --dest org.freedesktop.Notifications --object-path /org/freedesktop/Notifications ' + '--method org.freedesktop.Notifications.Notify "Screenshots" 0 "" "$2" "$3" "[]" ' + '"{\x27image-path\x27: <\x27file://$q\x27>, \x27x-minimo-open\x27: <\x27$q\x27>}" 4000 >/dev/null 2>&1 || true';
         Quickshell.execDetached(["sh", "-c", script, "notify", root.screenshotDirAbs, t1, t2]);
     }

@@ -402,7 +402,9 @@ var weatherTranslations = {
     "Connection timed out": ["Tiempo de conexión agotado", "Время ожидания подключения истекло"],
     "Network not found": ["Red no encontrada", "Сеть не найдена"],
     "Couldn't connect": ["No se pudo conectar", "Не удалось подключиться"],
-    "Clear clipboard": ["Borrar", "Очистить"]
+    "Clear clipboard": ["Borrar", "Очистить"],
+    "Screenshot saved": ["Captura guardada", "Снимок сохранён"],
+    "Copied to the clipboard": ["Copiada al portapapeles", "Скопирован в буфер обмена"]
 }
 for (var key in weatherTranslations) {
     if (!Object.prototype.hasOwnProperty.call(weatherTranslations, key)) continue
