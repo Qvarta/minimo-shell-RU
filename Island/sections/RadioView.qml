@@ -1,15 +1,12 @@
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Diego Ledesma (TRN1) — Minimo OS
+
 pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
 import Quickshell.Io
 import "../../Common"
 
-// Панель «Радио» внутри острова (порт плагина online-radio для Noctalia Shell):
-// сетка станций, воспроизведение через cvlc, метаданные (артист/трек) из icy-заголовков.
-// Служебная информация пишется и читается из ~/.config/minimo-os/radio.json
-// (в плагине для этого использовался pluginSettings).
+
 Item {
     id: root
     signal back()
@@ -21,7 +18,7 @@ Item {
     readonly property string defaultStationsPath: Quickshell.env("HOME") + "/.config/minimo-os/radio-stations.json"
 
     property bool loaded: false
-    property var stations: []                  // [{ name, url }]
+    property var stations: []
     property string currentPlayingStation: ""
     property string currentPlayingProcessState: ""
     property string currentTrack: ""
@@ -32,7 +29,6 @@ Item {
     function stationAt(name) { return stations.find(s => s.name === name) ?? null }
 
     // ─────────────────────── Чтение / запись radio.json ───────────────────────
-    // Читаем всегда (даже при running: true): файл мог измениться извне.
     Process {
         id: catProc
         running: true
@@ -46,13 +42,13 @@ Item {
         }
     }
 
-    // Если своего файла нет — берём станции из radio-stations.json один раз.
     FileView {
         id: defaultsView
         path: "file://" + root.defaultStationsPath
         blockLoading: true
         printErrors: false
     }
+
     Timer {
         id: loadDefaults
         interval: 150
@@ -70,7 +66,7 @@ Item {
             }
             root.stations = list
             root.loaded = true
-            root.save()   // создаём ~/.config/minimo-os/radio.json
+            root.save()  
         }
     }
 
@@ -94,7 +90,6 @@ Item {
         } else {
             loadDefaults.restart()
         }
-        // При перезапуске оболочки процесс уже не жив — состояние «игралось» сбрасываем.
         if (root.currentPlayingProcessState === "start")
             root.stopPlayback()
     }
@@ -110,7 +105,7 @@ Item {
     }
 
     function save() {
-        if (!loaded) return                 // никогда не pisar el archivo antes de leerlo
+        if (!loaded) return                 
         writeProc.command = ["sh", "-c", "mkdir -p '" + root.dir + "' && cat > '" + root.dir + "/radio.json'", root.serialize()]
         writeProc.running = true
     }
@@ -146,7 +141,6 @@ Item {
         running: false
     }
 
-    // Команда строится в момент запуска (как binding — иначе перезапускалась бы на каждое событие).
     property var cvlcCommand: []
     Process {
         id: cvlcProcess
@@ -173,7 +167,6 @@ Item {
         if (isPlaying && currentPlayingStation === name) {
             stopPlayback()
         } else if (isPlaying) {
-            // Останавливаем и играем новую с паузой, чтобы cvlc успел освободить устройства.
             stopPlayback()
             switchTimer.stationToPlay = name
             switchTimer.restart()
@@ -247,8 +240,6 @@ Item {
     function getCurrentRow() { return Math.floor(currentIndex / columns) }
     function getCurrentColumn() { return currentIndex % columns }
 
-    // Posicionamiento sin enums de GridView/ListView (no disponibles en quickshell):
-    // desplaza el grid para que la celda del índice quede visible.
     function ensureVisible() {
         if (gridView.count <= currentIndex || gridView.contentHeight <= gridView.height) return;
         const row = Math.floor(currentIndex / columns);
@@ -298,7 +289,6 @@ Item {
             toggle(stations[currentIndex].name)
     }
 
-    // Подсветка ячейки, когда станция начала/закончила играть или сменился индекс.
     Connections {
         target: root
         enabled: true
@@ -358,7 +348,11 @@ Item {
                 anchors.verticalCenter: parent.verticalCenter
                 spacing: 6
                 visible: root.isPlaying
-                Icon { anchors.verticalCenter: parent.verticalCenter; name: "volume"; size: 16; tone: "gray" }
+
+                // _____________________________________________________________________________________________________
+                // Icon { anchors.verticalCenter: parent.verticalCenter; name: "volume"; size: 16; tone: "gray" }
+                // _____________________________________________________________________________________________________
+
                 Text {
                     anchors.verticalCenter: parent.verticalCenter
                     width: 140
@@ -450,7 +444,6 @@ Item {
                                 }
                             }
 
-                            // Скрытый источник: всегда грузает картинку (для шейдера)
                             Image {
                                 id: stationImageSource
                                 anchors.fill: parent
@@ -471,7 +464,6 @@ Item {
                                 }
                             }
 
-                            // Обычная картинка (только для неиграющих станций)
                             Image {
                                 id: stationImage
                                 anchors.fill: parent
@@ -481,7 +473,6 @@ Item {
                                 visible: false
                             }
 
-                            // Волновой шейдер поверх логотипа играющей станции
                             ShaderEffect {
                                 id: playingShader
                                 anchors.fill: parent
@@ -510,7 +501,6 @@ Item {
                                 }
                             }
 
-                            // Индикатор «сейчас играет»
                             Rectangle {
                                 visible: delegateContainer.isNowPlaying
                                 anchors { top: parent.top; right: parent.right; margins: 4 }
