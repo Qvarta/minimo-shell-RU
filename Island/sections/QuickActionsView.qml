@@ -6,7 +6,8 @@ import Quickshell
 import "../../Common"
 import "../../Services"
 
-// Панель закреплённых действий, открываемая из ActionsSection.
+// Панель быстрых действий (радио, снимок экрана, заметки, буфер обмена),
+// открываемая из ActionsSection.
 Item {
     id: root
     signal back()
@@ -84,7 +85,7 @@ Item {
         }
     }
 
-    component PinnedButton:
+    component ActionButton:
     Item {
         id: btn
 
@@ -182,7 +183,7 @@ Item {
             RoundButton { icon: "back"; onClicked: root.back() }
             Text {
                 anchors.centerIn: parent
-                text: I18n.tr("Pinned")
+                text: I18n.tr("Quick actions")
                 color: Theme.textPrimary
                 font.family: Theme.font
                 font.pixelSize: 15
@@ -197,7 +198,7 @@ Item {
             rowSpacing: 4
             Repeater {
                 model: root.buttons
-                delegate: PinnedButton {
+                delegate: ActionButton {
                     id: b
                     required property string modelData
                     readonly property var item: root.builtins.find(x => x.id === modelData)
