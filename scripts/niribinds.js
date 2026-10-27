@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 .pragma library
 
-// Public output contract: [{ title: string, binds: [{ keys: string, desc: string }] }]
+// Output: [{ title: string, binds: [{ keys: string, desc: string }] }]
 function normalizeKey(key) {
     const value = key.trim();
     const names = {
@@ -19,17 +19,23 @@ function normalizeKey(key) {
 }
 
 function parseCombo(combo) {
-    const parts = combo.split("+").map(p => p.trim()).filter(p => p.length > 0);
+    const parts = combo.split("+").map(part => part.trim()).filter(part => part.length > 0);
     const modifiers = [];
     let key = "";
     for (let i = 0; i < parts.length; i++) {
         const part = parts[i].toLowerCase();
-        if (["mod", "super", "meta", "win"].indexOf(part) >= 0) modifiers.push("Super");
-        else if (part === "shift") modifiers.push("Shift");
-        else if (part === "ctrl" || part === "control") modifiers.push("Ctrl");
-        else if (part === "alt") modifiers.push("Alt");
-        else key = parts[i];
+        let modifier = "";
+        if (part === "mod" || part === "super" || part === "meta" || part === "win") modifier = "Super";
+        else if (part === "ctrl" || part === "control") modifier = "Ctrl";
+        else if (part === "alt") modifier = "Alt";
+        else if (part === "shift") modifier = "Shift";
+        if (modifier) {
+            if (modifiers.indexOf(modifier) < 0) modifiers.push(modifier);
+        } else {
+            key = parts[i];
+        }
     }
+
     const ordered = [];
     const order = ["Super", "Ctrl", "Alt", "Shift"];
     for (let i = 0; i < order.length; i++)
@@ -38,224 +44,91 @@ function parseCombo(combo) {
     return ordered.join(" + ");
 }
 
-function isSpace(ch) {
-    return ch === " " || ch === "\t" || ch === "\n" || ch === "\r";
-}
-
-function splitInlineComment(line) {
-    let quote = "";
-    for (let i = 0; i < line.length; i++) {
-        const ch = line[i];
-        if (quote) {
-            if (ch === "\\" && i + 1 < line.length) i++;
-            else if (ch === quote) quote = "";
-        } else if (ch === '"' || ch === "'") quote = ch;
-        else if (ch === "/" && line[i + 1] === "/")
-            return { code: line.substring(0, i), comment: line.substring(i + 2).trim() };
-    }
-    return { code: line, comment: null };
-}
-
-function extractBlock(source, name) {
-    let open = -1, quote = "", comment = false;
-    for (let i = 0; i < source.length; i++) {
-        const ch = source[i];
-        if (comment) { if (ch === "\n") comment = false; continue; }
-        if (quote) {
-            if (ch === "\\" && i + 1 < source.length) i++;
-            else if (ch === quote) quote = "";
-            continue;
+// Finds the binds block without parsing the rest of KDL.
+function getBindsLines(source) {
+    const lines = source.split("\n");
+    let start = -1;
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (line.indexOf("//") !== 0 && line.indexOf("binds") === 0 && line.indexOf("{") >= 0) {
+            start = i;
+            break;
         }
-        if (ch === '"' || ch === "'") { quote = ch; continue; }
-        if (ch === "/" && source[i + 1] === "/") { comment = true; i++; continue; }
-        if (source.substr(i, name.length) !== name) continue;
-        const before = i === 0 ? "" : source[i - 1];
-        const after = source[i + name.length] || "";
-        if (!(i === 0 || isSpace(before) || before === "{")) continue;
-        if (!(after === "" || isSpace(after) || after === "{")) continue;
-        let cursor = i + name.length;
-        while (cursor < source.length && isSpace(source[cursor])) cursor++;
-        if (source[cursor] === "{") { open = cursor; break; }
     }
-    if (open < 0) return null;
+    if (start < 0) return [];
 
-    let depth = 0;
-    quote = ""; comment = false;
-    for (let i = open; i < source.length; i++) {
-        const ch = source[i];
-        if (comment) { if (ch === "\n") comment = false; continue; }
-        if (quote) {
-            if (ch === "\\" && i + 1 < source.length) i++;
-            else if (ch === quote) quote = "";
-            continue;
-        }
-        if (ch === '"' || ch === "'") quote = ch;
-        else if (ch === "/" && source[i + 1] === "/") { comment = true; i++; }
-        else if (ch === "{") depth++;
-        else if (ch === "}" && --depth === 0) return source.substring(open + 1, i);
-    }
-    return null;
-}
-
-function tokenize(source) {
     const result = [];
-    let token = "", quote = "", active = false;
-    for (let i = 0; i < source.length; i++) {
-        const ch = source[i];
-        if (quote) {
-            if (ch === "\\" && i + 1 < source.length) { token += source[++i]; }
-            else if (ch === quote) quote = "";
-            else token += ch;
-            active = true;
-        } else if (ch === '"' || ch === "'") { quote = ch; active = true; }
-        else if (isSpace(ch)) {
-            if (active) result.push(token);
-            token = ""; active = false;
-        } else { token += ch; active = true; }
+    let depth = 0;
+    for (let i = start; i < lines.length; i++) {
+        const line = lines[i];
+        // Braces in quoted arguments are not part of the block structure.
+        let quote = "";
+        for (let j = 0; j < line.length; j++) {
+            const ch = line[j];
+            if (quote) {
+                if (ch === "\\" && j + 1 < line.length) j++;
+                else if (ch === quote) quote = "";
+                continue;
+            }
+            if (ch === '"' || ch === "'") quote = ch;
+            else if (ch === "/" && line[j + 1] === "/") break;
+            else if (ch === "{") depth++;
+            else if (ch === "}") depth--;
+        }
+        if (i > start) result.push(line);
+        if (depth === 0 && i > start) break;
     }
-    if (active) result.push(token);
     return result;
 }
 
-function actionDescription(body) {
-    const first = body.split(";")[0].trim();
-    if (!first) return "Нет описания";
-    const descriptions = {
-        "close-window":"Закрыть окно", "fullscreen-window":"Полный экран",
-        "toggle-window-floating":"Плавающее окно", "focus-column-left":"Фокус влево",
-        "focus-column-right":"Фокус вправо", "focus-window-up":"Фокус вверх",
-        "focus-window-down":"Фокус вниз", "focus-window-or-workspace-up":"Фокус вверх",
-        "focus-window-or-workspace-down":"Фокус вниз", "focus-workspace-up":"Раб. стол вверх",
-        "focus-workspace-down":"Раб. стол вниз", "focus-workspace":"Переключиться на раб. стол",
-        "move-column-to-workspace":"Окно на раб. стол"
-    };
-    const tokens = tokenize(first);
-    if (!tokens.length) return "Нет описания";
-    if (tokens[0] === "spawn" || tokens[0] === "spawn-sh") {
-        const command = tokens[1] || "";
-        for (let i = 0; i + 2 < tokens.length; i++)
-            if (tokens[i] === "ipc" && tokens[i + 1] === "call")
-                return "Открыть " + tokens[i + 2].replace("plugin:", "");
-        const parts = command.split("/");
-        return "Запустить " + (parts[parts.length - 1] || command || "команду");
-    }
-    if (descriptions[tokens[0]])
-        return tokens.length > 1 ? descriptions[tokens[0]] + " " + tokens[1] : descriptions[tokens[0]];
-    return first;
-}
+function parseLine(line) {
+    // In the supported shortcut format, // after } is the visible description.
+    let commentAt = line.indexOf("//");
+    const code = (commentAt < 0 ? line : line.substring(0, commentAt)).trim();
+    const comment = commentAt < 0 ? "" : line.substring(commentAt + 2).trim();
 
-function braceDelta(source) {
-    let delta = 0, quote = "";
-    for (let i = 0; i < source.length; i++) {
-        const ch = source[i];
-        if (quote) {
-            if (ch === "\\" && i + 1 < source.length) i++;
-            else if (ch === quote) quote = "";
-        } else if (ch === '"' || ch === "'") quote = ch;
-        else if (ch === "/" && source[i + 1] === "/") break;
-        else if (ch === "{") delta++;
-        else if (ch === "}") delta--;
-    }
-    return delta;
-}
-
-function isBindingHeader(code) {
     const open = code.indexOf("{");
-    return open > 0 && (code.indexOf("}") < 0 || code.indexOf("}") > open);
-}
+    const close = code.lastIndexOf("}");
+    if (open < 1 || close < open) return null;
 
-function bindingCombo(header) {
-    const name = header.substring(0, header.indexOf("{")).trim();
-    const words = [];
-    let word = "";
-    for (let i = 0; i <= name.length; i++) {
-        const ch = i === name.length ? " " : name[i];
-        if (isSpace(ch)) {
-            if (word && word.indexOf("=") < 0) words.push(word);
-            word = "";
-        } else {
-            word += ch;
-        }
+    // Header can contain KDL options (e.g. cooldown-ms=150); only key tokens are used.
+    const headerParts = code.substring(0, open).trim().split(" ");
+    const keyParts = [];
+    for (let i = 0; i < headerParts.length; i++) {
+        const part = headerParts[i].trim();
+        if (part && part.indexOf("=") < 0) keyParts.push(part);
     }
-    return words.join("+");
+    if (!keyParts.length) return null;
+
+    return {
+        keys: parseCombo(keyParts.join("+")),
+        desc: comment || code.substring(open + 1, close).trim()
+    };
 }
 
-function isSeparatorLine(value) {
-    if (!value) return true;
-    for (let i = 0; i < value.length; i++)
-        if ("─=-*_".indexOf(value[i]) < 0) return false;
-    return true;
-}
-
-function cleanComment(value) {
-    value = value.trim();
-    while (value.length && "─=-*_ \t".indexOf(value[0]) >= 0) value = value.substring(1);
-    while (value.length && "─=-*_ \t".indexOf(value[value.length - 1]) >= 0)
-        value = value.substring(0, value.length - 1);
-    return value.trim();
-}
-
-function parse(text) {
-    let body = extractBlock(text, "binds");
-    if (body === null) {
-        const input = extractBlock(text, "input");
-        if (input !== null) body = extractBlock(input, "binds");
-    }
-    if (body === null) return [];
-
+function parse(source) {
+    const lines = getBindsLines(source);
     const categories = [];
-    let category = null, pendingDescription = null;
-    const lines = body.split("\n");
-    let i = 0;
-    while (i < lines.length) {
-        const trimmed = lines[i].trim();
-        if (!trimmed) { i++; continue; }
+    let category = null;
 
-        if (trimmed.indexOf("//") === 0) {
-            const comment = cleanComment(trimmed.substring(2));
-            if (!comment || isSeparatorLine(comment)) { i++; continue; }
-            let nextCode = null, nextComment = null;
-            for (let j = i + 1; j < lines.length; j++) {
-                const next = splitInlineComment(lines[j].trim());
-                if (!next.code.trim()) continue;
-                nextCode = next.code.trim(); nextComment = next.comment; break;
-            }
-            if (nextCode !== null && isBindingHeader(nextCode) && !nextComment) pendingDescription = comment;
-            else {
-                if (category) categories.push(category);
-                category = { title: comment, binds: [] };
-            }
-            i++; continue;
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line || line === "}") continue;
+
+        if (line.indexOf("//") === 0) {
+            const title = line.substring(2).trim();
+            if (!title) continue;
+            if (category && category.binds.length) categories.push(category);
+            category = { title: title, binds: [] };
+            continue;
         }
 
-        const split = splitInlineComment(trimmed);
-        const code = split.code.trim();
-        if (!isBindingHeader(code)) { i++; continue; }
-        const combo = bindingCombo(code);
-        let action = code.substring(code.indexOf("{") + 1);
-        let depth = braceDelta(action), last = i;
-        while (depth > 0 && last + 1 < lines.length) {
-            last++;
-            action += "\n" + lines[last];
-            depth += braceDelta(lines[last]);
-        }
-        const close = action.lastIndexOf("}");
-        if (close >= 0) action = action.substring(0, close);
-        const actionLines = action.split("\n");
-        for (let j = 0; j < actionLines.length; j++)
-            actionLines[j] = splitInlineComment(actionLines[j]).code;
-        action = actionLines.join("\n").trim();
-
-        if (combo) {
-            if (!category) category = { title: "Прочее", binds: [] };
-            let desc = actionDescription(action);
-            if (split.comment) desc = split.comment;
-            if (pendingDescription) desc = pendingDescription;
-            category.binds.push({ keys: parseCombo(combo), desc: desc });
-        }
-        pendingDescription = null;
-        i = last + 1;
+        const binding = parseLine(line);
+        if (!binding) continue;
+        if (!category) category = { title: "Прочее", binds: [] };
+        category.binds.push(binding);
     }
+
     if (category && category.binds.length) categories.push(category);
     return categories;
 }
