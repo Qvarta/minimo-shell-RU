@@ -17,8 +17,6 @@ Item {
     // ───────────────────────── Файл состояния ─────────────────────────
     readonly property string dir: Quickshell.env("HOME") + "/.config/minimo-os"
     readonly property string fileUrl: "file://" + dir + "/radio.json"
-    // Станции по умолчанию (копия online-radio/stations.json рядом с конфигурацией).
-    readonly property string defaultStationsPath: Quickshell.env("HOME") + "/.config/minimo-os/radio-stations.json"
 
     property bool loaded: false
     property var stations: []                  // [{ name, url }]
@@ -46,13 +44,34 @@ Item {
         }
     }
 
-    // Если своего файла нет — берём станции из radio-stations.json один раз.
-    FileView {
-        id: defaultsView
-        path: "file://" + root.defaultStationsPath
-        blockLoading: true
-        printErrors: false
-    }
+    // Встроенный список станций по умолчанию (копия assets/radio.json):
+    // используется только если ~/.config/minimo-os/radio.json отсутствует.
+    readonly property string defaultStationsJson: JSON.stringify([
+        { name: "Radio Record", url: "https://radiorecord.hostingradio.ru/rr_main96.aacp" },
+        { name: "Europa Plus", url: "http://ep2143.eurospica.europaplus.ru/europaplus2143-128.mp3" },
+        { name: "DFM", url: "http://dfm.hostingradio.ru/dfm96.aacp" },
+        { name: "Retro FM", url: "http://retrofm.streamr.ru/retro96.aacp" },
+        { name: "Хит FM", url: "http://hitfm.streamr.ru/hit96.aacp" },
+        { name: "Радио Шансон", url: "http://chansons.streamr.ru/chanson96.aacp" },
+        { name: "Русское Радио", url: "http://rum96.streamr.ru/rum96.aacp" },
+        { name: "Дорожное Радио", url: "http://drtg.streamr.ru/dor96.aacp" },
+        { name: "Comedy Radio", url: "http://comedy.streamr.ru/comedy128k" },
+        { name: "Like FM", url: "http://likefm.streamr.ru/like96.aacp" },
+        { name: "Vox FM", url: "http://vox96.streamr.ru/vox96.aacp" },
+        { name: "Best-FM", url: "http://bestfm.streamr.ru/best96.aacp" },
+        { name: "Радио JAZZ", url: "http://jazz.streamr.ru/jazz96.aacp" },
+        { name: "Energy", url: "http://energy.streamr.ru/energy96.aacp" },
+        { name: "Studio", url: "http://studio.streamr.ru/studio96.aacp" },
+        { name: "Ultra", url: "http://ultra.streamr.ru/ultra96.aacp" },
+        { name: "Korporator", url: "http://korporator.streamr.ru/korp96.aacp" },
+        { name: "FRESH", url: "http://fresh.streamr.ru/fresh96.aacp" },
+        { name: "Radiomayak", url: "http://radio.mayak.info/radio/mayak.m3u" },
+        { name: "Orbit", url: "http://orbit.streamr.ru/orbit96.aacp" },
+        { name: "TNT", url: "http://tnt.streamr.ru/tnt96.aacp" },
+        { name: "Maximum", url: "http://maximum.streamr.ru/maximum96.aacp" },
+        { name: "Nashe Radio", url: "http://nashe.streamr.ru/nashe96.aacp" }
+    ])
+
     Timer {
         id: loadDefaults
         interval: 150
@@ -62,15 +81,15 @@ Item {
                 return
             var list = []
             try {
-                var j = JSON.parse(defaultsView.text())
+                var j = JSON.parse(root.defaultStationsJson)
                 if (Array.isArray(j))
                     list = j.map(s => ({ name: s.name || "", url: s.url || "" })).filter(s => s.name && s.url)
             } catch (e) {
-                console.warn("RadioView: no se pudo leer stations.json:", e)
+                console.warn("RadioView: не удалось разобрать список станций по умолчанию:", e)
             }
             root.stations = list
             root.loaded = true
-            root.save()   // создаём ~/.config/minimo-os/radio.json
+            root.save()   // создаём ~/.config/minimo-os/radio.json (только если файла ещё нет)
         }
     }
 
@@ -350,23 +369,12 @@ Item {
             RoundButton { icon: "back"; onClicked: root.back() }
             Text {
                 anchors.centerIn: parent
-                text: I18n.tr("Radio")
+                // При играющей станции заголовок меняется на её название.
+                text: root.isPlaying ? root.currentPlayingStation : I18n.tr("Radio")
                 color: Theme.textPrimary; font.family: Theme.font; font.pixelSize: 15; font.weight: Font.DemiBold
-            }
-            Row {
-                anchors.right: parent.right
-                anchors.verticalCenter: parent.verticalCenter
-                spacing: 6
-                visible: root.isPlaying
-                Icon { anchors.verticalCenter: parent.verticalCenter; name: "volume"; size: 16; tone: "gray" }
-                Text {
-                    anchors.verticalCenter: parent.verticalCenter
-                    width: 140
-                    text: [root.currentArtist, root.currentTrack].filter(s => s !== "").join(" — ") || root.currentPlayingStation
-                    color: Theme.textSecondary; font.family: Theme.font; font.pixelSize: 11
-                    elide: Text.ElideRight
-                    horizontalAlignment: Text.AlignRight
-                }
+                width: parent.width - 80
+                elide: Text.ElideMiddle
+                horizontalAlignment: Text.AlignHCenter
             }
         }
 
