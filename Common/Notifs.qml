@@ -65,7 +65,7 @@ Singleton {
     function finish(n) { const live = queue.indexOf(n) >= 0; drop(n); if (live) n.dismiss() }
     // Cierra la actual (el usuario la descartó o se venció el tiempo).
     function dismiss() { const n = current; if (n) finish(n) }
-    // Clic en el aviso: acción "default" si existe; si no, trae la app (desminimiza y enfoca).
+    // Clic en el aviso: abre la ruta indicada o invoca la acción "default", si existe.
     function activate() {
         const n = current
         if (!n) return
@@ -73,8 +73,6 @@ Singleton {
         const open = n.hints ? n.hints["x-minimo-open"] : ""
         if (typeof open === "string" && open.startsWith("/")) Quickshell.execDetached(["xdg-open", open])   // captura: abrirla
         else if (def) def.invoke()
-        else Quickshell.execDetached([Qt.resolvedUrl("../scripts/focus-app.py").toString().replace("file://", ""),
-                                      n.desktopEntry || "", n.appName || ""])
         finish(n)
     }
     function invoke(action) { const n = current; action.invoke(); if (n) finish(n) }
