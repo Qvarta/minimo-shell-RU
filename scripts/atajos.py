@@ -59,14 +59,14 @@ MEDIA = {
     "XF86AudioPrev": ("Pista anterior", "Multimedia"),
 }
 DIR = {"l": "a la izquierda", "r": "a la derecha", "u": "arriba", "d": "abajo"}
-ORDER = ["Aplicaciones", "Ventanas", "Foco", "Escritorios", "Capturas", "Multimedia", "Sesión", "Otros"]
+ORDER = ["Aplicaciones", "Ventanas", "Foco", "Capturas", "Multimedia", "Sesión", "Otros"]
 
 # Idioma: `--lang en` / `--lang ru` traduce SOLO los textos generados aquí (acciones, grupos, teclas);
 # las descripciones escritas en la configuración (description = ...) quedan como están.
 LANG = "es"
 EN = {
     # grupos
-    "Aplicaciones": "Apps", "Ventanas": "Windows", "Foco": "Focus", "Escritorios": "Desktops",
+    "Aplicaciones": "Apps", "Ventanas": "Windows", "Foco": "Focus",
     "Capturas": "Screenshots", "Multimedia": "Media", "Sesión": "Session", "Otros": "Other",
     # teclas
     "Espacio": "Space", "Inicio": "Home", "Fin": "End", "RePág": "PgUp", "AvPág": "PgDn",

@@ -27,14 +27,15 @@ PanelWindow {
     // Ocultamiento inteligente: hay ventanas en el escritorio activo del monitor de ESTA isla.
     // Solo se evalúa con la opción activa; los escritorios especiales (id < 0) no cuentan.
     // En niri (Services/Niri.qml) no hay relación monitor↔workspace por socket: se cuenta
-    // el escritorio enfocado según Compositor/Workspaces.
+    // el escritorio enfocado según Compositor/Niri.
     readonly property bool isNiri: Compositor.isNiri && !Compositor.isHyprland
     // IMPORTANTE: "Hyprland.*" solo dentro de la rama del ternario que se
     // evalúa. Instanciar/cualificar el objeto Hyprland en una sesión niri hace
     // que Quickshell intente conectar al socket IPC y lance el WARN
     // "$HYPRLAND_INSTANCE_SIGNATURE is unset. Cannot connect to hyprland."
     readonly property var monitorWs: DisplayState.islandSmartHide
-        ? (isNiri ? { id: Workspaces.activeId } : (Hyprland.monitorFor(win.screen)?.activeWorkspace ?? null))
+        ? (isNiri ? (Niri.activeWorkspace ? { id: Niri.activeWorkspace.idx } : null)
+                  : (Hyprland.monitorFor(win.screen)?.activeWorkspace ?? null))
         : null
     readonly property int wsWindows: monitorWs && monitorWs.id > 0
         ? (isNiri ? Niri.windowCountInWorkspace(monitorWs.id) : (monitorWs.toplevels?.values.length ?? 0))
@@ -221,8 +222,6 @@ PanelWindow {
             dragging = false; dragDx = 0
         }
         onCanceled: { dragging = false; dragDx = 0; pulling = false; dragDy = 0 }
-        // Rueda sobre la isla compacta: escritorio anterior/siguiente.
-        onWheel: w => { if (!win.open) Workspaces.wheel(w.angleDelta.y) }
     }
 
     // Sombra suave y difusa detrás de la tarjeta (no recorta, no recibe input).

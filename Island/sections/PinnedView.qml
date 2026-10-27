@@ -11,14 +11,13 @@ Item {
     id: root
     signal back()
     signal done()
-    signal desktops()
     signal clipboard()
     signal notes()
     signal radio()
     // Кнопка радио: локальное действие (не проходит через QuickItems.builtins).
     readonly property var extraButtons: [{ id: "radio", label: I18n.tr("Radio"), icon: "music" }]
     readonly property var builtins: QuickItems.builtins.concat(extraButtons)
-    readonly property var buttons: ["capture", "desktops", "notes", "clipboard", "radio"]
+    readonly property var buttons: ["capture", "notes", "clipboard", "radio"]
     implicitHeight: col.implicitHeight
 
     readonly property string screenshotDirAbs: (Quickshell.env("HOME") || "/tmp") + "/Pictures/Screenshots"
@@ -55,8 +54,6 @@ Item {
     function activate(id) {
         if (id === "capture")
             root.takeScreenshot(Compositor.session);
-        else if (id === "desktops")
-            root.desktops();
         else if (id === "clipboard")
             root.clipboard();
         else if (id === "notes")

@@ -16,8 +16,8 @@ Item {
     property bool open: false
     readonly property bool searchFocused: search.hasFocus
     property alias character: chr
-    property string page: "menu"   // "menu" | "desks" | "clip" | "cal" | "pinned" | "notes" | "weather" | "radio"
-    implicitHeight: (page === "desks" ? desks.implicitHeight : page === "clip" ? clip.implicitHeight : page === "cal" ? cal.implicitHeight : page === "pinned" ? pinnedView.implicitHeight : page === "notes" ? notes.implicitHeight : page === "weather" ? weather.implicitHeight : page === "radio" ? radio.implicitHeight : col.implicitHeight) + 40
+    property string page: "menu"   // "menu" | "clip" | "cal" | "pinned" | "notes" | "weather" | "radio"
+    implicitHeight: (page === "clip" ? clip.implicitHeight : page === "cal" ? cal.implicitHeight : page === "pinned" ? pinnedView.implicitHeight : page === "notes" ? notes.implicitHeight : page === "weather" ? weather.implicitHeight : page === "radio" ? radio.implicitHeight : col.implicitHeight) + 40
 
     function showClipboard() { clip.refresh(); page = "clip" }
 
@@ -147,20 +147,6 @@ Item {
         onActivated: { actions.reset(); root.done(); SettingsState.show() }
     }
 
-    WorkspacesView {
-        id: desks
-        x: root.page === "desks" ? 20 : root.width * 0.3
-        y: 20
-        width: root.width - 40
-        opacity: root.page === "desks" ? 1 : 0
-        visible: opacity > 0
-        enabled: root.page === "desks"
-        Behavior on x { NumberAnimation { duration: 320; easing.type: Easing.OutQuint } }
-        Behavior on opacity { NumberAnimation { duration: 220 } }
-        onBack: root.page = "menu"
-        onPicked: root.done()
-    }
-
     ClipboardView {
         id: clip
         x: root.page === "clip" ? 20 : root.width * 0.3
@@ -202,7 +188,6 @@ Item {
         Behavior on opacity { NumberAnimation { duration: 220 } }
         onBack: root.page = "menu"
         onDone: root.done()
-        onDesktops: { desks.refresh(); root.page = "desks" }
         onClipboard: root.showClipboard()
         onNotes: root.page = "notes"
         onRadio: root.page = "radio"
