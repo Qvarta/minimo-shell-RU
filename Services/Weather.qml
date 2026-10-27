@@ -361,21 +361,12 @@ Singleton {
                 root.scheduleRetry();
             }
         }
-
-        console.info("[Weather][geocode] request started, requestId=" + requestId
-                     + ", endpoint=api.noctalia.dev");
-
         xhr.onerror = function () {
             handleNetworkFailure("onerror");
         };
         xhr.onreadystatechange = function () {
             if (xhr.readyState !== XMLHttpRequest.DONE)
                 return;
-
-            console.info("[Weather][geocode] request finished, requestId=" + requestId
-                         + ", status=" + xhr.status
-                         + ", elapsedMs=" + (Date.now() - startedAt));
-
             if (requestId !== root.requestGeneration) {
                 console.warn("[Weather][geocode] ignoring stale response, requestId=" + requestId
                              + ", currentGeneration=" + root.requestGeneration);
@@ -389,7 +380,6 @@ Singleton {
                 try {
                     var geoData = JSON.parse(xhr.responseText);
                     if (geoData.lat != null) {
-                        console.info("[Weather][geocode] response parsed successfully, requestId=" + requestId);
                         callback(geoData.lat, geoData.lng, geoData.name, geoData.country);
                     } else {
                         console.warn("[Weather][geocode] response has no coordinates, requestId=" + requestId);
@@ -438,10 +428,6 @@ Singleton {
                 root.scheduleRetry();
             }
         }
-
-        console.info("[Weather][forecast] request started, requestId=" + requestId
-                     + ", endpoint=api.open-meteo.com");
-
         xhr.onerror = function () {
             logNetworkFailure("onerror");
             if (requestId === root.requestGeneration)
@@ -450,11 +436,6 @@ Singleton {
         xhr.onreadystatechange = function () {
             if (xhr.readyState !== XMLHttpRequest.DONE)
                 return;
-
-            console.info("[Weather][forecast] request finished, requestId=" + requestId
-                         + ", status=" + xhr.status
-                         + ", elapsedMs=" + (Date.now() - startedAt));
-
             if (requestId !== root.requestGeneration) {
                 console.warn("[Weather][forecast] ignoring stale response, requestId=" + requestId
                              + ", currentGeneration=" + root.requestGeneration);
@@ -489,7 +470,6 @@ Singleton {
                     isFetchingWeather = false;
                     root.retryAttempt = 0;
                     retryTimer.stop();
-                    console.info("[Weather][forecast] response parsed successfully, requestId=" + requestId);
                 } catch (e) {
                     console.error("[Weather][forecast] response parse failed, requestId=" + requestId + ":", e);
                     errorCallback("Location", "Failed to parse weather data: " + e + " | raw: " + text.slice(0, 200));
