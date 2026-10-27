@@ -148,7 +148,6 @@ Item {
             width: 7; height: 7; radius: 3.5
             color: Theme.recording
         }
-        WorkspaceDots { anchors.verticalCenter: parent.verticalCenter }
     }
 
     // Vista previa de la captura: ancho 440 px (alto según la proporción, máx. 300 px).

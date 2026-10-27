@@ -7,7 +7,6 @@ import "Island"
 import "Wallpaper"
 import "Launcher"
 import "Settings"
-import "Overview"
 import "Services"
 
 // Minimo OS shell root: fondo de pantalla e isla por monitor.
@@ -37,5 +36,4 @@ ShellRoot {
     }
     Launcher {}
     SettingsWindow {}
-    Overview {}
 }
