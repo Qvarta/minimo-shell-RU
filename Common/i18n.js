@@ -397,6 +397,8 @@ var weatherTranslations = {
     "Snow showers": ["Chubascos de nieve", "Снегопады"],
     "Thunderstorm": ["Tormenta eléctrica", "Гроза"],
     "Unknown": ["Desconocido", "Неизвестно"],
+    "Radio": ["Radio", "Радио"],
+    "No radio stations": ["Sin estaciones de radio", "Нет радиостанций"],
     "Pinned": ["Fijados", "Закреплённое"],
     "m/s": ["m/s", "м/с"],
     "N": ["N", "С"],

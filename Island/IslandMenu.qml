@@ -16,8 +16,8 @@ Item {
     property bool open: false
     readonly property bool searchFocused: search.hasFocus
     property alias character: chr
-    property string page: "menu"   // "menu" | "desks" | "clip" | "cal" | "pinned" | "notes" | "weather"
-    implicitHeight: (page === "desks" ? desks.implicitHeight : page === "clip" ? clip.implicitHeight : page === "cal" ? cal.implicitHeight : page === "pinned" ? pinnedView.implicitHeight : page === "notes" ? notes.implicitHeight : page === "weather" ? weather.implicitHeight : col.implicitHeight) + 40
+    property string page: "menu"   // "menu" | "desks" | "clip" | "cal" | "pinned" | "notes" | "weather" | "radio"
+    implicitHeight: (page === "desks" ? desks.implicitHeight : page === "clip" ? clip.implicitHeight : page === "cal" ? cal.implicitHeight : page === "pinned" ? pinnedView.implicitHeight : page === "notes" ? notes.implicitHeight : page === "weather" ? weather.implicitHeight : page === "radio" ? radio.implicitHeight : col.implicitHeight) + 40
 
     function showClipboard() { clip.refresh(); page = "clip" }
 
@@ -205,6 +205,7 @@ Item {
         onDesktops: { desks.refresh(); root.page = "desks" }
         onClipboard: root.showClipboard()
         onNotes: root.page = "notes"
+        onRadio: root.page = "radio"
     }
 
     NotesView {
@@ -229,6 +230,19 @@ Item {
         opacity: root.page === "weather" ? 1 : 0
         visible: opacity > 0
         enabled: root.page === "weather"
+        Behavior on x { NumberAnimation { duration: 320; easing.type: Easing.OutQuint } }
+        Behavior on opacity { NumberAnimation { duration: 220 } }
+        onBack: root.page = "menu"
+    }
+
+    RadioView {
+        id: radio
+        x: root.page === "radio" ? 20 : root.width * 0.3
+        y: 20
+        width: root.width - 40
+        opacity: root.page === "radio" ? 1 : 0
+        visible: opacity > 0
+        enabled: root.page === "radio"
         Behavior on x { NumberAnimation { duration: 320; easing.type: Easing.OutQuint } }
         Behavior on opacity { NumberAnimation { duration: 220 } }
         onBack: root.page = "menu"

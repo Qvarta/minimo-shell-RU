@@ -14,7 +14,11 @@ Item {
     signal desktops()
     signal clipboard()
     signal notes()
-    readonly property var buttons: ["capture", "desktops", "notes", "clipboard"]
+    signal radio()
+    // Кнопка радио: локальное действие (не проходит через QuickItems.builtins).
+    readonly property var extraButtons: [{ id: "radio", label: I18n.tr("Radio"), icon: "music" }]
+    readonly property var builtins: QuickItems.builtins.concat(extraButtons)
+    readonly property var buttons: ["capture", "desktops", "notes", "clipboard", "radio"]
     implicitHeight: col.implicitHeight
 
     readonly property string screenshotDirAbs: (Quickshell.env("HOME") || "/tmp") + "/Pictures/Screenshots"
@@ -57,6 +61,8 @@ Item {
             root.clipboard();
         else if (id === "notes")
             root.notes();
+        else if (id === "radio")
+            root.radio();
     }
 
     component RoundButton: Rectangle {
@@ -195,7 +201,7 @@ Item {
                 delegate: PinnedButton {
                     id: b
                     required property string modelData
-                    readonly property var item: QuickItems.builtins.find(x => x.id === modelData)
+                    readonly property var item: root.builtins.find(x => x.id === modelData)
                     icon: item ? item.icon : ""
                     label: item ? item.label : ""
                     onActivated: root.activate(b.modelData)
