@@ -336,38 +336,18 @@ Singleton {
     function geocodeLocation(locationName, requestId, callback, errorCallback) {
         var geoUrl = "https://api.noctalia.dev/geocode?city=" + encodeURIComponent(locationName);
         var xhr = new XMLHttpRequest();
-        var startedAt = Date.now();
-        var networkFailureLogged = false;
         var networkFailureHandled = false;
-
-        function logNetworkFailure(source) {
-            if (networkFailureLogged)
-                return;
-            networkFailureLogged = true;
-            console.warn("[Weather][geocode] network failure (" + source
-                         + "), requestId=" + requestId
-                         + ", status=" + xhr.status
-                         + ", readyState=" + xhr.readyState
-                         + ", elapsedMs=" + (Date.now() - startedAt));
-        }
 
         function handleNetworkFailure(source) {
             if (networkFailureHandled)
                 return;
             networkFailureHandled = true;
-            logNetworkFailure(source);
             if (requestId === root.requestGeneration) {
                 isFetchingWeather = false;
                 root.scheduleRetry();
             }
         }
         xhr.onerror = function () {
-            console.warn("[Weather][geocode] XMLHttpRequest onerror"
-                         + ", requestId=" + requestId
-                         + ", status=" + xhr.status
-                         + ", readyState=" + xhr.readyState
-                         + ", elapsedMs=" + (Date.now() - startedAt)
-                         + ", url=" + geoUrl);
             handleNetworkFailure("onerror");
         };
         xhr.onreadystatechange = function () {
@@ -402,9 +382,6 @@ Singleton {
             }
         };
         xhr.open("GET", geoUrl);
-        console.info("[Weather][geocode] sending GET request"
-                     + ", requestId=" + requestId
-                     + ", url=" + geoUrl);
         xhr.send();
     }
 
@@ -420,11 +397,6 @@ Singleton {
             if (networkFailureLogged)
                 return;
             networkFailureLogged = true;
-            console.warn("[Weather][forecast] network failure (" + source
-                         + "), requestId=" + requestId
-                         + ", status=" + xhr.status
-                         + ", readyState=" + xhr.readyState
-                         + ", elapsedMs=" + (Date.now() - startedAt));
         }
 
         function handleNetworkFailure(source) {
@@ -438,13 +410,6 @@ Singleton {
             }
         }
         xhr.onerror = function () {
-            console.warn("[Weather][forecast] XMLHttpRequest onerror"
-                         + ", requestId=" + requestId
-                         + ", status=" + xhr.status
-                         + ", readyState=" + xhr.readyState
-                         + ", elapsedMs=" + (Date.now() - startedAt)
-                         + ", url=" + url);
-            logNetworkFailure("onerror");
             if (requestId === root.requestGeneration)
                 isFetchingWeather = false;
         };
@@ -496,9 +461,6 @@ Singleton {
             }
         };
         xhr.open("GET", url);
-        console.info("[Weather][forecast] sending GET request"
-                     + ", requestId=" + requestId
-                     + ", url=" + url);
         xhr.send();
     }
 
