@@ -1,216 +1,261 @@
 // SPDX-License-Identifier: MIT
 .pragma library
 
+// Public output contract: [{ title: string, binds: [{ keys: string, desc: string }] }]
 function normalizeKey(key) {
-    const k = key.trim();
-    const low = k.toLowerCase();
-
-    const map = {
-        "escape": "ESCAPE", "return": "ENTER", "enter": "ENTER", "space": "SPACE",
-        "tab": "TAB", "backspace": "BACKSPACE", "delete": "DELETE", "insert": "INSERT",
-        "home": "HOME", "end": "END", "page_up": "PAGE UP", "page_down": "PAGE DOWN",
-        "prior": "PAGE UP", "next": "PAGE DOWN", "left": "LEFT", "right": "RIGHT",
-        "up": "UP", "down": "DOWN", "print": "PRINT", "kp_add": "KP ADD",
-        "kp_subtract": "KP SUBTRACT", "kp_multiply": "KP MULTIPLY", "kp_divide": "KP DIVIDE",
-        "kp_enter": "KP ENTER", "wheelscrollup": "WHEEL UP", "wheelscrolldown": "WHEEL DOWN",
-        "wheelscrollleft": "WHEEL LEFT", "wheelscrollright": "WHEEL RIGHT",
-        "mouseleft": "MOUSE LEFT", "mouseright": "MOUSE RIGHT", "mousemiddle": "MOUSE MIDDLE",
-        "mouseback": "MOUSE BACK", "mouseforward": "MOUSE FORWARD"
+    const value = key.trim();
+    const names = {
+        escape:"ESCAPE", return:"ENTER", enter:"ENTER", space:"SPACE", tab:"TAB",
+        backspace:"BACKSPACE", delete:"DELETE", insert:"INSERT", home:"HOME", end:"END",
+        page_up:"PAGE UP", page_down:"PAGE DOWN", prior:"PAGE UP", next:"PAGE DOWN",
+        left:"LEFT", right:"RIGHT", up:"UP", down:"DOWN", print:"PRINT",
+        kp_add:"KP ADD", kp_subtract:"KP SUBTRACT", kp_multiply:"KP MULTIPLY",
+        kp_divide:"KP DIVIDE", kp_enter:"KP ENTER", wheelscrollup:"WHEEL UP",
+        wheelscrolldown:"WHEEL DOWN", wheelscrollleft:"WHEEL LEFT", wheelscrollright:"WHEEL RIGHT",
+        mouseleft:"MOUSE LEFT", mouseright:"MOUSE RIGHT", mousemiddle:"MOUSE MIDDLE",
+        mouseback:"MOUSE BACK", mouseforward:"MOUSE FORWARD"
     };
-
-    if (map[low]) return map[low];
-    if (/^f\d+$/i.test(k)) return k.toUpperCase();
-    if (/^xf86/i.test(k)) return k.toUpperCase();
-    if (k.length === 1) return k.toUpperCase();
-    return k.toUpperCase();
+    return names[value.toLowerCase()] || value.toUpperCase();
 }
-
 
 function parseCombo(combo) {
-    const parts = combo.split('+').map(p => p.trim()).filter(p => p.length > 0);
-    let mods = [];
+    const parts = combo.split("+").map(p => p.trim()).filter(p => p.length > 0);
+    const modifiers = [];
     let key = "";
-
-    for (const p of parts) {
-        const q = p.toLowerCase();
-        if (q === "mod" || q === "super" || q === "meta" || q === "win") mods.push("Super");
-        else if (q === "shift") mods.push("Shift");
-        else if (q === "ctrl" || q === "control") mods.push("Ctrl");
-        else if (q === "alt") mods.push("Alt");
-        else key = p;
+    for (let i = 0; i < parts.length; i++) {
+        const part = parts[i].toLowerCase();
+        if (["mod", "super", "meta", "win"].indexOf(part) >= 0) modifiers.push("Super");
+        else if (part === "shift") modifiers.push("Shift");
+        else if (part === "ctrl" || part === "control") modifiers.push("Ctrl");
+        else if (part === "alt") modifiers.push("Alt");
+        else key = parts[i];
     }
-
+    const ordered = [];
     const order = ["Super", "Ctrl", "Alt", "Shift"];
-    const uniq = order.filter(m => mods.includes(m));
-
-    let fullKey = uniq.join(" + ");
-    const normKey = key ? normalizeKey(key) : "";
-    if (normKey) fullKey = fullKey ? fullKey + " + " + normKey : normKey;
-
-    return fullKey;
+    for (let i = 0; i < order.length; i++)
+        if (modifiers.indexOf(order[i]) >= 0) ordered.push(order[i]);
+    if (key) ordered.push(normalizeKey(key));
+    return ordered.join(" + ");
 }
 
-function autoDesc(body) {
-    const first = body.split(';')[0].trim();
-    if (!first) return "Нет описания";
-
-    const actionMap = {
-        "close-window": "Закрыть окно", "fullscreen-window": "Полный экран",
-        "toggle-window-floating": "Плавающее окно", "focus-column-left": "Фокус влево",
-        "focus-column-right": "Фокус вправо", "focus-window-up": "Фокус вверх",
-        "focus-window-down": "Фокус вниз", "focus-workspace-up": "Раб. стол вверх",
-        "focus-workspace-down": "Раб. стол вниз", "focus-workspace": "Переключиться на раб. стол",
-        "move-column-to-workspace": "Окно на раб. стол"
-    };
-
-    const spawnMatch = first.match(/^spawn(?:-sh)?\s+["']([^"']+)["']/);
-    if (spawnMatch) {
-        const cmd = spawnMatch[1];
-        const ipcMatch = cmd.match(/ipc"?\s+"call"?\s+"([^"]+)"\s+"([^"]+)"/);
-        if (ipcMatch) return "Открыть " + ipcMatch[1].replace("plugin:", "");
-        const bin = cmd.split(/\s+/)[0].split('/').pop();
-        return "Запустить " + bin;
-    }
-
-    const actionKey = first.split(/\s+/)[0];
-    if (actionMap[actionKey]) {
-        const arg = first.substring(actionKey.length).trim().replace(/^["']|["']$/g, "");
-        return arg ? actionMap[actionKey] + " " + arg : actionMap[actionKey];
-    }
-
-    return first;
+function isSpace(ch) {
+    return ch === " " || ch === "\t" || ch === "\n" || ch === "\r";
 }
 
-function splitInlineComment(s) {
-    let inStr = false;
-    for (let i = 0; i < s.length - 1; i++) {
-        const ch = s[i];
-        if (inStr) {
-            if (ch === "\\") { i++; continue; }
-            if (ch === '"') inStr = false;
-        } else {
-            if (ch === '"') inStr = true;
-            else if (ch === "/" && s[i + 1] === "/") {
-                return { code: s.substring(0, i), comment: s.substring(i + 2).trim() };
-            }
+function splitInlineComment(line) {
+    let quote = "";
+    for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (quote) {
+            if (ch === "\\" && i + 1 < line.length) i++;
+            else if (ch === quote) quote = "";
+        } else if (ch === '"' || ch === "'") quote = ch;
+        else if (ch === "/" && line[i + 1] === "/")
+            return { code: line.substring(0, i), comment: line.substring(i + 2).trim() };
+    }
+    return { code: line, comment: null };
+}
+
+function extractBlock(source, name) {
+    let open = -1, quote = "", comment = false;
+    for (let i = 0; i < source.length; i++) {
+        const ch = source[i];
+        if (comment) { if (ch === "\n") comment = false; continue; }
+        if (quote) {
+            if (ch === "\\" && i + 1 < source.length) i++;
+            else if (ch === quote) quote = "";
+            continue;
         }
+        if (ch === '"' || ch === "'") { quote = ch; continue; }
+        if (ch === "/" && source[i + 1] === "/") { comment = true; i++; continue; }
+        if (source.substr(i, name.length) !== name) continue;
+        const before = i === 0 ? "" : source[i - 1];
+        const after = source[i + name.length] || "";
+        if (!(i === 0 || isSpace(before) || before === "{")) continue;
+        if (!(after === "" || isSpace(after) || after === "{")) continue;
+        let cursor = i + name.length;
+        while (cursor < source.length && isSpace(source[cursor])) cursor++;
+        if (source[cursor] === "{") { open = cursor; break; }
     }
-    return { code: s, comment: null };
-}
+    if (open < 0) return null;
 
-function _extractBlock(text, name) {
-    const re = new RegExp("(^|\\s)" + name + "\\s*\\{", "m");
-    const m = text.match(re);
-    if (!m) return null;
-    const openIdx = text.indexOf("{", m.index);
-    let depth = 0, inStr = false, prev = "";
-    for (let i = openIdx; i < text.length; i++) {
-        const ch = text[i];
-        if (inStr) {
-            if (ch === '"' && prev !== "\\") inStr = false;
-        } else if (ch === '"') {
-            inStr = true;
-        } else if (ch === "/" && text[i + 1] === "/") {
-            const eol = text.indexOf("\n", i);
-            i = eol === -1 ? text.length : eol - 1;
-        } else if (ch === "{") {
-            depth++;
-        } else if (ch === "}") {
-            depth--;
-            if (depth === 0) return text.substring(openIdx + 1, i);
+    let depth = 0;
+    quote = ""; comment = false;
+    for (let i = open; i < source.length; i++) {
+        const ch = source[i];
+        if (comment) { if (ch === "\n") comment = false; continue; }
+        if (quote) {
+            if (ch === "\\" && i + 1 < source.length) i++;
+            else if (ch === quote) quote = "";
+            continue;
         }
-        prev = ch;
+        if (ch === '"' || ch === "'") quote = ch;
+        else if (ch === "/" && source[i + 1] === "/") { comment = true; i++; }
+        else if (ch === "{") depth++;
+        else if (ch === "}" && --depth === 0) return source.substring(open + 1, i);
     }
     return null;
 }
 
+function tokenize(source) {
+    const result = [];
+    let token = "", quote = "", active = false;
+    for (let i = 0; i < source.length; i++) {
+        const ch = source[i];
+        if (quote) {
+            if (ch === "\\" && i + 1 < source.length) { token += source[++i]; }
+            else if (ch === quote) quote = "";
+            else token += ch;
+            active = true;
+        } else if (ch === '"' || ch === "'") { quote = ch; active = true; }
+        else if (isSpace(ch)) {
+            if (active) result.push(token);
+            token = ""; active = false;
+        } else { token += ch; active = true; }
+    }
+    if (active) result.push(token);
+    return result;
+}
+
+function actionDescription(body) {
+    const first = body.split(";")[0].trim();
+    if (!first) return "Нет описания";
+    const descriptions = {
+        "close-window":"Закрыть окно", "fullscreen-window":"Полный экран",
+        "toggle-window-floating":"Плавающее окно", "focus-column-left":"Фокус влево",
+        "focus-column-right":"Фокус вправо", "focus-window-up":"Фокус вверх",
+        "focus-window-down":"Фокус вниз", "focus-window-or-workspace-up":"Фокус вверх",
+        "focus-window-or-workspace-down":"Фокус вниз", "focus-workspace-up":"Раб. стол вверх",
+        "focus-workspace-down":"Раб. стол вниз", "focus-workspace":"Переключиться на раб. стол",
+        "move-column-to-workspace":"Окно на раб. стол"
+    };
+    const tokens = tokenize(first);
+    if (!tokens.length) return "Нет описания";
+    if (tokens[0] === "spawn" || tokens[0] === "spawn-sh") {
+        const command = tokens[1] || "";
+        for (let i = 0; i + 2 < tokens.length; i++)
+            if (tokens[i] === "ipc" && tokens[i + 1] === "call")
+                return "Открыть " + tokens[i + 2].replace("plugin:", "");
+        const parts = command.split("/");
+        return "Запустить " + (parts[parts.length - 1] || command || "команду");
+    }
+    if (descriptions[tokens[0]])
+        return tokens.length > 1 ? descriptions[tokens[0]] + " " + tokens[1] : descriptions[tokens[0]];
+    return first;
+}
+
+function braceDelta(source) {
+    let delta = 0, quote = "";
+    for (let i = 0; i < source.length; i++) {
+        const ch = source[i];
+        if (quote) {
+            if (ch === "\\" && i + 1 < source.length) i++;
+            else if (ch === quote) quote = "";
+        } else if (ch === '"' || ch === "'") quote = ch;
+        else if (ch === "/" && source[i + 1] === "/") break;
+        else if (ch === "{") delta++;
+        else if (ch === "}") delta--;
+    }
+    return delta;
+}
+
+function isBindingHeader(code) {
+    const open = code.indexOf("{");
+    return open > 0 && (code.indexOf("}") < 0 || code.indexOf("}") > open);
+}
+
+function bindingCombo(header) {
+    const name = header.substring(0, header.indexOf("{")).trim();
+    const words = [];
+    let word = "";
+    for (let i = 0; i <= name.length; i++) {
+        const ch = i === name.length ? " " : name[i];
+        if (isSpace(ch)) {
+            if (word && word.indexOf("=") < 0) words.push(word);
+            word = "";
+        } else {
+            word += ch;
+        }
+    }
+    return words.join("+");
+}
+
+function isSeparatorLine(value) {
+    if (!value) return true;
+    for (let i = 0; i < value.length; i++)
+        if ("─=-*_".indexOf(value[i]) < 0) return false;
+    return true;
+}
+
+function cleanComment(value) {
+    value = value.trim();
+    while (value.length && "─=-*_ \t".indexOf(value[0]) >= 0) value = value.substring(1);
+    while (value.length && "─=-*_ \t".indexOf(value[value.length - 1]) >= 0)
+        value = value.substring(0, value.length - 1);
+    return value.trim();
+}
+
 function parse(text) {
-    let body = _extractBlock(text, "binds");
+    let body = extractBlock(text, "binds");
     if (body === null) {
-        const input = _extractBlock(text, "input");
-        if (input !== null) body = _extractBlock(input, "binds");
+        const input = extractBlock(text, "input");
+        if (input !== null) body = extractBlock(input, "binds");
     }
     if (body === null) return [];
 
-    const cats = [];
-    let currentCat = null;
-    let pendingComment = null;
-
-    const lines = body.split('\n');
+    const categories = [];
+    let category = null, pendingDescription = null;
+    const lines = body.split("\n");
     let i = 0;
     while (i < lines.length) {
         const trimmed = lines[i].trim();
-        if (trimmed.length === 0) { i++; continue; }
+        if (!trimmed) { i++; continue; }
 
-        if (trimmed.startsWith("//")) {
-            const c = trimmed.replace(/^\/\/\s*/, "").replace(/^[─=\-*_\s]+/, "").replace(/[─=\-*_\s]+$/, "").trim();
-            if (c.length === 0 || /^[─=\-*_]+$/.test(c)) { i++; continue; }
-            // Смотрим на следующую осмысленную строку.
-            let nextCode = null, nextInline = null;
-            for (let k = i + 1; k < lines.length; k++) {
-                const sp = splitInlineComment(lines[k].trim());
-                if (sp.code.trim().length === 0) continue;
-                nextCode = sp.code.trim();
-                nextInline = sp.comment;
-                break;
+        if (trimmed.indexOf("//") === 0) {
+            const comment = cleanComment(trimmed.substring(2));
+            if (!comment || isSeparatorLine(comment)) { i++; continue; }
+            let nextCode = null, nextComment = null;
+            for (let j = i + 1; j < lines.length; j++) {
+                const next = splitInlineComment(lines[j].trim());
+                if (!next.code.trim()) continue;
+                nextCode = next.code.trim(); nextComment = next.comment; break;
             }
-            const nextIsBind = nextCode !== null && /^[^\{\}]+\{/.test(nextCode);
-            if (nextIsBind && (nextInline === null || nextInline.length === 0)) {
-                pendingComment = c;  
-            } else {
-                if (currentCat) cats.push(currentCat);
-                currentCat = { title: c, binds: [] };
+            if (nextCode !== null && isBindingHeader(nextCode) && !nextComment) pendingDescription = comment;
+            else {
+                if (category) categories.push(category);
+                category = { title: comment, binds: [] };
             }
-            i++;
-            continue;
+            i++; continue;
         }
 
-        const splitFirst = splitInlineComment(trimmed);
-        const code = splitFirst.code;
-        let inlineComment = splitFirst.comment;
-
-        if (/^[^\{\}]+\{/.test(code)) {
-            const namePart = code.substring(0, code.indexOf("{")).trim();
-            const tokens = namePart.split(/\s+/).filter(t => t.length > 0 && !t.includes("="));
-            const combo = tokens.join("+");
-            let bodyText = code.substring(code.indexOf("{") + 1);
-
-            let depth = (bodyText.match(/\{/g) || []).length - (bodyText.match(/\}/g) || []).length;
-            let j = i;
-            while (depth > 0 && j + 1 < lines.length) {
-                j++;
-                let nextLine = lines[j];
-                if (!inlineComment) {
-                    const splitNext = splitInlineComment(nextLine);
-                    if (splitNext.comment !== null && /\}\s*$/.test(splitNext.code.trim())) {
-                        inlineComment = splitNext.comment;
-                        nextLine = splitNext.code;
-                    }
-                }
-                bodyText += "\n" + nextLine;
-                depth += (nextLine.match(/\{/g) || []).length;
-                depth -= (nextLine.match(/\}/g) || []).length;
-            }
-
-            const lastClose = bodyText.lastIndexOf("}");
-            if (lastClose !== -1) bodyText = bodyText.substring(0, lastClose);
-            bodyText = bodyText.split('\n').map(l => splitInlineComment(l).code).join('\n').trim();
-
-            if (combo.length > 0) {
-                if (!currentCat) currentCat = { title: "Прочее", binds: [] };
-                const desc = (pendingComment && pendingComment.length > 0) ? pendingComment
-                           : (inlineComment && inlineComment.length > 0) ? inlineComment
-                           : autoDesc(bodyText);
-                currentCat.binds.push({ keys: parseCombo(combo), desc: desc });
-            }
-            pendingComment = null;
-            i = j + 1;
-            continue;
+        const split = splitInlineComment(trimmed);
+        const code = split.code.trim();
+        if (!isBindingHeader(code)) { i++; continue; }
+        const combo = bindingCombo(code);
+        let action = code.substring(code.indexOf("{") + 1);
+        let depth = braceDelta(action), last = i;
+        while (depth > 0 && last + 1 < lines.length) {
+            last++;
+            action += "\n" + lines[last];
+            depth += braceDelta(lines[last]);
         }
+        const close = action.lastIndexOf("}");
+        if (close >= 0) action = action.substring(0, close);
+        const actionLines = action.split("\n");
+        for (let j = 0; j < actionLines.length; j++)
+            actionLines[j] = splitInlineComment(actionLines[j]).code;
+        action = actionLines.join("\n").trim();
 
-        i++;
+        if (combo) {
+            if (!category) category = { title: "Прочее", binds: [] };
+            let desc = actionDescription(action);
+            if (split.comment) desc = split.comment;
+            if (pendingDescription) desc = pendingDescription;
+            category.binds.push({ keys: parseCombo(combo), desc: desc });
+        }
+        pendingDescription = null;
+        i = last + 1;
     }
-
-    if (currentCat && currentCat.binds.length > 0) cats.push(currentCat);
-    return cats;
+    if (category && category.binds.length) categories.push(category);
+    return categories;
 }
