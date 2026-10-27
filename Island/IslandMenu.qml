@@ -107,8 +107,8 @@ Item {
             Item {
                 id: mainSliders
                 width: parent.width
-                visible: QuickItems.pinnedSliders.length > 0
-                readonly property var sliders: QuickItems.pinnedSliders
+                readonly property var sliders: ["volume", "brightness"]
+                visible: sliders.length > 0
                 readonly property int volAt: sliders.indexOf("volume")
                 readonly property bool volFirst: volAt === 0
                 readonly property real volH: vol.visible ? vol.height : 0
