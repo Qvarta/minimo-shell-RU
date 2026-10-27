@@ -62,24 +62,36 @@ Rectangle {
                 width: contentCol.width
                 spacing: 0
 
-                // Заголовок категории. Как во всех остальных вкладках настроек
-                // (DisplayPage, PersonalizationPage, WallpapersPage) — SectionTitle:
-                // обычный текст без плашки, читаемый в обеих темах.
-                // Раньше здесь была «акцентная плашка»: Rectangle-заголовок лежал
-                // внутри Column с leftPadding/rightPadding, а Column не является Item
-                // с padding'ами до QtQuick 2.21, поэтому отступы молча игнорировались,
-                // availableWidth не резолвился (ширина заголовка = undefined → 0) и
-                // текст с инверсионным цветом на невидимой плашке не рисовался вовсе.
-                SectionTitle {
-                    // required-свойства делегата инициализируются только у самого
-                    // делегата (group), поэтому здесь просто читаем group.index.
-                    // (Раньше здесь было `required property int index` — Repeater
-                    // его не инициализировал, делегат падал с ошибкой создания.)
+                // Заголовок категории — собственный компонент (без SectionTitle):
+                // плашка на весь фон карточки (Theme.field — контрастирует и с
+                // белой/чёрной карточкой root, и с рядами биндов ShortcutRow),
+                // скруглённая, текст по центру, стиль шрифта как у SectionTitle.
+                // ВАЖНО: width задаётся явно (group.width - 36), height — из
+                // implicitHeight текста + вертикальных отступов. Никаких
+                // padding/availableWidth у Rectangle — эти свойства есть только у
+                // Control/PaddingItem, а молча нерезолвящаяся привязка давала
+                // ширину 0 и невидимый заголовок (первоначальный баг).
+                Rectangle {
+                    id: catHeader
                     width: group.width - 36
                     x: 18
-                    topPadding: group.index === 0 ? 4 : 20
-                    bottomPadding: 8
-                    text: group.modelData.title.toUpperCase()
+                    height: catHeaderText.implicitHeight + 2 * vPad
+                    radius: 8
+                    color: Theme.field
+
+                    readonly property int vPad: group.index === 0 ? 8 : 14
+
+                    Text {
+                        id: catHeaderText
+                        anchors.centerIn: parent
+                        width: parent.width - 24
+                        text: group.modelData.title.toUpperCase()
+                        color: Theme.textSecondary
+                        font.family: Theme.font; font.pixelSize: 12; font.weight: Font.DemiBold
+                        horizontalAlignment: Text.AlignHCenter
+                        elide: Text.ElideRight
+                        maximumLineCount: 1
+                    }
                 }
 
                 Repeater {
