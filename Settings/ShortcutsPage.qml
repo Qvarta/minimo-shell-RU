@@ -13,14 +13,13 @@ Rectangle {
     implicitHeight: contentCol.implicitHeight + 32
     property bool shown: false
 
-    // Пути к возможным файлам с биндами niri (в порядке приоритета).
-    readonly property string configDir: (Quickshell.env("XDG_CONFIG_HOME") || (Quickshell.env("HOME") + "/.config")) + "/niri"
-    readonly property var configCandidates: [configDir + "/binds.kdl", configDir + "/config.kdl"]
+    // Файл с биндами Niri.
+    readonly property string configPath: Quickshell.env("HOME") + "/.config/niri/binds.kdl"
 
     property var groups: []
     property bool loaded: false
 
-    onShownChanged: if (shown && !loaded) parseConfig(0)
+    onShownChanged: if (shown && !loaded) loadConfig()
 
     ShortcutRow {
         id: rowProbe
@@ -28,15 +27,10 @@ Rectangle {
         width: 0; height: 0
     }
 
-    function parseConfig(index) {
-        if (index >= configCandidates.length) { loaded = true; return; }
-        rowProbe.getShortcuts(configCandidates[index], categories => {
-            if (categories && categories.length > 0) {
-                root.groups = categories;
-                root.loaded = true;
-            } else {
-                parseConfig(index + 1);
-            }
+    function loadConfig() {
+        rowProbe.getShortcuts(configPath, categories => {
+            root.groups = categories || [];
+            root.loaded = true;
         });
     }
 
@@ -96,12 +90,17 @@ Rectangle {
             }
         }
 
-        // если бинды не найдены 
+        // если бинды не найдены
         Text {
             visible: root.loaded && root.groups.length === 0
+            width: parent.width - 36
             anchors.horizontalCenter: parent.horizontalCenter
-            text: Compositor.session === "niri" ? I18n.tr("No se encontraron atajos") : I18n.tr("Se requiere una sesión de Niri")
+            text: Compositor.session !== "niri"
+                  ? I18n.tr("Se requiere una sesión de Niri")
+                  : I18n.tr("Не удалось найти бинды Niri. Проверьте файл ~/.config/niri/binds.kdl.\n\nФормат: отдельный комментарий // Категория, затем каждый бинд на одной строке: Mod+M { spawn \"spotify\"; } // Описание. Название бинда указывается после закрывающей фигурной скобки }.")
             color: Theme.textSecondary; font.family: Theme.font; font.pixelSize: 13
+            wrapMode: Text.WordWrap
+            horizontalAlignment: Text.AlignLeft
             topPadding: 10
         }
     }
