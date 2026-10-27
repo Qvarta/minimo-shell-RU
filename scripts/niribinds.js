@@ -166,8 +166,25 @@ function isBindingHeader(code) {
 
 function bindingCombo(header) {
     const name = header.substring(0, header.indexOf("{")).trim();
-    const words = name.split(/[ \t]+/).filter(word => word && word.indexOf("=") < 0);
+    const words = [];
+    let word = "";
+    for (let i = 0; i <= name.length; i++) {
+        const ch = i === name.length ? " " : name[i];
+        if (isSpace(ch)) {
+            if (word && word.indexOf("=") < 0) words.push(word);
+            word = "";
+        } else {
+            word += ch;
+        }
+    }
     return words.join("+");
+}
+
+function isSeparatorLine(value) {
+    if (!value) return true;
+    for (let i = 0; i < value.length; i++)
+        if ("─=-*_".indexOf(value[i]) < 0) return false;
+    return true;
 }
 
 function cleanComment(value) {
@@ -196,7 +213,7 @@ function parse(text) {
 
         if (trimmed.indexOf("//") === 0) {
             const comment = cleanComment(trimmed.substring(2));
-            if (!comment || /^[─=\-*_]+$/.test(comment)) { i++; continue; }
+            if (!comment || isSeparatorLine(comment)) { i++; continue; }
             let nextCode = null, nextComment = null;
             for (let j = i + 1; j < lines.length; j++) {
                 const next = splitInlineComment(lines[j].trim());
