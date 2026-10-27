@@ -14,6 +14,8 @@ Item {
     readonly property string fileUrl: "file://" + dir + "/radio.json"
     // Станции по умолчанию (копия online-radio/stations.json рядом с конфигурацией).
     readonly property string defaultStationsPath: Quickshell.env("HOME") + "/.config/minimo-os/radio-stations.json"
+    // Путь к шаблону станций в поставке (assets/radio-stations.json).
+    readonly property string bundledStationsPath: Qt.resolvedUrl("../../assets/radio-stations.json").toString().replace("file://", "")
 
     property bool loaded: false
     property var stations: []
@@ -47,6 +49,28 @@ Item {
         printErrors: false
     }
 
+    // Если radio-stations.json нет в ~/.config/minimo-os — копируем из assets
+    function ensureDefaults(callback) {
+        copyDefaultsProc.callback = callback
+        copyDefaultsProc.command = ["sh", "-c",
+            "mkdir -p '" + root.dir + "' && " +
+            "if [ ! -f '" + root.defaultStationsPath + "' ]; then " +
+            "  cp '" + root.bundledStationsPath + "' '" + root.defaultStationsPath + "' 2>/dev/null || true; " +
+            "fi"
+        ]
+        copyDefaultsProc.running = true
+    }
+
+    Process {
+        id: copyDefaultsProc
+        running: false
+        property var callback: null
+        onExited: {
+            if (callback) callback()
+            callback = null
+        }
+    }
+
     Timer {
         id: loadDefaults
         interval: 150
@@ -54,17 +78,22 @@ Item {
         onTriggered: {
             if (root.loaded)
                 return
-            var list = []
-            try {
-                var j = JSON.parse(defaultsView.text())
-                if (Array.isArray(j))
-                    list = j.map(s => ({ name: s.name || "", url: s.url || "" })).filter(s => s.name && s.url)
-            } catch (e) {
-                console.warn("RadioView: no se pudo leer stations.json:", e)
-            }
-            root.stations = list
-            root.loaded = true
-            root.save()  
+            root.ensureDefaults(function() {
+                if (root.loaded)
+                    return
+                var list = []
+                try {
+                    defaultsView.reload()   // перечитать после возможного копирования
+                    var j = JSON.parse(defaultsView.text())
+                    var arr = Array.isArray(j) ? j : (j && Array.isArray(j.stations) ? j.stations : [])
+                    list = arr.map(s => ({ name: s.name || "", url: s.url || "" })).filter(s => s.name && s.url)
+                } catch (e) {
+                    console.warn("RadioView: no se pudo leer stations.json:", e)
+                }
+                root.stations = list
+                root.loaded = true
+                root.save()
+            })
         }
     }
 
@@ -232,7 +261,7 @@ Item {
     readonly property real cellSpacing: 8
 
     function getImageUrl(stationName) {
-        return Qt.resolvedUrl("../assets/radio/" + stationName + ".png")
+        return Qt.resolvedUrl("../../assets/png/" + stationName + ".png")
     }
 
     function getCurrentRow() { return Math.floor(currentIndex / columns) }
@@ -331,34 +360,23 @@ Item {
         width: parent.width
         spacing: 14
 
-        // Заголовок: кнопка «назад», название, статус воспроизведения.
+        // Заголовок: кнопка «назад», название (или имя играющей станции).
         Item {
             width: parent.width
             height: 32
             RoundButton { icon: "back"; onClicked: root.back() }
             Text {
                 anchors.centerIn: parent
-                text: I18n.tr("Radio")
-                color: Theme.textPrimary; font.family: Theme.font; font.pixelSize: 15; font.weight: Font.DemiBold
-            }
-            Row {
-                anchors.right: parent.right
-                anchors.verticalCenter: parent.verticalCenter
-                spacing: 6
-                visible: root.isPlaying
-
-                // _____________________________________________________________________________________________________
-                // Icon { anchors.verticalCenter: parent.verticalCenter; name: "volume"; size: 16; tone: "gray" }
-                // _____________________________________________________________________________________________________
-
-                Text {
-                    anchors.verticalCenter: parent.verticalCenter
-                    width: 140
-                    text: [root.currentArtist, root.currentTrack].filter(s => s !== "").join(" — ") || root.currentPlayingStation
-                    color: Theme.textSecondary; font.family: Theme.font; font.pixelSize: 11
-                    elide: Text.ElideRight
-                    horizontalAlignment: Text.AlignRight
-                }
+                width: parent.width - 80
+                text: root.isPlaying
+                    ? root.currentPlayingStation
+                    : I18n.tr("Radio")
+                color: Theme.textPrimary
+                font.family: Theme.font
+                font.pixelSize: 15
+                font.weight: Font.DemiBold
+                elide: Text.ElideRight
+                horizontalAlignment: Text.AlignHCenter
             }
         }
 
@@ -535,5 +553,8 @@ Item {
         }
     }
 
-    Component.onCompleted: forceActiveFocus()
+    Component.onCompleted: {
+        forceActiveFocus()
+        root.ensureDefaults(null)
+    }
 }
