@@ -97,7 +97,7 @@ Rectangle {
             anchors.horizontalCenter: parent.horizontalCenter
             text: Compositor.session !== "niri"
                   ? I18n.tr("Se requiere una sesión de Niri")
-                  : I18n.tr("Niri shortcuts not found. Check ~/.config/niri/binds.kdl.\\n\\nFormat: add a standalone comment // Category, then put each binding on one line: Mod+M { spawn \\"spotify\\"; } // Description. The binding name goes after the closing brace }.")
+                  : I18n.tr("Niri shortcuts not found. Check ~/.config/niri/binds.kdl.\n\nFormat: add a standalone comment // Category, then put each binding on one line: Mod+M { spawn \"spotify\"; } // Description. The binding name goes after the closing brace }.")
             color: Theme.textSecondary; font.family: Theme.font; font.pixelSize: 13
             wrapMode: Text.WordWrap
             horizontalAlignment: Text.AlignLeft
