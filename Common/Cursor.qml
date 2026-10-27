@@ -4,10 +4,10 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import "../Services"
 
-// Posición global del cursor (Hyprland). Un único proceso liviano consulta
-// `hyprctl cursorpos` ~25 veces/seg, y solo corre mientras algún consumidor
-// (personaje visible) lo necesita. Sin consumidores no hay sondeo.
+// Положение курсора: Hyprland использует IPC-скрипт, Niri — события MouseArea
+// на слое обоев (для пустого рабочего стола).
 Singleton {
     id: root
     property int users: 0
@@ -21,11 +21,9 @@ Singleton {
 
     Process {
         id: proc
-        running: root.users > 0
-        // Si el proceso cae (p. ej. Hyprland recargó), se relanza en 2 s mientras haya usuarios.
-        onExited: if (root.users > 0) relaunch.restart()
-        // Un solo proceso que lee el socket IPC de Hyprland con frecuencia adaptativa
-        // (antes: un hyprctl cada 40 ms ≈ 40 % de un núcleo).
+        running: root.users > 0 && !Compositor.isNiri
+        // Если процесс падает, перезапускаем его только в сессии Hyprland.
+        onExited: if (root.users > 0 && !Compositor.isNiri) relaunch.restart()
         command: [Qt.resolvedUrl("../scripts/cursorpos.py").toString().replace("file://", "")]
         stdout: SplitParser {
             onRead: line => {
@@ -37,5 +35,9 @@ Singleton {
             }
         }
     }
-    Timer { id: relaunch; interval: 2000; onTriggered: if (root.users > 0) { proc.running = false; proc.running = true } }
+    Timer {
+        id: relaunch
+        interval: 2000
+        onTriggered: if (root.users > 0 && !Compositor.isNiri) { proc.running = false; proc.running = true }
+    }
 }
