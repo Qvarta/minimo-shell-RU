@@ -109,26 +109,81 @@ function splitInlineComment(s) {
 }
 
 // Основной парсер: текст конфига niri -> массив категорий с биндами.
-function parse(text) {
-    const lines = text.split('\n');
-    const cats = [];
-    let currentCat = null;
+// Двухпроходный алгоритм:
+//  1) вырезаем секцию binds { ... } (или input { binds { ... } }) стеком
+//     скобок, игнорируя кавычки и комментарии;
+//  2) разбираем её построчно: комментарий-заголовок = категория, строка
+//     вида "Mod+A { action... }" = бинд (поддерживаются многострочные тела).
 
+// Вырезает содержимое блока `name { ... }` из текста, возвращает строку или null.
+function _extractBlock(text, name) {
+    const re = new RegExp("(^|\\s)" + name + "\\s*\\{", "m");
+    const m = text.match(re);
+    if (!m) return null;
+    const openIdx = text.indexOf("{", m.index);
+    let depth = 0, inStr = false, prev = "";
+    for (let i = openIdx; i < text.length; i++) {
+        const ch = text[i];
+        if (inStr) {
+            if (ch === '"' && prev !== "\\") inStr = false;
+        } else if (ch === '"') {
+            inStr = true;
+        } else if (ch === "/" && text[i + 1] === "/") {
+            const eol = text.indexOf("\n", i);
+            i = eol === -1 ? text.length : eol - 1;
+        } else if (ch === "{") {
+            depth++;
+        } else if (ch === "}") {
+            depth--;
+            if (depth === 0) return text.substring(openIdx + 1, i);
+        }
+        prev = ch;
+    }
+    return null;
+}
+
+function parse(text) {
+    // Секция биндов может лежать как в binds.kdl ("binds { ... }"),
+    // так и внутри input { ... } в config.kdl.
+    let body = _extractBlock(text, "binds");
+    if (body === null) {
+        const input = _extractBlock(text, "input");
+        if (input !== null) body = _extractBlock(input, "binds");
+    }
+    if (body === null) return [];
+
+    const cats = [];
+    let currentCat = null;      // Текущая категория (комментарий-заголовок).
+    let pendingComment = null;  // Одиночный комментарий перед биндом — его описание.
+
+    const lines = body.split('\n');
     let i = 0;
     while (i < lines.length) {
         const trimmed = lines[i].trim();
-
         if (trimmed.length === 0) { i++; continue; }
 
-        // Пропускаем обрамление секции binds { ... }.
-        if (/^binds\s*\{?\s*$/.test(trimmed) || trimmed === "}" || trimmed === "{") { i++; continue; }
-
-        // Комментарий-заголовок = новая категория.
+        // Комментарийная строка: заголовок новой категории.
+        // Исключение — одиночный комментарий непосредственно перед биндом
+        // без инлайн-описания у него: тогда он служит ему описанием.
         if (trimmed.startsWith("//")) {
-            const c = trimmed.replace(/^\/\/\s*/, "").replace(/^[─=\-*_]+/, "").replace(/[─=\-*_]+$/, "").trim();
+            const c = trimmed.replace(/^\/\/\s*/, "").replace(/^[─=\-*_\s]+/, "").replace(/[─=\-*_\s]+$/, "").trim();
             if (c.length === 0 || /^[─=\-*_]+$/.test(c)) { i++; continue; }
-            if (currentCat) cats.push(currentCat);
-            currentCat = { title: c, binds: [] };
+            // Смотрим на следующую осмысленную строку.
+            let nextCode = null, nextInline = null;
+            for (let k = i + 1; k < lines.length; k++) {
+                const sp = splitInlineComment(lines[k].trim());
+                if (sp.code.trim().length === 0) continue;
+                nextCode = sp.code.trim();
+                nextInline = sp.comment;
+                break;
+            }
+            const nextIsBind = nextCode !== null && /^[^\{\}]+\{/.test(nextCode);
+            if (nextIsBind && (nextInline === null || nextInline.length === 0)) {
+                pendingComment = c;   // описание следующего бинда
+            } else {
+                if (currentCat) cats.push(currentCat);
+                currentCat = { title: c, binds: [] };
+            }
             i++;
             continue;
         }
@@ -137,14 +192,16 @@ function parse(text) {
         const code = splitFirst.code;
         let inlineComment = splitFirst.comment;
 
-        // Строка вида: mod+Key { action... }
-        const bindMatch = code.match(/^[^\{\}]+?\s*(?:[a-z\-]+=[^\s\{]+\s*)*\{\s*(.*)$/);
-        if (bindMatch) {
-            const combo = code.replace(/\{[\s\S]*$/, "").trim();
-            let body = bindMatch[1];
+        // Строка вида: mod+Key [параметры] { действие... }
+        if (/^[^\{\}]+\{/.test(code)) {
+            // Имя блока до "{"; параметры вида cooldown-ms=150 отбрасываем.
+            const namePart = code.substring(0, code.indexOf("{")).trim();
+            const tokens = namePart.split(/\s+/).filter(t => t.length > 0 && !t.includes("="));
+            const combo = tokens.join("+");
+            let bodyText = code.substring(code.indexOf("{") + 1);
 
             // Дочитываем многострочное тело бинда до закрывающей скобки.
-            let depth = 1 + (body.match(/\{/g) || []).length - (body.match(/\}/g) || []).length;
+            let depth = (bodyText.match(/\{/g) || []).length - (bodyText.match(/\}/g) || []).length;
             let j = i;
             while (depth > 0 && j + 1 < lines.length) {
                 j++;
@@ -156,25 +213,24 @@ function parse(text) {
                         nextLine = splitNext.code;
                     }
                 }
-                body += "\n" + nextLine;
+                bodyText += "\n" + nextLine;
                 depth += (nextLine.match(/\{/g) || []).length;
                 depth -= (nextLine.match(/\}/g) || []).length;
             }
 
-            body = body.replace(/^[^{]*\{/, "").replace(/\}\s*$/, "").trim();
-            body = body.split('\n').map(l => splitInlineComment(l).code).join('\n').trim();
+            // Тело без последнего "}" и без комментариев.
+            const lastClose = bodyText.lastIndexOf("}");
+            if (lastClose !== -1) bodyText = bodyText.substring(0, lastClose);
+            bodyText = bodyText.split('\n').map(l => splitInlineComment(l).code).join('\n').trim();
 
-            if (!combo || /^[a-z\-]+=$/.test(combo)) { i = j + 1; continue; }
-
-            if (!currentCat) {
-                currentCat = { title: "Прочее", binds: [] };
+            if (combo.length > 0) {
+                if (!currentCat) currentCat = { title: "Прочее", binds: [] };
+                const desc = (pendingComment && pendingComment.length > 0) ? pendingComment
+                           : (inlineComment && inlineComment.length > 0) ? inlineComment
+                           : autoDesc(bodyText);
+                currentCat.binds.push({ keys: parseCombo(combo), desc: desc });
             }
-
-            currentCat.binds.push({
-                keys: parseCombo(combo),
-                desc: (inlineComment && inlineComment.length > 0) ? inlineComment : autoDesc(body)
-            });
-
+            pendingComment = null;
             i = j + 1;
             continue;
         }
