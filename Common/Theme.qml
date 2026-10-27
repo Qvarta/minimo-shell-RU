@@ -51,6 +51,7 @@ Singleton {
     readonly property int radiusField: 12
 
     readonly property string font: "Adwaita Sans"
+    readonly property int fontSize: 13            // базовый размер шрифта интерфейса
 
     readonly property int durFast: 160
     readonly property int durNormal: 360
