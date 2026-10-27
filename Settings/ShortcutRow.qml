@@ -2,65 +2,51 @@
 // Copyright (c) 2026 Diego Ledesma (TRN1) — Minimo OS
 pragma ComponentBehavior: Bound
 import QtQuick
+import "qml" as NQ // папка с парсером конфига niri (перенесён из плагина niri-cheatsheet)
 import "../Common"
 
-// Fila de un atajo: acción a la izquierda y sus combinaciones (teclas) a la derecha.
-// combos: [{ mods: ["Super", "Shift"], keys: ["←", "H"] }, …]. Teclas alternativas con
-// los mismos modificadores se separan con "/"; combinaciones distintas, con "o".
+// Строка горячих клавиш: слева описание действия, справа — комбинация клавиш.
+// keys — строка вида "Super + Shift + 1" (формат парсера niri-cheatsheet).
 Item {
     id: row
     property string label
-    property var combos: []
+    property string keys
     property bool last: false
     implicitHeight: Math.max(44, name.implicitHeight + 22)
+
+    // Парсер конфигурации niri (логика плагина niri-cheatsheet).
+    NQ.NiriBindsParser { id: parser }
+
+    // Метод получения клавиш: читает конфиг niri (binds.kdl) по пути configPath,
+    // парсит его и вызывает onDone с массивом категорий
+    // [{ title, binds: [{ keys, desc }] }].
+    function getShortcuts(configPath, onDone) {
+        var handler = function (categories) {
+            parser.parsed.disconnect(handler);
+            if (onDone) onDone(categories);
+        };
+        parser.parsed.connect(handler);
+        parser.parseFile(configPath);
+    }
 
     Text {
         id: name
         anchors.left: parent.left; anchors.leftMargin: 18
-        anchors.right: keys.left; anchors.rightMargin: 12
+        anchors.right: keysRow.left; anchors.rightMargin: 12
         anchors.verticalCenter: parent.verticalCenter
         text: row.label
         wrapMode: Text.WordWrap
         color: Theme.textPrimary; font.family: Theme.font; font.pixelSize: 14
     }
     Row {
-        id: keys
+        id: keysRow
         anchors.right: parent.right; anchors.rightMargin: 14
         anchors.verticalCenter: parent.verticalCenter
-        spacing: 10
+        spacing: 4
         Repeater {
-            model: row.combos
-            delegate: Row {
-                id: combo
-                required property var modelData
-                required property int index
-                spacing: 4
-                Text {
-                    visible: combo.index > 0
-                    anchors.verticalCenter: parent.verticalCenter
-                    rightPadding: 6
-                    text: I18n.tr("or"); color: Theme.textSecondary; font.family: Theme.font; font.pixelSize: 12
-                }
-                Repeater {
-                    model: combo.modelData.mods
-                    delegate: KeyCap { required property string modelData; text: modelData }
-                }
-                Repeater {
-                    model: combo.modelData.keys
-                    delegate: Row {
-                        id: alt
-                        required property string modelData
-                        required property int index
-                        spacing: 4
-                        Text {
-                            visible: alt.index > 0
-                            anchors.verticalCenter: parent.verticalCenter
-                            text: "/"; color: Theme.textSecondary; font.family: Theme.font; font.pixelSize: 12
-                        }
-                        KeyCap { text: alt.modelData }
-                    }
-                }
-            }
+            // Разбиваем "Super + A" в список частей ["Super", "A"].
+            model: row.keys.split("+").map(s => s.trim()).filter(s => s.length > 0)
+            delegate: KeyCap { required property string modelData; text: modelData }
         }
     }
     Rectangle {
