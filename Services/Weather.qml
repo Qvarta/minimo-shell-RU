@@ -389,21 +389,12 @@ Singleton {
     function fetchWeatherData(latitude, longitude, requestId, errorCallback) {
         var url = "https://api.open-meteo.com/v1/forecast?latitude=" + latitude + "&longitude=" + longitude + "&current_weather=true&current=relativehumidity_2m,surface_pressure,is_day&daily=temperature_2m_max,temperature_2m_min,weathercode,sunset,sunrise,wind_direction_10m_dominant,wind_speed_10m_max,relative_humidity_2m_mean,surface_pressure_mean&timezone=auto&wind_speed_unit=ms";
         var xhr = new XMLHttpRequest();
-        var startedAt = Date.now();
-        var networkFailureLogged = false;
         var networkFailureHandled = false;
-
-        function logNetworkFailure(source) {
-            if (networkFailureLogged)
-                return;
-            networkFailureLogged = true;
-        }
 
         function handleNetworkFailure(source) {
             if (networkFailureHandled)
                 return;
             networkFailureHandled = true;
-            logNetworkFailure(source);
             if (requestId === root.requestGeneration) {
                 isFetchingWeather = false;
                 root.scheduleRetry();
