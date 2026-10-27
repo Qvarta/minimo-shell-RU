@@ -1,0 +1,184 @@
+{
+  "config": "/home/ko/.config/niri/binds.kdl",
+  "cheatsheetData": [
+    {
+      "title": "Меню",
+      "binds": [
+        {
+          "keys": "F1",
+          "desc": "Меню плагинов"
+        },
+        {
+          "keys": "PRINT",
+          "desc": "Меню скриншотов"
+        },
+        {
+          "keys": "Super + ESCAPE",
+          "desc": "Меню сессии"
+        },
+        {
+          "keys": "Super + A",
+          "desc": "Меню приложений"
+        },
+        {
+          "keys": "Super + W",
+          "desc": "Меню обоев"
+        }
+      ]
+    },
+    {
+      "title": "Приложения",
+      "binds": [
+        {
+          "keys": "Super + T",
+          "desc": "Терминал"
+        },
+        {
+          "keys": "Super + E",
+          "desc": "Файловый менеджер"
+        },
+        {
+          "keys": "Super + C",
+          "desc": "Редактор кода"
+        },
+        {
+          "keys": "F12",
+          "desc": "VPN"
+        },
+        {
+          "keys": "Super + B",
+          "desc": "Браузер"
+        },
+        {
+          "keys": "Super + M",
+          "desc": "Музыка"
+        }
+      ]
+    },
+    {
+      "title": "Система",
+      "binds": [
+        {
+          "keys": "Super + Q",
+          "desc": "Закрыть окно"
+        },
+        {
+          "keys": "Super + R",
+          "desc": "Рестарт QS"
+        },
+        {
+          "keys": "Super + KP ADD",
+          "desc": "Громкость +"
+        },
+        {
+          "keys": "Super + KP SUBTRACT",
+          "desc": "Громкость -"
+        }
+      ]
+    },
+    {
+      "title": "Окна",
+      "binds": [
+        {
+          "keys": "Super + F1",
+          "desc": "Полный экран"
+        },
+        {
+          "keys": "Super + V",
+          "desc": "Плавающее окно"
+        },
+        {
+          "keys": "Super + O",
+          "desc": "Режим обзора"
+        }
+      ]
+    },
+    {
+      "title": "Фокус",
+      "binds": [
+        {
+          "keys": "Super + LEFT",
+          "desc": "Фокус влево"
+        },
+        {
+          "keys": "Super + RIGHT",
+          "desc": "Фокус вправо"
+        },
+        {
+          "keys": "Super + UP",
+          "desc": "Фокус вверх"
+        },
+        {
+          "keys": "Super + DOWN",
+          "desc": "Фокус вниз"
+        }
+      ]
+    },
+    {
+      "title": "Мышь",
+      "binds": [
+        {
+          "keys": "Super + MOUSE BACK",
+          "desc": "Раб. стол вверх"
+        },
+        {
+          "keys": "Super + MOUSE FORWARD",
+          "desc": "Раб. стол вниз"
+        },
+        {
+          "keys": "Super + WHEEL DOWN",
+          "desc": "Раб. стол след."
+        },
+        {
+          "keys": "Super + WHEEL UP",
+          "desc": "Раб. стол пред."
+        }
+      ]
+    },
+    {
+      "title": "Рабочие пространства",
+      "binds": [
+        {
+          "keys": "Super + 1",
+          "desc": "Раб. стол 1"
+        },
+        {
+          "keys": "Super + 2",
+          "desc": "Раб. стол 2"
+        },
+        {
+          "keys": "Super + 3",
+          "desc": "Раб. стол 3"
+        },
+        {
+          "keys": "Super + 4",
+          "desc": "Раб. стол 4"
+        },
+        {
+          "keys": "Super + 5",
+          "desc": "Раб. стол 5"
+        },
+        {
+          "keys": "Super + Shift + 1",
+          "desc": "Окно на раб. стол 1"
+        },
+        {
+          "keys": "Super + Shift + 2",
+          "desc": "Окно на раб. стол 2"
+        },
+        {
+          "keys": "Super + Shift + 3",
+          "desc": "Окно на раб. стол 3"
+        },
+        {
+          "keys": "Super + Shift + 4",
+          "desc": "Окно на раб. стол 4"
+        },
+        {
+          "keys": "Super + Shift + 5",
+          "desc": "Окно на раб. стол 5"
+        }
+      ]
+    }
+  ]
+}

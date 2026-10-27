@@ -1,0 +1,22 @@
+{
+  "id": "niri-cheatsheet",
+  "name": "Keybind Cheatsheet (Niri)",
+  "version": "1.0.0",
+  "minNoctaliaVersion": "3.6.0",
+  "author": "qvarta",
+  "license": "MIT",
+  "description": "Dynamic keyboard shortcuts cheatsheet that reads and displays Niri keybindings. Requires Niri window manager.",
+  "entryPoints": {
+    "main": "Main.qml",
+    "panel": "Panel.qml",
+    "settings": "Settings.qml"
+  },
+  "dependencies": {
+    "plugins": []
+  },
+  "metadata": {
+    "defaultSettings": {
+      "parsedData": [] 
+    }
+  }
+}
