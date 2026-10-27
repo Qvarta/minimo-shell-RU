@@ -62,42 +62,22 @@ Rectangle {
                 width: contentCol.width
                 spacing: 0
 
-                // Заголовок категории — акцентная плашка: фон из цвета темы (18%
-                // прозрачности) и тонкая рамка чуть насыщеннее, шрифт крупнее
-                // (Theme.fontSize + 4) и жирный. Отступы внутри Column, чтобы
-                // высота секции учитывалась автоматически.
-                Column {
-                    id: catHeaderWrap
-                    width: group.width
-                    leftPadding: 18; rightPadding: 18
-                    topPadding: group.index === 0 ? 4 : 20
+                // Заголовок категории. Как во всех остальных вкладках настроек
+                // (DisplayPage, PersonalizationPage, WallpapersPage) — SectionTitle:
+                // обычный текст без плашки, читаемый в обеих темах.
+                // Раньше здесь была «акцентная плашка»: Rectangle-заголовок лежал
+                // внутри Column с leftPadding/rightPadding, а Column не является Item
+                // с padding'ами до QtQuick 2.21, поэтому отступы молча игнорировались,
+                // availableWidth не резолвился (ширина заголовка = undefined → 0) и
+                // текст с инверсионным цветом на невидимой плашке не рисовался вовсе.
+                SectionTitle {
+                    id: catTitle
+                    required property int index
+                    width: group.width - 36
+                    x: 18
+                    topPadding: catTitle.index === 0 ? 4 : 20
                     bottomPadding: 8
-
-                    Rectangle {
-                        id: catHeader
-                        width: catHeaderWrap.availableWidth
-                        implicitHeight: catTitle.implicitHeight + 16
-                        radius: 10
-                        color: Qt.rgba(Theme.fill.r, Theme.fill.g, Theme.fill.b, 0.18)
-                        border.width: 1
-                        border.color: Qt.rgba(Theme.fill.r, Theme.fill.g, Theme.fill.b, 0.35)
-
-                        Text {
-                            id: catTitle
-                            anchors.left: parent.left; anchors.leftMargin: 12
-                            anchors.right: parent.right; anchors.rightMargin: 12
-                            anchors.verticalCenter: parent.verticalCenter
-                            text: group.modelData.title.toUpperCase()
-                            // Не Theme.fill: в светлой теме это почти чёрный, а фон
-                            // плашки — он же с 18% прозрачности поверх белой карточки,
-                            // т.е. тот же тон. Берём onFill (инверсия акцента), чтобы
-                            // текст читался на любой теме.
-                            color: Theme.onFill
-                            font.family: Theme.font
-                            font.pixelSize: Theme.fontSize + 4
-                            font.weight: Font.Bold
-                        }
-                    }
+                    text: group.modelData.title.toUpperCase()
                 }
 
                 Repeater {
