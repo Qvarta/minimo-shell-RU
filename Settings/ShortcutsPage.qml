@@ -71,11 +71,13 @@ Rectangle {
                 // availableWidth не резолвился (ширина заголовка = undefined → 0) и
                 // текст с инверсионным цветом на невидимой плашке не рисовался вовсе.
                 SectionTitle {
-                    id: catTitle
-                    required property int index
+                    // required-свойства делегата инициализируются только у самого
+                    // делегата (group), поэтому здесь просто читаем group.index.
+                    // (Раньше здесь было `required property int index` — Repeater
+                    // его не инициализировал, делегат падал с ошибкой создания.)
                     width: group.width - 36
                     x: 18
-                    topPadding: catTitle.index === 0 ? 4 : 20
+                    topPadding: group.index === 0 ? 4 : 20
                     bottomPadding: 8
                     text: group.modelData.title.toUpperCase()
                 }
