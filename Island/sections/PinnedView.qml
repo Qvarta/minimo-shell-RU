@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Diego Ledesma (TRN1) — Minimo OS
+
 pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
@@ -14,14 +14,15 @@ Item {
     signal clipboard()
     signal notes()
     signal radio()
-    // Встроенные закреплённые действия. Кнопка радио — локальное действие,
-    // добавляется сверх builtins.
+
     readonly property var builtins: [
+        { id: "radio", label: I18n.tr("Radio"), icon: "music" },
         { id: "capture", label: I18n.tr("Screenshot"), icon: "capture" },
         { id: "notes", label: I18n.tr("Notes"), icon: "note" },
-        { id: "clipboard", label: I18n.tr("Clipboard"), icon: "clipboard" }
-    ].concat([{ id: "radio", label: I18n.tr("Radio"), icon: "music" }])
-    readonly property var buttons: ["capture", "notes", "clipboard", "radio"]
+        { id: "clipboard", label: I18n.tr("Clipboard"), icon: "clipboard" },
+    ]
+    readonly property var buttons: ["radio", "capture", "notes", "clipboard"]
+
     implicitHeight: col.implicitHeight
 
     readonly property string screenshotDirAbs: (Quickshell.env("HOME") || "/tmp") + "/Pictures/Screenshots"
@@ -50,7 +51,6 @@ Item {
         const lang = DisplayState.language;
         const t1 = lang === "en" ? "Screenshot saved" : lang === "ru" ? "Снимок сохранён" : "Captura guardada";
         const t2 = lang === "en" ? "Copied to the clipboard" : lang === "ru" ? "Скопирован в буфер обмена" : "Copiada al portapapeles";
-        // Последний созданный .png в каталоге снимков, экранированный для GVariant.
         const script = 'q=$(ls -t "$1"/*.png 2>/dev/null | head -n1); q=$(printf "%s" "$q" | sed "s/\x27/\\\\\x27/g"); ' + 'gdbus call --session --dest org.freedesktop.Notifications --object-path /org/freedesktop/Notifications ' + '--method org.freedesktop.Notifications.Notify "Screenshots" 0 "" "$2" "$3" "[]" ' + '"{\x27image-path\x27: <\x27file://$q\x27>, \x27x-minimo-open\x27: <\x27$q\x27>}" 4000 >/dev/null 2>&1 || true';
         Quickshell.execDetached(["sh", "-c", script, "notify", root.screenshotDirAbs, t1, t2]);
     }
@@ -84,8 +84,6 @@ Item {
         }
     }
 
-    // Горизонтальная кнопка закреплённого действия: иконка слева, подпись справа.
-    // Цвета и состояния повторяют MenuButton.
     component PinnedButton:
     Item {
         id: btn
