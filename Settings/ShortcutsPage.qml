@@ -62,11 +62,38 @@ Rectangle {
                 width: contentCol.width
                 spacing: 0
 
-                SectionTitle {
-                    text: group.modelData.title.toUpperCase()
-                    leftPadding: 18
-                    topPadding: group.index === 0 ? 0 : 14
-                    bottomPadding: 6
+                // Заголовок категории — акцентная плашка: фон из цвета темы (18%
+                // прозрачности) и тонкая рамка чуть насыщеннее, шрифт крупнее
+                // (Theme.fontSize + 4) и жирный. Отступы внутри Column, чтобы
+                // высота секции учитывалась автоматически.
+                Column {
+                    id: catHeaderWrap
+                    width: group.width
+                    leftPadding: 18; rightPadding: 18
+                    topPadding: group.index === 0 ? 4 : 20
+                    bottomPadding: 8
+
+                    Rectangle {
+                        id: catHeader
+                        width: catHeaderWrap.availableWidth
+                        implicitHeight: catTitle.implicitHeight + 16
+                        radius: 10
+                        color: Qt.rgba(Theme.fill.r, Theme.fill.g, Theme.fill.b, 0.18)
+                        border.width: 1
+                        border.color: Qt.rgba(Theme.fill.r, Theme.fill.g, Theme.fill.b, 0.35)
+
+                        Text {
+                            id: catTitle
+                            anchors.left: parent.left; anchors.leftMargin: 12
+                            anchors.right: parent.right; anchors.rightMargin: 12
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: group.modelData.title.toUpperCase()
+                            color: Theme.fill
+                            font.family: Theme.font
+                            font.pixelSize: Theme.fontSize + 4
+                            font.weight: Font.Bold
+                        }
+                    }
                 }
 
                 Repeater {
