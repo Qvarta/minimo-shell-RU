@@ -334,6 +334,10 @@ PanelWindow {
             if (cmd === "show") { win.shown = true; hideTimer.stop() }
             else if (cmd === "hide") { win.expanded = false; win.shown = false }
             else if (cmd === "open") win.expanded = true
+            else if (cmd === "quickactions") {
+                // Открыть вкладку быстрых действий напрямую через IPC.
+                win.panel = false; win.expanded = true; menu.showQuickActions()
+            }
             else if (cmd === "clipboard") {
                 // Super+V: abre la isla en el portapapeles (o la cierra si ya está ahí).
                 if (win.expanded && menu.page === "clip") win.collapse()
