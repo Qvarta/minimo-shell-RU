@@ -362,6 +362,12 @@ Singleton {
             }
         }
         xhr.onerror = function () {
+            console.warn("[Weather][geocode] XMLHttpRequest onerror"
+                         + ", requestId=" + requestId
+                         + ", status=" + xhr.status
+                         + ", readyState=" + xhr.readyState
+                         + ", elapsedMs=" + (Date.now() - startedAt)
+                         + ", url=" + geoUrl);
             handleNetworkFailure("onerror");
         };
         xhr.onreadystatechange = function () {
@@ -396,6 +402,9 @@ Singleton {
             }
         };
         xhr.open("GET", geoUrl);
+        console.info("[Weather][geocode] sending GET request"
+                     + ", requestId=" + requestId
+                     + ", url=" + geoUrl);
         xhr.send();
     }
 
@@ -429,6 +438,12 @@ Singleton {
             }
         }
         xhr.onerror = function () {
+            console.warn("[Weather][forecast] XMLHttpRequest onerror"
+                         + ", requestId=" + requestId
+                         + ", status=" + xhr.status
+                         + ", readyState=" + xhr.readyState
+                         + ", elapsedMs=" + (Date.now() - startedAt)
+                         + ", url=" + url);
             logNetworkFailure("onerror");
             if (requestId === root.requestGeneration)
                 isFetchingWeather = false;
@@ -481,6 +496,9 @@ Singleton {
             }
         };
         xhr.open("GET", url);
+        console.info("[Weather][forecast] sending GET request"
+                     + ", requestId=" + requestId
+                     + ", url=" + url);
         xhr.send();
     }
 
