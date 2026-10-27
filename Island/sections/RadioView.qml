@@ -4,7 +4,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
 import Quickshell.Io
-import "../Common"
+import "../../Common"
 
 // Панель «Радио» внутри острова (порт плагина online-radio для Noctalia Shell):
 // сетка станций, воспроизведение через cvlc, метаданные (артист/трек) из icy-заголовков.
@@ -17,8 +17,8 @@ Item {
     // ───────────────────────── Файл состояния ─────────────────────────
     readonly property string dir: Quickshell.env("HOME") + "/.config/minimo-os"
     readonly property string fileUrl: "file://" + dir + "/radio.json"
-    // Станции по умолчанию (из online-radio/stations.json), если файла ещё нет.
-    readonly property var defaultStationsUrl: "qrc:/qt/qml/shell/online-radio/stations.json"
+    // Станции по умолчанию (копия online-radio/stations.json рядом с конфигурацией).
+    readonly property string defaultStationsPath: Quickshell.env("HOME") + "/.config/minimo-os/radio-stations.json"
 
     property bool loaded: false
     property var stations: []                  // [{ name, url }]
@@ -46,10 +46,10 @@ Item {
         }
     }
 
-    // Если своего файла нет — берём станции из stations.json плагина один раз.
+    // Если своего файла нет — берём станции из radio-stations.json один раз.
     FileView {
         id: defaultsView
-        path: root.defaultStationsUrl
+        path: "file://" + root.defaultStationsPath
         blockLoading: true
         printErrors: false
     }
@@ -247,9 +247,18 @@ Item {
     function getCurrentRow() { return Math.floor(currentIndex / columns) }
     function getCurrentColumn() { return currentIndex % columns }
 
+    // Posicionamiento sin enums de GridView/ListView (no disponibles en quickshell):
+    // desplaza el grid para que la celda del índice quede visible.
     function ensureVisible() {
-        if (gridView.count > currentIndex)
-            gridView.positionViewAtIndex(currentIndex, GridView.Contain)
+        if (gridView.count <= currentIndex || gridView.contentHeight <= gridView.height) return;
+        const row = Math.floor(currentIndex / columns);
+        const cellTop = row * gridView.cellHeight;
+        const cellBottom = cellTop + gridView.cellHeight;
+        if (cellTop < gridView.contentY) {
+            gridView.contentY = cellTop;
+        } else if (cellBottom > gridView.contentY + gridView.height) {
+            gridView.contentY = cellBottom - gridView.height;
+        }
     }
 
     function selectStation(index) {
@@ -373,11 +382,6 @@ Item {
             cellWidth: Math.floor((width - (root.columns - 1) * root.cellSpacing) / root.columns)
             cellHeight: cellWidth + 44
 
-            ScrollBar.vertical: ScrollBar {
-                policy: ScrollBar.AsNeeded
-                background: Rectangle { color: Theme.track; implicitWidth: 5; radius: 3 }
-                contentItem: Rectangle { color: Theme.fill; radius: 3 }
-            }
 
             delegate: Item {
                 id: delegateContainer
