@@ -88,7 +88,11 @@ Rectangle {
                             anchors.right: parent.right; anchors.rightMargin: 12
                             anchors.verticalCenter: parent.verticalCenter
                             text: group.modelData.title.toUpperCase()
-                            color: Theme.fill
+                            // Не Theme.fill: в светлой теме это почти чёрный, а фон
+                            // плашки — он же с 18% прозрачности поверх белой карточки,
+                            // т.е. тот же тон. Берём onFill (инверсия акцента), чтобы
+                            // текст читался на любой теме.
+                            color: Theme.onFill
                             font.family: Theme.font
                             font.pixelSize: Theme.fontSize + 4
                             font.weight: Font.Bold
