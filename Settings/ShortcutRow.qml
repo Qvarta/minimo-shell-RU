@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Diego Ledesma (TRN1) — Minimo OS
-pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
 import Quickshell.Io
@@ -80,7 +79,24 @@ Item {
         Repeater {
             // Разбиваем "Super + A" в список частей ["Super", "A"].
             model: row.keys.split("+").map(s => s.trim()).filter(s => s.length > 0)
-            delegate: KeyCap { required property string modelData; text: modelData }
+            // Делегат — базовый Rectangle, как во всех остальных Repeater проекта:
+            // рисуем «клавишу» (chip) напрямую.
+            delegate: Rectangle {
+                id: cap
+                required property string modelData
+                implicitWidth: Math.max(26, capLabel.implicitWidth + 16)
+                implicitHeight: 24
+                radius: 7
+                color: Theme.raised
+                border.width: 1; border.color: Theme.track
+                Text {
+                    id: capLabel
+                    anchors.centerIn: parent
+                    text: cap.modelData
+                    color: Theme.textPrimary
+                    font.family: Theme.font; font.pixelSize: 12; font.weight: Font.Medium
+                }
+            }
         }
     }
     Rectangle {
