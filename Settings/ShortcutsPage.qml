@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Diego Ledesma (TRN1) — Minimo OS
-pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
 import "../Common"
@@ -55,6 +54,7 @@ Rectangle {
 
         Repeater {
             model: root.groups
+            // Делегат — обычный Column, как во всех остальных Repeater проекта.
             delegate: Column {
                 id: group
                 required property var modelData
@@ -70,16 +70,20 @@ Rectangle {
                 }
 
                 Repeater {
+                    id: innerRep
                     model: group.modelData.binds
                     delegate: ShortcutRow {
                         id: bind
                         required property var modelData
                         required property int index
-                        required property int count
                         width: group.width
                         label: bind.modelData.desc
                         keys: bind.modelData.keys
-                        last: bind.index === bind.count - 1 && group.index === root.groups.length - 1
+                        // Последний бинд последней категории: без разделительной линии.
+                        // Число элементов берём из model.length (контекстное свойство
+                        // count Quickshell не предоставляет).
+                        last: bind.index === (group.modelData.binds.length ?? innerRep.itemCount) - 1
+                              && group.index === root.groups.length - 1
                     }
                 }
             }
