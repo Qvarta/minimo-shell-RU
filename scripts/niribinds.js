@@ -1,13 +1,6 @@
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Diego Ledesma (TRN1) — Minimo OS
 .pragma library
 
-// Чистый JS-парсер конфигурации клавиш niri (без QML-типов, работает в любой
-// контексте). Логика перенесена из плагина niri-cheatsheet (Main.qml): разбор
-// категорий (комментарии-заголовки //), биндов и нормализация названий клавиш.
-// Возвращает массив категорий [{ title, binds: [{ keys: "Super + A", desc }] }].
-
-// Приводит название клавиши к читаемому виду (Escape -> ESCAPE, page_up -> PAGE UP).
 function normalizeKey(key) {
     const k = key.trim();
     const low = k.toLowerCase();
@@ -32,8 +25,7 @@ function normalizeKey(key) {
     return k.toUpperCase();
 }
 
-// Собирает человекочитаемую комбинацию: модификаторы в порядке Super, Ctrl, Alt, Shift,
-// затем основная клавиша ("mod+Shift+a" -> "Super + Shift + A").
+
 function parseCombo(combo) {
     const parts = combo.split('+').map(p => p.trim()).filter(p => p.length > 0);
     let mods = [];
@@ -58,7 +50,6 @@ function parseCombo(combo) {
     return fullKey;
 }
 
-// Описание действия по телу бинда (когда в конфиге нет комментария //).
 function autoDesc(body) {
     const first = body.split(';')[0].trim();
     if (!first) return "Нет описания";
@@ -90,7 +81,6 @@ function autoDesc(body) {
     return first;
 }
 
-// Разделяет строку на код и инлайн-комментарий "// ...", не трогая строки в кавычках.
 function splitInlineComment(s) {
     let inStr = false;
     for (let i = 0; i < s.length - 1; i++) {
@@ -108,14 +98,6 @@ function splitInlineComment(s) {
     return { code: s, comment: null };
 }
 
-// Основной парсер: текст конфига niri -> массив категорий с биндами.
-// Двухпроходный алгоритм:
-//  1) вырезаем секцию binds { ... } (или input { binds { ... } }) стеком
-//     скобок, игнорируя кавычки и комментарии;
-//  2) разбираем её построчно: комментарий-заголовок = категория, строка
-//     вида "Mod+A { action... }" = бинд (поддерживаются многострочные тела).
-
-// Вырезает содержимое блока `name { ... }` из текста, возвращает строку или null.
 function _extractBlock(text, name) {
     const re = new RegExp("(^|\\s)" + name + "\\s*\\{", "m");
     const m = text.match(re);
@@ -143,8 +125,6 @@ function _extractBlock(text, name) {
 }
 
 function parse(text) {
-    // Секция биндов может лежать как в binds.kdl ("binds { ... }"),
-    // так и внутри input { ... } в config.kdl.
     let body = _extractBlock(text, "binds");
     if (body === null) {
         const input = _extractBlock(text, "input");
@@ -153,8 +133,8 @@ function parse(text) {
     if (body === null) return [];
 
     const cats = [];
-    let currentCat = null;      // Текущая категория (комментарий-заголовок).
-    let pendingComment = null;  // Одиночный комментарий перед биндом — его описание.
+    let currentCat = null;
+    let pendingComment = null;
 
     const lines = body.split('\n');
     let i = 0;
@@ -162,9 +142,6 @@ function parse(text) {
         const trimmed = lines[i].trim();
         if (trimmed.length === 0) { i++; continue; }
 
-        // Комментарийная строка: заголовок новой категории.
-        // Исключение — одиночный комментарий непосредственно перед биндом
-        // без инлайн-описания у него: тогда он служит ему описанием.
         if (trimmed.startsWith("//")) {
             const c = trimmed.replace(/^\/\/\s*/, "").replace(/^[─=\-*_\s]+/, "").replace(/[─=\-*_\s]+$/, "").trim();
             if (c.length === 0 || /^[─=\-*_]+$/.test(c)) { i++; continue; }
@@ -179,7 +156,7 @@ function parse(text) {
             }
             const nextIsBind = nextCode !== null && /^[^\{\}]+\{/.test(nextCode);
             if (nextIsBind && (nextInline === null || nextInline.length === 0)) {
-                pendingComment = c;   // описание следующего бинда
+                pendingComment = c;  
             } else {
                 if (currentCat) cats.push(currentCat);
                 currentCat = { title: c, binds: [] };
@@ -192,15 +169,12 @@ function parse(text) {
         const code = splitFirst.code;
         let inlineComment = splitFirst.comment;
 
-        // Строка вида: mod+Key [параметры] { действие... }
         if (/^[^\{\}]+\{/.test(code)) {
-            // Имя блока до "{"; параметры вида cooldown-ms=150 отбрасываем.
             const namePart = code.substring(0, code.indexOf("{")).trim();
             const tokens = namePart.split(/\s+/).filter(t => t.length > 0 && !t.includes("="));
             const combo = tokens.join("+");
             let bodyText = code.substring(code.indexOf("{") + 1);
 
-            // Дочитываем многострочное тело бинда до закрывающей скобки.
             let depth = (bodyText.match(/\{/g) || []).length - (bodyText.match(/\}/g) || []).length;
             let j = i;
             while (depth > 0 && j + 1 < lines.length) {
@@ -218,7 +192,6 @@ function parse(text) {
                 depth -= (nextLine.match(/\}/g) || []).length;
             }
 
-            // Тело без последнего "}" и без комментариев.
             const lastClose = bodyText.lastIndexOf("}");
             if (lastClose !== -1) bodyText = bodyText.substring(0, lastClose);
             bodyText = bodyText.split('\n').map(l => splitInlineComment(l).code).join('\n').trim();

@@ -1,16 +1,14 @@
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Diego Ledesma (TRN1) — Minimo OS
+
 import QtQuick
 import "../Common"
 
-// Fila con título, detalle y un interruptor a la derecha.
 Item {
     id: row
     property string text
     property string detail
     property bool checked
     signal toggled(bool v)
-    // Crece si el detalle ocupa varias líneas (nunca queda tapado por el interruptor).
     implicitHeight: Math.max(64, col.implicitHeight + 24)
     Column {
         id: col

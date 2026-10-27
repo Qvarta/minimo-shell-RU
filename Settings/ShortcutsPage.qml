@@ -1,13 +1,10 @@
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Diego Ledesma (TRN1) — Minimo OS
+
 import QtQuick
 import Quickshell
 import "../Common"
 import "../Services"
 
-// Горячие клавиши: список биндов, прочитанных из конфигурации niri.
-// Получением и парсингом клавиш занимается ShortcutRow.getShortcuts() —
-// самостоятельный парсер (logic/niribinds.js), не зависящий от внешних плагинов.
 Rectangle {
     id: root
     radius: Theme.radiusCard
@@ -23,17 +20,14 @@ Rectangle {
     property var groups: []
     property bool loaded: false
 
-    // При открытии вкладки один раз загружаем список клавиш.
     onShownChanged: if (shown && !loaded) parseConfig(0)
 
-    // Невидимая строка-«пробник»: используется только ради метода getShortcuts().
     ShortcutRow {
         id: rowProbe
         visible: false
         width: 0; height: 0
     }
 
-    // Пробуем кандидаты конфига по очереди; результат приходит через onDone.
     function parseConfig(index) {
         if (index >= configCandidates.length) { loaded = true; return; }
         rowProbe.getShortcuts(configCandidates[index], categories => {
@@ -54,7 +48,6 @@ Rectangle {
 
         Repeater {
             model: root.groups
-            // Делегат — обычный Column, как во всех остальных Repeater проекта.
             delegate: Column {
                 id: group
                 required property var modelData
@@ -62,15 +55,7 @@ Rectangle {
                 width: contentCol.width
                 spacing: 0
 
-                // Заголовок категории — собственный компонент (без SectionTitle):
-                // плашка на весь фон карточки (Theme.field — контрастирует и с
-                // белой/чёрной карточкой root, и с рядами биндов ShortcutRow),
-                // скруглённая, текст по центру, стиль шрифта как у SectionTitle.
-                // ВАЖНО: width задаётся явно (group.width - 36), height — из
-                // implicitHeight текста + вертикальных отступов. Никаких
-                // padding/availableWidth у Rectangle — эти свойства есть только у
-                // Control/PaddingItem, а молча нерезолвящаяся привязка давала
-                // ширину 0 и невидимый заголовок (первоначальный баг).
+                // Заголовок категории
                 Rectangle {
                     id: catHeader
                     width: group.width - 36
@@ -104,9 +89,6 @@ Rectangle {
                         width: group.width
                         label: bind.modelData.desc
                         keys: bind.modelData.keys
-                        // Последний бинд последней категории: без разделительной линии.
-                        // Число элементов берём из model.length (контекстное свойство
-                        // count Quickshell не предоставляет).
                         last: bind.index === (group.modelData.binds.length ?? innerRep.itemCount) - 1
                               && group.index === root.groups.length - 1
                     }
@@ -114,7 +96,7 @@ Rectangle {
             }
         }
 
-        // Сообщение, если бинды не найдены (например, сессия не niri).
+        // если бинды не найдены 
         Text {
             visible: root.loaded && root.groups.length === 0
             anchors.horizontalCenter: parent.horizontalCenter

@@ -4,7 +4,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import "../Common"
-import "logic/niribinds.js" as NB
+import "../scripts/niribinds.js" as NB
 
 
 Item {
