@@ -12,9 +12,7 @@ Item {
     // ───────────────────────── Файл состояния ─────────────────────────
     readonly property string dir: Quickshell.env("HOME") + "/.config/minimo-os"
     readonly property string fileUrl: "file://" + dir + "/radio.json"
-    // Станции по умолчанию (копия online-radio/stations.json рядом с конфигурацией).
     readonly property string defaultStationsPath: Quickshell.env("HOME") + "/.config/minimo-os/radio-stations.json"
-    // Путь к шаблону станций в поставке (assets/radio-stations.json).
     readonly property string bundledStationsPath: Qt.resolvedUrl("../../assets/radio-stations.json").toString().replace("file://", "")
 
     property bool loaded: false
@@ -83,7 +81,7 @@ Item {
                     return
                 var list = []
                 try {
-                    defaultsView.reload()   // перечитать после возможного копирования
+                    defaultsView.reload()   
                     var j = JSON.parse(defaultsView.text())
                     var arr = Array.isArray(j) ? j : (j && Array.isArray(j.stations) ? j.stations : [])
                     list = arr.map(s => ({ name: s.name || "", url: s.url || "" })).filter(s => s.name && s.url)
@@ -360,7 +358,7 @@ Item {
         width: parent.width
         spacing: 14
 
-        // Заголовок: кнопка «назад», название (или имя играющей станции).
+        // Заголовок
         Item {
             width: parent.width
             height: 32
@@ -446,7 +444,7 @@ Item {
                             Behavior on scale { NumberAnimation { duration: 200; easing.type: Easing.InOutQuad } }
                             transformOrigin: Item.Center
 
-                            // Плейсхолдер (пока нет картинки)
+                            // Плейсхолдер
                             Rectangle {
                                 id: iconPlaceholder
                                 anchors.fill: parent
@@ -502,7 +500,7 @@ Item {
                                 property color bgWidget: Theme.card
                                 property vector2d resolution: Qt.vector2d(width, height)
                                 property color bgColor1: "#2C7BFF"
-                                fragmentShader: Qt.resolvedUrl("../assets/radio/ring.qsb")
+                                fragmentShader: Qt.resolvedUrl("../../shaders/ring.qsb")
 
                                 Item {
                                     id: shaderAnimator
