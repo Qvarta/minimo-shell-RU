@@ -29,63 +29,18 @@ Item {
         if (buttons.length === 0)
             return
         currentIndex = (currentIndex + delta + buttons.length) % buttons.length
-        Qt.callLater(function() {
-            const button = actionRepeater.itemAt(root.currentIndex)
-            if (root.enabled && root.visible && button)
-                button.forceActiveFocus()
-        })
     }
 
-    // Delegates can be created after the page becomes enabled. Retry focus briefly
-    // instead of relying on a single callLater that can run before itemAt() exists.
-    function requestKeyboardFocus() {
-        focusRetries = 0
-        focusTimer.restart()
-    }
-
-    property int focusRetries: 0
-    Timer {
-        id: focusTimer
-        interval: 50
-        repeat: true
-        onTriggered: {
-            if (!root.enabled || !root.visible) {
-                stop()
-                return
-            }
-            const button = actionRepeater.itemAt(root.currentIndex)
-            if (button) {
-                button.forceActiveFocus()
-                if (button.activeFocus) {
-                    stop()
-                    return
-                }
-            }
-            if (++root.focusRetries >= 10)
-                stop()
-        }
-    }
-
-    focus: enabled && visible
+    // Match RadioView: the page root owns focus and handles keyboard navigation.
+    focus: enabled
     onEnabledChanged: {
-        if (enabled) {
-            currentIndex = 0
-            requestKeyboardFocus()
-        } else {
-            focusTimer.stop()
-        }
+        if (enabled)
+            Qt.callLater(function() {
+                if (root.enabled)
+                    root.forceActiveFocus()
+            })
     }
-    onVisibleChanged: {
-        if (visible) {
-            currentIndex = 0
-            requestKeyboardFocus()
-        } else {
-            focusTimer.stop()
-        }
-    }
-    Component.onCompleted: requestKeyboardFocus()
 
-    Keys.priority: Keys.BeforeItem
     Keys.onEscapePressed: event => {
         event.accepted = true
         root.back()
@@ -94,11 +49,6 @@ Item {
     Keys.onDownPressed: event => { event.accepted = true; moveSelection(1) }
     Keys.onLeftPressed: event => { event.accepted = true; moveSelection(-1) }
     Keys.onRightPressed: event => { event.accepted = true; moveSelection(1) }
-    Keys.onTabPressed: event => {
-        event.accepted = true
-        moveSelection((event.modifiers & Qt.ShiftModifier) ? -1 : 1)
-    }
-    Keys.onBacktabPressed: event => { event.accepted = true; moveSelection(-1) }
     Keys.onReturnPressed: event => {
         event.accepted = true
         root.activate(root.buttons[root.currentIndex])
@@ -186,23 +136,6 @@ Item {
         implicitHeight: 52
         width: implicitWidth
         height: implicitHeight
-        activeFocusOnTab: true
-
-        Keys.priority: Keys.BeforeItem
-        Keys.onUpPressed: event => { event.accepted = true; root.moveSelection(-1) }
-        Keys.onDownPressed: event => { event.accepted = true; root.moveSelection(1) }
-        Keys.onLeftPressed: event => { event.accepted = true; root.moveSelection(-1) }
-        Keys.onRightPressed: event => { event.accepted = true; root.moveSelection(1) }
-        Keys.onTabPressed: event => {
-            event.accepted = true
-            root.moveSelection((event.modifiers & Qt.ShiftModifier) ? -1 : 1)
-        }
-        Keys.onBacktabPressed: event => { event.accepted = true; root.moveSelection(-1) }
-        Keys.onReturnPressed: event => { event.accepted = true; root.activate(root.buttons[root.currentIndex]) }
-        Keys.onEnterPressed: event => { event.accepted = true; root.activate(root.buttons[root.currentIndex]) }
-        Keys.onSpacePressed: event => { event.accepted = true; root.activate(root.buttons[root.currentIndex]) }
-        Keys.onEscapePressed: event => { event.accepted = true; root.back() }
-
         Rectangle {
             id: background
             anchors.fill: parent
@@ -215,15 +148,6 @@ Item {
             }
             Behavior on scale {
                 NumberAnimation { duration: 120; easing.type: Easing.OutQuad }
-            }
-
-            Rectangle {
-                anchors.fill: parent
-                radius: parent.radius
-                color: "transparent"
-                border.width: 2
-                border.color: Theme.hover
-                visible: btn.activeFocus
             }
 
             Rectangle {
