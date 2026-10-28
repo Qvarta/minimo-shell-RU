@@ -333,12 +333,27 @@ Item {
         }
     }
 
-    Keys.onUpPressed: moveSelection(0, -1)
-    Keys.onDownPressed: moveSelection(0, 1)
-    Keys.onLeftPressed: moveSelection(-1, 0)
-    Keys.onRightPressed: moveSelection(1, 0)
-    Keys.onReturnPressed: activateCurrentStation()
-    Keys.onEnterPressed: activateCurrentStation()
+    // RadioView is embedded in IslandMenu, whose parent keeps its own focus.
+    // Claim focus whenever this page becomes active so arrow/Enter keys reach us.
+    focus: enabled
+    onEnabledChanged: {
+        if (enabled)
+            Qt.callLater(function() {
+                if (root.enabled)
+                    root.forceActiveFocus()
+            })
+    }
+
+    Keys.onEscapePressed: event => {
+        event.accepted = true
+        root.back()
+    }
+    Keys.onUpPressed: event => { event.accepted = true; moveSelection(0, -1) }
+    Keys.onDownPressed: event => { event.accepted = true; moveSelection(0, 1) }
+    Keys.onLeftPressed: event => { event.accepted = true; moveSelection(-1, 0) }
+    Keys.onRightPressed: event => { event.accepted = true; moveSelection(1, 0) }
+    Keys.onReturnPressed: event => { event.accepted = true; activateCurrentStation() }
+    Keys.onEnterPressed: event => { event.accepted = true; activateCurrentStation() }
 
     implicitHeight: col.implicitHeight
 
@@ -551,8 +566,5 @@ Item {
         }
     }
 
-    Component.onCompleted: {
-        forceActiveFocus()
-        root.ensureDefaults(null)
-    }
+    Component.onCompleted: root.ensureDefaults(null)
 }
