@@ -14,8 +14,6 @@ Row {
     id: root
     signal done()
     signal quickActions()
-    // Abre el panel de energía (PowerView) en IslandMenu.
-    signal power()
 
     readonly property var commands: ({
         reboot: "systemctl reboot",
@@ -44,6 +42,5 @@ Row {
 
     MenuButton { icon: "logout"; label: I18n.tr("Log out"); armed: root.armed === "logout"; onActivated: root.press("logout") }
     MenuButton { icon: "restart"; label: I18n.tr("Restart"); armed: root.armed === "reboot"; onActivated: root.press("reboot") }
-    MenuButton { icon: "power"; label: I18n.tr("Shut down"); armed: root.armed === "poweroff"; onActivated: root.press("poweroff") }
     MenuButton { icon: "apps"; label: I18n.tr("Quick actions"); onActivated: root.quickActions() }
 }
