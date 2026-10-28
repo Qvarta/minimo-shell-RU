@@ -16,12 +16,11 @@ Item {
     property bool open: false
     readonly property bool searchFocused: search.hasFocus
     property alias character: chr
-    property string page: "menu"   // "menu" | "clip" | "cal" | "power" | "quickactions" | "notes" | "weather" | "radio"
-    implicitHeight: (page === "clip" ? clip.implicitHeight : page === "cal" ? cal.implicitHeight : page === "power" ? power.implicitHeight : page === "quickactions" ? quickActionsView.implicitHeight : page === "notes" ? notes.implicitHeight : page === "weather" ? weather.implicitHeight : page === "radio" ? radio.implicitHeight : col.implicitHeight) + 40
+    property string page: "menu"   // "menu" | "clip" | "cal" | "quickactions" | "notes" | "weather" | "radio"
+    implicitHeight: (page === "clip" ? clip.implicitHeight : page === "cal" ? cal.implicitHeight : page === "quickactions" ? quickActionsView.implicitHeight : page === "notes" ? notes.implicitHeight : page === "weather" ? weather.implicitHeight : page === "radio" ? radio.implicitHeight : col.implicitHeight) + 40
 
     function showClipboard() { clip.refresh(); page = "clip" }
     function showQuickActions() { page = "quickactions" }
-    function showPower() { power.reset(); page = "power" }
 
     // El buscador no se enfoca solo: se activa al hacerle clic.
     function opened() { search.reset() }
@@ -138,8 +137,6 @@ Item {
                 anchors.horizontalCenter: parent.horizontalCenter
                 onDone: root.done()
                 onQuickActions: root.page = "quickactions"
-                // La acción de energía completa vive en su propio panel (como el calendario).
-                onPower: root.showPower()
             } }
     }
 
@@ -180,18 +177,6 @@ Item {
         onBack: root.page = "menu"
     }
 
-    PowerPanel {
-        id: power
-        x: root.page === "power" ? 20 : root.width * 0.3
-        y: 20
-        width: root.width - 40
-        opacity: root.page === "power" ? 1 : 0
-        visible: opacity > 0
-        enabled: root.page === "power"
-        Behavior on x { NumberAnimation { duration: 320; easing.type: Easing.OutQuint } }
-        Behavior on opacity { NumberAnimation { duration: 220 } }
-        onBack: root.page = "menu"
-    }
 
     QuickActionsView {
         id: quickActionsView
