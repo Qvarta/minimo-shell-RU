@@ -23,6 +23,50 @@ Item {
         { id: "clipboard", label: I18n.tr("Clipboard"), icon: "clipboard" },
     ]
     readonly property var buttons: ["radio", "capture", "notes", "clipboard"]
+    property int currentIndex: 0
+
+    function moveSelection(delta) {
+        if (buttons.length === 0)
+            return
+        currentIndex = (currentIndex + delta + buttons.length) % buttons.length
+    }
+
+    // This view lives inside IslandMenu, whose parent may otherwise keep focus.
+    // Claim focus when the page is enabled so keyboard events reach this view.
+    focus: enabled
+    onEnabledChanged: {
+        if (enabled)
+            Qt.callLater(function() {
+                if (root.enabled)
+                    root.forceActiveFocus()
+            })
+    }
+
+    Keys.onEscapePressed: event => {
+        event.accepted = true
+        root.back()
+    }
+    Keys.onUpPressed: event => { event.accepted = true; moveSelection(-1) }
+    Keys.onDownPressed: event => { event.accepted = true; moveSelection(1) }
+    Keys.onLeftPressed: event => { event.accepted = true; moveSelection(-1) }
+    Keys.onRightPressed: event => { event.accepted = true; moveSelection(1) }
+    Keys.onTabPressed: event => {
+        event.accepted = true
+        moveSelection((event.modifiers & Qt.ShiftModifier) ? -1 : 1)
+    }
+    Keys.onBacktabPressed: event => { event.accepted = true; moveSelection(-1) }
+    Keys.onReturnPressed: event => {
+        event.accepted = true
+        root.activate(root.buttons[root.currentIndex])
+    }
+    Keys.onEnterPressed: event => {
+        event.accepted = true
+        root.activate(root.buttons[root.currentIndex])
+    }
+    Keys.onSpacePressed: event => {
+        event.accepted = true
+        root.activate(root.buttons[root.currentIndex])
+    }
 
     implicitHeight: col.implicitHeight
 
@@ -99,9 +143,6 @@ Item {
         width: implicitWidth
         height: implicitHeight
         activeFocusOnTab: true
-
-        Keys.onReturnPressed: mouse.fire()
-        Keys.onSpacePressed: mouse.fire()
 
         Rectangle {
             id: background
@@ -199,11 +240,16 @@ Item {
                 model: root.buttons
                 delegate: ActionButton {
                     id: b
+                    required property int index
                     required property string modelData
                     readonly property var item: root.builtins.find(x => x.id === modelData)
                     icon: item ? item.icon : ""
                     label: item ? item.label : ""
-                    onActivated: root.activate(b.modelData)
+                    active: index === root.currentIndex
+                    onActivated: {
+                        root.currentIndex = index
+                        root.activate(b.modelData)
+                    }
                 }
             }
         }
