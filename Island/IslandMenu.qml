@@ -160,6 +160,7 @@ Item {
         Behavior on opacity { NumberAnimation { duration: 220 } }
         onBack: root.page = "menu"
         onPicked: root.done()
+        onDone: root.done()
     }
 
     CalendarView {
@@ -206,6 +207,7 @@ Item {
         Behavior on x { NumberAnimation { duration: 320; easing.type: Easing.OutQuint } }
         Behavior on opacity { NumberAnimation { duration: 220 } }
         onBack: root.page = "menu"
+        onDone: root.done()
     }
 
     WeatherView {
@@ -233,5 +235,6 @@ Item {
         Behavior on x { NumberAnimation { duration: 320; easing.type: Easing.OutQuint } }
         Behavior on opacity { NumberAnimation { duration: 220 } }
         onBack: root.page = "menu"
+        onDone: root.done()
     }
 }

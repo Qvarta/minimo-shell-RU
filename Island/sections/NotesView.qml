@@ -9,17 +9,53 @@ import "../../Common"
 Item {
     id: root
     signal back()
+    signal done()
     property string editing: ""        // id de la nota abierta ("" = lista)
     property bool armed: false
     implicitHeight: col.implicitHeight
 
     function reset() { close(); }
     function open(id) { armed = false; editing = id; editor.text = Notes.get(id)?.text ?? ""; editor.forceActiveFocus(); editor.cursorPosition = editor.text.length }
-    function close() { if (editing !== "") Notes.flush(); editing = ""; armed = false; editor.focus = false }
+    function close() { if (editing !== "") Notes.flush(); editing = ""; armed = false; editor.focus = false; root.forceActiveFocus() }
     function goBack() { if (editing !== "") close(); else root.back() }
     function stamp(ms) {
         const d = new Date(ms), now = new Date()
         return d.toDateString() === now.toDateString() ? Qt.formatTime(d, "HH:mm") : d.toLocaleDateString(I18n.locale, I18n.lang === "en" ? "MMM d" : "d MMM")
+    }
+
+    // ───────── Фокус ─────────
+    focus: enabled
+
+    function requestKeyboardFocus() {
+        Qt.callLater(function() {
+            if (root.enabled && root.visible && root.editing === "")
+                root.forceActiveFocus()
+        })
+        refocusTimer.restart()
+    }
+
+    Timer {
+        id: refocusTimer
+        interval: 200
+        repeat: false
+        onTriggered: {
+            // Не отбираем фокус у редактора, пока он открыт.
+            if (root.enabled && root.visible && !root.activeFocus && root.editing === "")
+                root.forceActiveFocus()
+        }
+    }
+
+    onEnabledChanged: if (enabled) requestKeyboardFocus()
+    Component.onCompleted: requestKeyboardFocus()
+
+    // Esc: если открыт редактор — закрыть редактор (вернуться к списку),
+    // иначе — закрыть островок целиком. Кнопка «назад» всегда ведёт в меню.
+    Keys.onEscapePressed: event => {
+        event.accepted = true
+        if (root.editing !== "")
+            root.close()
+        else
+            root.done()
     }
 
     Timer { id: disarm; interval: 3000; onTriggered: root.armed = false }
@@ -31,7 +67,12 @@ Item {
         width: 32; height: 32; radius: 16
         color: rbm.containsMouse ? Theme.hover : Theme.surface
         Icon { anchors.centerIn: parent; name: rb.icon; size: 18 }
-        MouseArea { id: rbm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: rb.clicked() }
+        MouseArea {
+            id: rbm; anchors.fill: parent; hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            focus: false
+            onClicked: { root.forceActiveFocus(); rb.clicked() }
+        }
     }
 
     Column {
@@ -57,9 +98,11 @@ Item {
                 Text { id: dl; anchors.centerIn: parent; text: root.armed ? I18n.tr("Confirm") : I18n.tr("Delete"); color: root.armed ? "#FFFFFF" : Theme.textPrimary; font.family: Theme.font; font.pixelSize: 12; font.weight: root.armed ? Font.DemiBold : Font.Normal }
                 MouseArea {
                     id: dm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+                    focus: false
                     onClicked: {
                         if (!root.armed) { root.armed = true; disarm.restart(); return }
                         const id = root.editing; root.editing = ""; root.armed = false; Notes.remove(id)
+                        root.forceActiveFocus()
                     }
                 }
             }
@@ -118,7 +161,12 @@ Item {
                                 color: Theme.textSecondary; font.family: Theme.font; font.pixelSize: 12
                             }
                             Rectangle { visible: nr.index < Notes.notes.length - 1; anchors.bottom: parent.bottom; x: 16; width: parent.width - 32; height: 1; color: Theme.track }
-                            MouseArea { id: nm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.open(nr.modelData.id) }
+                            MouseArea {
+                                id: nm; anchors.fill: parent; hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                focus: false
+                                onClicked: { root.forceActiveFocus(); root.open(nr.modelData.id) }
+                            }
                         }
                     }
                 }
@@ -149,7 +197,11 @@ Item {
                         if (cursorRectangle.y < ef.contentY) ef.contentY = cursorRectangle.y
                         else if (cursorRectangle.y + cursorRectangle.height > ef.contentY + ef.height) ef.contentY = cursorRectangle.y + cursorRectangle.height - ef.height
                     }
-                    Keys.onEscapePressed: root.close()
+                    // Esc внутри редактора закрывает редактор (возврат к списку).
+                    Keys.onEscapePressed: event => {
+                        event.accepted = true
+                        root.close()
+                    }
                 }
                 Text {
                     visible: editor.text === ""

@@ -9,12 +9,43 @@ import "../../Common"
 Item {
     id: root
     signal back()
+    signal done()
     signal picked()
     property bool armed: false        // "Borrar" pide un segundo clic
     implicitHeight: col.implicitHeight
 
     function refresh() { armed = false; Clipboard.refresh() }
     readonly property var history: Clipboard.items.filter(i => i.binary || !Clipboard.isPinned(i.text))
+
+    // ───────── Фокус ─────────
+    focus: enabled
+
+    function requestKeyboardFocus() {
+        Qt.callLater(function() {
+            if (root.enabled && root.visible)
+                root.forceActiveFocus()
+        })
+        refocusTimer.restart()
+    }
+
+    Timer {
+        id: refocusTimer
+        interval: 200
+        repeat: false
+        onTriggered: {
+            if (root.enabled && root.visible && !root.activeFocus)
+                root.forceActiveFocus()
+        }
+    }
+
+    onEnabledChanged: if (enabled) requestKeyboardFocus()
+    Component.onCompleted: requestKeyboardFocus()
+
+    // Esc закрывает островок целиком (done), а кнопка «назад» возвращает в меню (back).
+    Keys.onEscapePressed: event => {
+        event.accepted = true
+        root.done()
+    }
 
     Timer { id: disarm; interval: 3000; onTriggered: root.armed = false }
 
@@ -29,7 +60,12 @@ Item {
                 width: 32; height: 32; radius: 16
                 color: bm.containsMouse ? Theme.hover : Theme.surface
                 Icon { anchors.centerIn: parent; name: "back"; size: 18 }
-                MouseArea { id: bm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.back() }
+                MouseArea {
+                    id: bm; anchors.fill: parent; hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    focus: false
+                    onClicked: { root.forceActiveFocus(); root.back() }
+                }
             }
             Text {
                 anchors.centerIn: parent
@@ -45,7 +81,11 @@ Item {
                 Text { id: cl; anchors.centerIn: parent; text: root.armed ? I18n.tr("Confirm") : I18n.tr("Clear clipboard"); color: root.armed ? Theme.onAccent : Theme.textPrimary; font.family: Theme.font; font.pixelSize: 12; font.weight: root.armed ? Font.DemiBold : Font.Normal }
                 MouseArea {
                     id: cm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                    onClicked: { if (!root.armed) { root.armed = true; disarm.restart() } else { root.armed = false; Clipboard.clear() } }
+                    focus: false
+                    onClicked: {
+                        root.forceActiveFocus()
+                        if (!root.armed) { root.armed = true; disarm.restart() } else { root.armed = false; Clipboard.clear() }
+                    }
                 }
             }
         }

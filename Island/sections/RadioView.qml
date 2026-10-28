@@ -8,6 +8,7 @@ import "../../Common"
 Item {
     id: root
     signal back()
+    signal done()
 
     // ───────────────────────── Файл состояния ─────────────────────────
     readonly property string dir: Quickshell.env("HOME") + "/.config/minimo-os"
@@ -336,17 +337,38 @@ Item {
     // RadioView is embedded in IslandMenu, whose parent keeps its own focus.
     // Claim focus whenever this page becomes active so arrow/Enter keys reach us.
     focus: enabled
-    onEnabledChanged: {
-        if (enabled)
-            Qt.callLater(function() {
-                if (root.enabled)
-                    root.forceActiveFocus()
-            })
+
+    function requestKeyboardFocus() {
+        Qt.callLater(function() {
+            if (root.enabled && root.visible)
+                root.forceActiveFocus()
+        })
+        // Повторная попытка: Island.qml запускает unfocusLater (150 мс), который
+        // возвращает фокус на pill после открытия через IPC.
+        refocusTimer.restart()
     }
 
+    Timer {
+        id: refocusTimer
+        interval: 200
+        repeat: false
+        onTriggered: {
+            if (root.enabled && root.visible && !root.activeFocus)
+                root.forceActiveFocus()
+        }
+    }
+
+    onEnabledChanged: if (enabled) requestKeyboardFocus()
+
+    Component.onCompleted: {
+        requestKeyboardFocus()
+        root.ensureDefaults(null)
+    }
+
+    // Esc закрывает островок целиком (done), а кнопка «назад» возвращает в меню (back).
     Keys.onEscapePressed: event => {
         event.accepted = true
-        root.back()
+        root.done()
     }
     Keys.onUpPressed: event => { event.accepted = true; moveSelection(0, -1) }
     Keys.onDownPressed: event => { event.accepted = true; moveSelection(0, 1) }
@@ -365,7 +387,17 @@ Item {
         width: 32; height: 32; radius: 16
         color: rbm.containsMouse ? Theme.hover : Theme.surface
         Icon { anchors.centerIn: parent; name: rb.icon; size: 18; rotation: rb.iconRotation }
-        MouseArea { id: rbm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: rb.clicked() }
+        MouseArea {
+            id: rbm
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            focus: false
+            onClicked: {
+                root.forceActiveFocus()
+                rb.clicked()
+            }
+        }
     }
 
     Column {
@@ -436,8 +468,10 @@ Item {
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
                         acceptedButtons: Qt.LeftButton
+                        focus: false
                         onContainsMouseChanged: if (containsMouse) root.currentIndex = delegateContainer.index
                         onClicked: {
+                            root.forceActiveFocus()
                             root.currentIndex = delegateContainer.index
                             root.toggle(modelData.name)
                         }
@@ -565,6 +599,4 @@ Item {
             }
         }
     }
-
-    Component.onCompleted: root.ensureDefaults(null)
 }

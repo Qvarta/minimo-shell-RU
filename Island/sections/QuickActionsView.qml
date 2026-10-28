@@ -31,45 +31,51 @@ Item {
         currentIndex = (currentIndex + delta + buttons.length) % buttons.length
     }
 
-    // Keep keyboard focus on the page root, as in RadioView, whenever this page opens.
-    focus: enabled && visible
+    // QuickActionsView is embedded in IslandMenu, whose parent keeps its own focus.
+    // Claim focus whenever this page becomes active so arrow/Enter keys reach us.
+    focus: enabled
 
     function requestKeyboardFocus() {
         Qt.callLater(function() {
             if (root.enabled && root.visible)
                 root.forceActiveFocus()
         })
+        // Повторная попытка: Island.qml запускает unfocusLater (150 мс), который
+        // возвращает фокус на pill после открытия через IPC "quickactions".
+        refocusTimer.restart()
+    }
+
+    Timer {
+        id: refocusTimer
+        interval: 200
+        repeat: false
+        onTriggered: {
+            if (root.enabled && root.visible && !root.activeFocus)
+                root.forceActiveFocus()
+        }
     }
 
     onEnabledChanged: if (enabled) requestKeyboardFocus()
-    onVisibleChanged: if (visible) requestKeyboardFocus()
     Component.onCompleted: requestKeyboardFocus()
 
-    // Handle keys in one place so arrow events cannot be lost between child items.
-    Keys.priority: Keys.BeforeItem
-    Keys.onPressed: event => {
-        switch (event.key) {
-        case Qt.Key_Escape:
-            event.accepted = true
-            root.back()
-            break
-        case Qt.Key_Up:
-        case Qt.Key_Left:
-            event.accepted = true
-            root.moveSelection(-1)
-            break
-        case Qt.Key_Down:
-        case Qt.Key_Right:
-            event.accepted = true
-            root.moveSelection(1)
-            break
-        case Qt.Key_Return:
-        case Qt.Key_Enter:
-            event.accepted = true
-            if (root.buttons.length > 0)
-                root.activate(root.buttons[root.currentIndex])
-            break
-        }
+    // Esc закрывает островок целиком (done), а кнопка «назад» возвращает в меню (back).
+    Keys.onEscapePressed: event => {
+        event.accepted = true
+        root.done()
+    }
+    Keys.onUpPressed: event => { event.accepted = true; root.moveSelection(-1) }
+    Keys.onDownPressed: event => { event.accepted = true; root.moveSelection(1) }
+    Keys.onLeftPressed: event => { event.accepted = true; root.moveSelection(-1) }
+    Keys.onRightPressed: event => { event.accepted = true; root.moveSelection(1) }
+    Keys.onReturnPressed: event => {
+        event.accepted = true
+        if (root.buttons.length > 0)
+            root.activate(root.buttons[root.currentIndex])
+    }
+    Keys.onEnterPressed: event => {
+        event.accepted = true
+        if (root.buttons.length > 0)
+            root.activate(root.buttons[root.currentIndex])
     }
 
     implicitHeight: col.implicitHeight
@@ -128,7 +134,11 @@ Item {
             anchors.fill: parent
             hoverEnabled: true
             cursorShape: Qt.PointingHandCursor
-            onClicked: rb.clicked()
+            focus: false
+            onClicked: {
+                root.forceActiveFocus()
+                rb.clicked()
+            }
         }
     }
 
@@ -198,10 +208,14 @@ Item {
             anchors.fill: parent
             hoverEnabled: true
             cursorShape: Qt.PointingHandCursor
+            focus: false
             function fire() {
                 btn.activated()
             }
-            onClicked: fire()
+            onClicked: {
+                root.forceActiveFocus()
+                fire()
+            }
         }
     }
 
