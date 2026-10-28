@@ -37,8 +37,11 @@ Item {
 
     function requestKeyboardFocus() {
         Qt.callLater(function() {
-            if (root.enabled && root.visible)
-                root.forceActiveFocus()
+            if (!root.enabled || !root.visible)
+                return
+            const button = actionRepeater.itemAt(root.currentIndex)
+            if (button)
+                button.forceActiveFocus()
         })
     }
 
@@ -242,6 +245,7 @@ Item {
             columns: 1
             rowSpacing: 4
             Repeater {
+                id: actionRepeater
                 model: root.buttons
                 delegate: ActionButton {
                     id: b
