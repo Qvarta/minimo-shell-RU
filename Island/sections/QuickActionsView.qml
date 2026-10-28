@@ -31,17 +31,22 @@ Item {
         currentIndex = (currentIndex + delta + buttons.length) % buttons.length
     }
 
-    // This view lives inside IslandMenu, whose parent may otherwise keep focus.
-    // Claim focus when the page is enabled so keyboard events reach this view.
-    focus: enabled
-    onEnabledChanged: {
-        if (enabled)
-            Qt.callLater(function() {
-                if (root.enabled)
-                    root.forceActiveFocus()
-            })
+    // IslandMenu may keep focus on its own root when switching pages.
+    // Reclaim it whenever this page becomes visible/enabled, including first open.
+    focus: enabled && visible
+
+    function requestKeyboardFocus() {
+        Qt.callLater(function() {
+            if (root.enabled && root.visible)
+                root.forceActiveFocus()
+        })
     }
 
+    onEnabledChanged: if (enabled) requestKeyboardFocus()
+    onVisibleChanged: if (visible) requestKeyboardFocus()
+    Component.onCompleted: requestKeyboardFocus()
+
+    Keys.priority: Keys.BeforeItem
     Keys.onEscapePressed: event => {
         event.accepted = true
         root.back()
@@ -148,7 +153,7 @@ Item {
             id: background
             anchors.fill: parent
             radius: 14
-            color: btn.active ? Theme.fill : (mouse.containsMouse ? Theme.hover : Theme.surface)
+            color: btn.active ? Theme.hover : (mouse.containsMouse ? Theme.hover : Theme.surface)
             scale: mouse.pressed ? 0.98 : 1
 
             Behavior on color {
@@ -163,7 +168,7 @@ Item {
                 radius: parent.radius
                 color: "transparent"
                 border.width: 2
-                border.color: Theme.fill
+                border.color: Theme.hover
                 visible: btn.activeFocus
             }
 
@@ -174,13 +179,13 @@ Item {
                 width: 40
                 height: 40
                 radius: 20
-                color: btn.active ? Theme.fill : Theme.hover
+                color: btn.active ? Theme.field : Theme.hover
 
                 Icon {
                     anchors.centerIn: parent
                     name: btn.icon
                     size: 24
-                    tone: btn.active ? "white" : "dark"
+                    tone: "dark"
                 }
             }
 
