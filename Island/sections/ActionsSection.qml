@@ -14,6 +14,8 @@ Row {
     id: root
     signal done()
     signal quickActions()
+    // Abre el panel de energía (PowerView) en IslandMenu.
+    signal power()
 
     readonly property var commands: ({
         reboot: "systemctl reboot",
