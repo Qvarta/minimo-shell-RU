@@ -17,7 +17,9 @@ import "../Services"
 // confirmación que ActionsSection (Common/confirm.js): primer clic/Enter arma
 // ("Confirmar"), segundo ejecuta; solo una armada a la vez y 2 s de guarda tras
 // ejecutar. Clic fuera o Esc cierran. Flechas ← → ↑ ↓ y Tab/Shift+Tab mueven el
-// foco entre los botones; Enter/Espacio dispara el enfocado.
+// foco entre los botones; Enter/Espacio dispara el enfocado. El botón enfocado se
+// resalta igual que en el resto del proyecto (MenuButton, QuickActionsView):
+// relleno negro con ícono invertido, sin bordes ni aros alrededor.
 // Abrir por IPC: qs -c minimo-shell ipc call power open|toggle|close
 PanelWindow {
     id: win
@@ -126,28 +128,20 @@ PanelWindow {
             width: parent.width - 32
             spacing: 18
 
-            // Encabezado: solo el título centrado (sin botón "volver").
-            Item {
-                width: parent.width; height: 30
-                Text {
-                    anchors.centerIn: parent
-                    text: I18n.tr("Energy")
-                    color: Theme.textPrimary; font.family: Theme.font; font.pixelSize: 15; font.weight: Font.DemiBold
-                }
-            }
-
             Row {
                 id: btnRow
                 anchors.horizontalCenter: parent.horizontalCenter
                 spacing: 16
 
-                // Botón grande propio: mismos estados que MenuButton (hover, armado
-                // negro con "Confirmar", aro de foco), pero círculo e ícono más grandes.
+                // Botón grande propio: mismos estados que el resto del proyecto
+                // (MenuButton/QuickActionsView): hover gris, activo/armado con relleno
+                // negro e ícono/texto invertidos; sin filetes ni aros de foco permanentes.
                 component BigButton: Item {
                     id: btn
                     property string icon
                     property string label
                     property bool armed: false
+                    readonly property bool focused: btn.activeFocus
                     signal activated()
                     width: 104; height: 112
                     activeFocusOnTab: true
@@ -157,16 +151,11 @@ PanelWindow {
                         id: circle
                         anchors.horizontalCenter: parent.horizontalCenter
                         width: 72; height: 72; radius: 36
-                        color: btn.armed ? Theme.fill : (mouse.containsMouse ? Theme.hover : Theme.surface)
+                        color: (btn.armed || btn.focused) ? Theme.fill : (mouse.containsMouse ? Theme.hover : Theme.surface)
                         scale: mouse.pressed ? 0.92 : 1
-                        Rectangle {          // aro de foco por teclado
-                            anchors.fill: parent; anchors.margins: -4; radius: width / 2
-                            color: "transparent"; border.width: 2; border.color: Theme.fill
-                            visible: btn.activeFocus
-                        }
                         Behavior on color { ColorAnimation { duration: Theme.durFast } }
                         Behavior on scale { NumberAnimation { duration: 120; easing.type: Easing.OutQuad } }
-                        Icon { anchors.centerIn: parent; name: btn.icon; size: 32; tone: btn.armed ? "white" : "dark" }
+                        Icon { anchors.centerIn: parent; name: btn.icon; size: 32; tone: (btn.armed || btn.focused) ? "white" : "dark" }
                     }
                     Text {
                         anchors.top: circle.bottom; anchors.topMargin: 10
@@ -175,8 +164,8 @@ PanelWindow {
                         horizontalAlignment: Text.AlignHCenter
                         elide: Text.ElideRight
                         text: btn.armed ? I18n.tr("Confirm") : btn.label
-                        color: btn.armed ? Theme.textPrimary : Theme.textSecondary
-                        font.family: Theme.font; font.pixelSize: 13; font.weight: btn.armed ? Font.DemiBold : Font.Normal
+                        color: (btn.armed || btn.focused) ? Theme.textPrimary : Theme.textSecondary
+                        font.family: Theme.font; font.pixelSize: 13; font.weight: (btn.armed || btn.focused) ? Font.DemiBold : Font.Normal
                     }
                     MouseArea {
                         id: mouse
