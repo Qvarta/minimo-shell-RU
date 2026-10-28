@@ -31,35 +31,45 @@ Item {
         currentIndex = (currentIndex + delta + buttons.length) % buttons.length
     }
 
-    // Match RadioView: the page root owns focus and handles keyboard navigation.
-    focus: enabled
-    onEnabledChanged: {
-        if (enabled)
-            Qt.callLater(function() {
-                if (root.enabled)
-                    root.forceActiveFocus()
-            })
+    // Keep keyboard focus on the page root, as in RadioView, whenever this page opens.
+    focus: enabled && visible
+
+    function requestKeyboardFocus() {
+        Qt.callLater(function() {
+            if (root.enabled && root.visible)
+                root.forceActiveFocus()
+        })
     }
 
-    Keys.onEscapePressed: event => {
-        event.accepted = true
-        root.back()
-    }
-    Keys.onUpPressed: event => { event.accepted = true; moveSelection(-1) }
-    Keys.onDownPressed: event => { event.accepted = true; moveSelection(1) }
-    Keys.onLeftPressed: event => { event.accepted = true; moveSelection(-1) }
-    Keys.onRightPressed: event => { event.accepted = true; moveSelection(1) }
-    Keys.onReturnPressed: event => {
-        event.accepted = true
-        root.activate(root.buttons[root.currentIndex])
-    }
-    Keys.onEnterPressed: event => {
-        event.accepted = true
-        root.activate(root.buttons[root.currentIndex])
-    }
-    Keys.onSpacePressed: event => {
-        event.accepted = true
-        root.activate(root.buttons[root.currentIndex])
+    onEnabledChanged: if (enabled) requestKeyboardFocus()
+    onVisibleChanged: if (visible) requestKeyboardFocus()
+    Component.onCompleted: requestKeyboardFocus()
+
+    // Handle keys in one place so arrow events cannot be lost between child items.
+    Keys.priority: Keys.BeforeItem
+    Keys.onPressed: event => {
+        switch (event.key) {
+        case Qt.Key_Escape:
+            event.accepted = true
+            root.back()
+            break
+        case Qt.Key_Up:
+        case Qt.Key_Left:
+            event.accepted = true
+            root.moveSelection(-1)
+            break
+        case Qt.Key_Down:
+        case Qt.Key_Right:
+            event.accepted = true
+            root.moveSelection(1)
+            break
+        case Qt.Key_Return:
+        case Qt.Key_Enter:
+            event.accepted = true
+            if (root.buttons.length > 0)
+                root.activate(root.buttons[root.currentIndex])
+            break
+        }
     }
 
     implicitHeight: col.implicitHeight
