@@ -48,6 +48,7 @@ Singleton {
         function apps(): void { root.islandCommand("apps") }
         function clipboard(): void { root.islandCommand("clipboard") }
         function quickactions(): void { root.islandCommand("quickactions") }
+        function power(): void { root.islandCommand("power") }
         function pet(): void { root.islandCommand("pet") }
     }
 }

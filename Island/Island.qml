@@ -338,6 +338,10 @@ PanelWindow {
                 // Открыть вкладку быстрых действий напрямую через IPC.
                 win.panel = false; win.expanded = true; menu.showQuickActions()
             }
+            else if (cmd === "power") {
+                // Открыть panel de energía (salir / reiniciar / apagar) directo por ipc.
+                win.panel = false; win.expanded = true; menu.showPower()
+            }
             else if (cmd === "clipboard") {
                 // Super+V: abre la isla en el portapapeles (o la cierra si ya está ahí).
                 if (win.expanded && menu.page === "clip") win.collapse()
