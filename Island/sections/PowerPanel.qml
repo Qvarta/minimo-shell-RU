@@ -14,10 +14,19 @@ import ".."
 // puede estar armada y hay 2 s de guarda tras ejecutar. Íconos y lógica idénticos a
 // los del menú de la isla, pero aquí los botones son más grandes (componente propio)
 // y el encabezado lleva solo el título, sin botón "volver".
+// Navegación por teclado: al abrirse el panel (page === "power") la isla ya tiene
+// foco exclusivo del compositor (WlrKeyboardFocus.Exclusive, ver Island.qml), así
+// que aquí solo se captura el foco QML interno: root toma `focus` y enfoca el primer
+// botón; las flechas ← → ↑ ↓ y Tab/Shift+Tab mueven el foco entre los tres botones
+// (envuelto, como la navegación de RadioView) y Enter/Espacio disparan el enfocado.
+// Esc vuelve al menú de la isla.
 Item {
     id: root
     signal back()
     implicitHeight: col.implicitHeight
+
+    // Índice del botón enfocado por teclado (-1 = ninguno aún).
+    property int focusedIndex: -1
 
     // Tamaño de los botones de este panel (más grandes que los del menú).
     readonly property int btnW: 104
@@ -45,8 +54,48 @@ Item {
     function reset() { disarm.stop(); st = Confirm.disarm(st) }
     Timer { id: disarm; interval: 3000; onTriggered: root.st = Confirm.disarm(root.st) }
 
-    // Desarma las acciones al salir del panel (no queda ninguna armada).
-    onVisibleChanged: if (!visible) reset()
+    // --- Foco de teclado -----------------------------------------------------
+    // Los botones del panel (se recorren en orden con las flechas/Tab).
+    readonly property var buttons: [btnLogout, btnReboot, btnPoweroff]
+    // Mueve el foco interno entre botones: delta ±1 (lineal, envuelto).
+    function moveFocus(delta) {
+        const n = buttons.length
+        const i = focusedIndex < 0 ? (delta > 0 ? 0 : n - 1)
+                                   : (focusedIndex + delta + n) % n
+        focusedIndex = i
+        buttons[i].forceActiveFocus()
+    }
+    // Flechas: ← ↑ retroceden, → ↓ avanzan; Tab/Shift+Tab también. El handler está en
+    // root (no en los botones): si la tecla no se consume aquí, Qt la propaga al padre
+    // y termina rebotando el foco por Tab (saldría del panel hacia el buscador de la
+    // isla); al consumirla siempre, el foco queda capturado dentro del panel.
+    // RadioView usa el mismo patrón (Keys.on... sobre la raíz de la vista).
+    function keyNav(event, forward) {
+        event.accepted = true
+        if (visible) moveFocus(forward ? 1 : -1)
+    }
+
+    // Al abrirse el panel: enfoca el último botón recordado (o el primero) tras un
+    // tick, para que la ventana ya esté visible/con foco de teclado (la isla pide
+    // WlrKeyboardFocus.Exclusive al abrirse, ver Island.qml). Esc o clic fuera cierran.
+    onVisibleChanged: if (visible) {
+        Qt.callLater(function() {
+            if (!root.visible) return
+            root.buttons[root.focusedIndex < 0 ? 0 : root.focusedIndex].forceActiveFocus()
+        })
+    } else {
+        reset()
+    }
+
+    // Esc -> vuelve al menú de la isla (mismo gesto que cerrar con clic fuera).
+    focus: visible
+    Keys.onEscapePressed: { event.accepted = true; root.back() }
+    Keys.onLeftPressed: keyNav(event, false)
+    Keys.onUpPressed: keyNav(event, false)
+    Keys.onRightPressed: keyNav(event, true)
+    Keys.onDownPressed: keyNav(event, true)
+    Keys.onTabPressed: keyNav(event, !(event.modifiers & Qt.ShiftModifier))
+    Keys.onBacktabPressed: keyNav(event, false)
 
     // Botón grande propio de este panel: misma apariencia y estados que MenuButton
     // (hover, armado negro con "Confirmar", aro de foco), pero círculo e ícono más
@@ -59,6 +108,8 @@ Item {
         signal activated()
         width: root.btnW; height: 104
         activeFocusOnTab: true
+        // No consume las flechas/Tab: la navegación se gestiona en root (Keys.on...),
+        // que siempre acepta el evento, así el foco no escapa del panel por Tab.
         Keys.onReturnPressed: mouse.fire()
         Keys.onSpacePressed: mouse.fire()
         Rectangle {
@@ -116,9 +167,9 @@ Item {
             id: btnRow
             anchors.horizontalCenter: parent.horizontalCenter
             spacing: 12
-            BigButton { icon: "logout"; label: I18n.tr("Log out"); armed: root.armed === "logout"; onActivated: root.press("logout") }
-            BigButton { icon: "restart"; label: I18n.tr("Restart"); armed: root.armed === "reboot"; onActivated: root.press("reboot") }
-            BigButton { icon: "power"; label: I18n.tr("Shut down"); armed: root.armed === "poweroff"; onActivated: root.press("poweroff") }
+            BigButton { id: btnLogout; icon: "logout"; label: I18n.tr("Log out"); armed: root.armed === "logout"; onActivated: root.press("logout") }
+            BigButton { id: btnReboot; icon: "restart"; label: I18n.tr("Restart"); armed: root.armed === "reboot"; onActivated: root.press("reboot") }
+            BigButton { id: btnPoweroff; icon: "power"; label: I18n.tr("Shut down"); armed: root.armed === "poweroff"; onActivated: root.press("poweroff") }
         }
 
         // En pantallas chicas los 3 botones no entran en una fila: pasan a dos.
