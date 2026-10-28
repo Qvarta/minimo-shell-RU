@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Diego Ledesma (TRN1) — Minimo OS
-pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
 import "../../Common"
@@ -16,10 +15,14 @@ import ".."
 // y el encabezado lleva solo el título, sin botón "volver".
 // Navegación por teclado: al abrirse el panel (page === "power") la isla ya tiene
 // foco exclusivo del compositor (WlrKeyboardFocus.Exclusive, ver Island.qml), así
-// que aquí solo se captura el foco QML interno: root toma `focus` y enfoca el primer
-// botón; las flechas ← → ↑ ↓ y Tab/Shift+Tab mueven el foco entre los tres botones
-// (envuelto, como la navegación de RadioView) y Enter/Espacio disparan el enfocado.
-// Esc vuelve al menú de la isla.
+// que aquí solo se captura el foco QML interno. IMPORTANTE: no basta con pedir el
+// foco una vez al abrir — en Island.qml hay un Timer (unfocusLater, 150 ms) que, al
+// expandir la isla, devuelve el foco a la píldora DESPUÉS de que esta ventana esté
+// visible; eso "apagaba" el foco del panel justo después de tomarlo. Por eso el
+// panel observa Window.activeFocusItem (el ítem realmente enfocado en la ventana):
+// si el foco se va fuera del panel mientras está visible, lo recupera. Las flechas
+// ← → ↑ ↓ y Tab/Shift+Tab mueven el foco entre los tres botones (envuelto) y
+// Enter/Espacio disparan el enfocado. Esc vuelve al menú de la isla.
 Item {
     id: root
     signal back()
@@ -65,6 +68,18 @@ Item {
         focusedIndex = i
         buttons[i].forceActiveFocus()
     }
+    function focusButton(i) {
+        focusedIndex = i
+        buttons[i].forceActiveFocus()
+    }
+    // ¿El ítem enfocado de la ventana está dentro de este panel? (sube el árbol de
+    // padres hasta root; Window.activeFocusItem puede ser un hijo profundo, p.ej. el
+    // MouseArea no, pero sí el propio Item botón o cualquier descendiente).
+    function containsFocusItem(item) {
+        for (let it = item; it !== null; it = it.parent)
+            if (it === root) return true
+        return false
+    }
     // Flechas: ← ↑ retroceden, → ↓ avanzan; Tab/Shift+Tab también. El handler está en
     // root (no en los botones): si la tecla no se consume aquí, Qt la propaga al padre
     // y termina rebotando el foco por Tab (saldría del panel hacia el buscador de la
@@ -75,20 +90,45 @@ Item {
         if (visible) moveFocus(forward ? 1 : -1)
     }
 
-    // Al abrirse el panel: enfoca el último botón recordado (o el primero) tras un
-    // tick, para que la ventana ya esté visible/con foco de teclado (la isla pide
-    // WlrKeyboardFocus.Exclusive al abrirse, ver Island.qml). Esc o clic fuera cierran.
+    // Ventana de la isla (WlrLayershell): su activeFocusItem es el ítem que tiene el
+    // foco real. Lo usamos para "reclamar" el foco si otro lo toma mientras el panel
+    // está visible — ver comentario arriba: unfocusLater en Island.qml devuelve el
+    // foco a la píldora 150 ms después de expandir, justo cuando ya veíamos el panel.
+    readonly property Window islandWindow: Window.window
+    // El panel solo muestra el anillo de foco cuando de verdad tiene el foco activo
+    // de la ventana (no solo porque Qt "le dio" focus internamente estando invisible).
+    readonly property bool hasWinFocus: islandWindow !== null && containsFocusItem(islandWindow.activeFocusItem)
+    // Reenfoca sin robar el foco si ya estaba aquí (evita bucles de señal).
+    function reclaimFocus() {
+        if (!visible || !islandWindow) return
+        if (containsFocusItem(islandWindow.activeFocusItem)) return
+        focusButton(focusedIndex < 0 ? 0 : focusedIndex)
+    }
+    Connections {
+        target: root.islandWindow
+        enabled: root.visible && root.islandWindow !== null
+        function onActiveFocusItemChanged() { root.reclaimFocus() }
+    }
+
+    // Al abrirse el panel se intenta enfocar varias veces (cada 60 ms, ~8 intentos):
+    // hay que ganar la carrera con unfocusLater (Island.qml), que devuelve el foco a
+    // la píldora ~150 ms después de expandir la isla; además la opacidad animada hace
+    // que `visible` se vuelva true recién unos frames después de cambiar de página.
+    // Tras los reintentos, el Connections de arriba mantiene el foco capturado.
     onVisibleChanged: if (visible) {
-        Qt.callLater(function() {
-            if (!root.visible) return
-            root.buttons[root.focusedIndex < 0 ? 0 : root.focusedIndex].forceActiveFocus()
-        })
+        refocus.restart()
     } else {
         reset()
     }
+    Timer { id: refocus; interval: 60; repeat: true; triggeredOnStart: true
+        property int tries: 0
+        onTriggered: {
+            if (!root.visible) { stop(); return }
+            root.reclaimFocus()
+            if (++tries >= 8) stop()
+        } }
 
     // Esc -> vuelve al menú de la isla (mismo gesto que cerrar con clic fuera).
-    focus: visible
     Keys.onEscapePressed: { event.accepted = true; root.back() }
     Keys.onLeftPressed: keyNav(event, false)
     Keys.onUpPressed: keyNav(event, false)
@@ -118,10 +158,10 @@ Item {
             width: root.circleSize; height: root.circleSize; radius: root.circleSize / 2
             color: btn.armed ? Theme.fill : (mouse.containsMouse ? Theme.hover : Theme.surface)
             scale: mouse.pressed ? 0.92 : 1
-            Rectangle {          // aro de foco por teclado (solo con foco)
+            Rectangle {          // aro de foco por teclado (solo con foco real)
                 anchors.fill: parent; anchors.margins: -4; radius: width / 2
                 color: "transparent"; border.width: 2; border.color: Theme.fill
-                visible: btn.activeFocus
+                visible: btn.activeFocus && root.hasWinFocus
             }
             Behavior on color { ColorAnimation { duration: Theme.durFast } }
             Behavior on scale { NumberAnimation { duration: 120; easing.type: Easing.OutQuad } }
