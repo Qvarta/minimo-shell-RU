@@ -19,6 +19,22 @@ Item {
     property string page: "menu"   // "menu" | "clip" | "cal" | "quickactions" | "notes" | "weather" | "radio" | "power"
     implicitHeight: (page === "clip" ? clip.implicitHeight : page === "cal" ? cal.implicitHeight : page === "quickactions" ? quickActionsView.implicitHeight : page === "notes" ? notes.implicitHeight : page === "weather" ? weather.implicitHeight : page === "radio" ? radio.implicitHeight : page === "power" ? power.implicitHeight : col.implicitHeight) + 40
 
+    // Вкладки для циклической навигации стрелками внизу.
+    readonly property var tabs: ["menu", "clip", "cal", "quickactions", "notes", "weather", "radio", "power"]
+
+    function enterTab(t) {
+        if (t === "clip") clip.refresh()
+        else if (t === "cal") cal.reset()
+        else if (t === "power") power.reset()
+        page = t
+    }
+
+    // Циклический переход по вкладкам: n = -1 назад, n = +1 вперёд.
+    function cyclePage(n) {
+        const i = tabs.indexOf(page)
+        enterTab(tabs[(i + n + tabs.length) % tabs.length])
+    }
+
     function showClipboard() { clip.refresh(); page = "clip" }
     function showQuickActions() { page = "quickactions" }
     function showPower() { power.reset(); page = "power" }
@@ -245,5 +261,42 @@ Item {
         Behavior on opacity { NumberAnimation { duration: 220 } }
         onBack: root.page = "menu"
         onDone: root.done()
+    }
+
+    // Круглая кнопка со стрелкой (chevron, повёрнутый влево/вправо).
+    component TabArrow: Rectangle {
+        id: arrow
+        property real iconRotation: 0
+        signal clicked()
+        width: 32; height: 32; radius: 16
+        color: am.containsMouse ? Theme.hover : Theme.surface
+        Icon { anchors.centerIn: parent; name: "chevron"; size: 18; rotation: arrow.iconRotation }
+        MouseArea { id: am; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+            onClicked: arrow.clicked() }
+    }
+
+    // Горизонтальный ряд кнопок навигации по вкладкам внизу: <- прижат к левому краю, -> к правому.
+    Item {
+        id: tabNav
+        visible: root.open
+        z: 10
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: 4
+        anchors.left: parent.left; anchors.leftMargin: 20
+        anchors.right: parent.right; anchors.rightMargin: 20
+        height: 32
+
+        TabArrow {
+            anchors.left: parent.left
+            anchors.verticalCenter: parent.verticalCenter
+            iconRotation: -90   // стрелка <-
+            onClicked: root.cyclePage(-1)
+        }
+        TabArrow {
+            anchors.right: parent.right
+            anchors.verticalCenter: parent.verticalCenter
+            iconRotation: 90    // стрелка ->
+            onClicked: root.cyclePage(1)
+        }
     }
 }
