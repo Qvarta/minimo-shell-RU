@@ -22,8 +22,116 @@ Item {
     function showClipboard() { clip.refresh(); page = "clip" }
     function showQuickActions() { page = "quickactions" }
 
+    // ───────────────────── Навигация с клавиатуры (главная страница) ─────────────────────
+    // Подстраницы (radio, quickactions, clipboard, notes) обрабатывают клавиши сами;
+    // здесь навигация по элементам главной страницы меню.
+    readonly property var menuItems: ["search", "volume", "brightness", "logout", "restart", "poweroff", "quick", "settings"]
+    property int currentIndex: 0
+
+    readonly property bool volVisible: vol.ready
+    readonly property bool dispVisible: disp.brightness
+
+    function itemsList() {
+        var list = []
+        for (var i = 0; i < menuItems.length; i++) {
+            const id = menuItems[i]
+            if (id === "volume" && !volVisible) continue
+            if (id === "brightness" && !dispVisible) continue
+            list.push(id)
+        }
+        return list
+    }
+
+    function itemAt(index) {
+        const list = itemsList()
+        if (list.length === 0)
+            return ""
+        return list[(index % list.length + list.length) % list.length]
+    }
+
+    function indexOfItem(id) { return itemsList().indexOf(id) }
+
+    function clampSelection() {
+        const n = itemsList().length
+        if (n === 0) { currentIndex = 0; return }
+        if (currentIndex >= n) currentIndex = n - 1
+    }
+
+    function moveSelection(delta) {
+        const n = itemsList().length
+        if (n === 0)
+            return
+        currentIndex = (currentIndex + delta + n) % n
+    }
+
+    function activateItem(id) {
+        if (id === "search") search.focusField()
+        else if (id === "volume") vol.increase()
+        else if (id === "brightness") disp.increase()
+        else if (id === "logout") actions.press("logout")
+        else if (id === "restart") actions.press("reboot")
+        else if (id === "poweroff") actions.press("poweroff")
+        else if (id === "quick") page = "quickactions"
+        else if (id === "settings") { actions.reset(); root.done(); SettingsState.show() }
+    }
+
+    function adjustCurrent(delta) {
+        const id = itemAt(currentIndex)
+        if (id === "volume") vol.stepBy(delta)
+        else if (id === "brightness") { if (delta > 0) disp.increase(); else disp.decrease() }
+        else activateCurrent()
+    }
+
+    function activateCurrent() {
+        const id = itemAt(currentIndex)
+        if (id !== "")
+            activateItem(id)
+    }
+
+    // IslandMenu está dentro de la píldora, que conserva su propio foco: pedimos
+    // el foco cuando esta página está activa para que lleguen las flechas/Enter.
+    focus: enabled
+
+    function requestKeyboardFocus() {
+        Qt.callLater(function() {
+            if (root.enabled && root.visible)
+                root.forceActiveFocus()
+        })
+        // Segundo intento: Island.qml lanza unfocusLater (150 ms), que devuelve
+        // el foco a la píldora al abrir la isla.
+        refocusTimer.restart()
+    }
+
+    Timer {
+        id: refocusTimer
+        interval: 200
+        repeat: false
+        onTriggered: {
+            if (root.enabled && root.visible && !root.activeFocus)
+                root.forceActiveFocus()
+        }
+    }
+
+    onEnabledChanged: if (enabled) requestKeyboardFocus()
+    Component.onCompleted: requestKeyboardFocus()
+
+    // Esc cierra la isla entera (done); con otra página abierta decide esa página
+    // (las subpáginas capturan la tecla antes que el menú).
+    Keys.onEscapePressed: event => {
+        event.accepted = true
+        root.done()
+    }
+    // Arriba/abajo mueven la selección; izquierda/derecha ajustan el slider enfocado.
+    Keys.onUpPressed: event => { event.accepted = true; root.moveSelection(-1) }
+    Keys.onDownPressed: event => { event.accepted = true; root.moveSelection(1) }
+    Keys.onLeftPressed: event => { event.accepted = true; root.adjustCurrent(-1) }
+    Keys.onRightPressed: event => { event.accepted = true; root.adjustCurrent(1) }
+    Keys.onReturnPressed: event => { event.accepted = true; root.activateCurrent() }
+    Keys.onEnterPressed: event => { event.accepted = true; root.activateCurrent() }
+    Keys.onSpacePressed: event => { event.accepted = true; root.activateCurrent() }
+
     // El buscador no se enfoca solo: se activa al hacerle clic.
-    function opened() { search.reset() }
+    function opened() { search.reset(); clampSelection() }
 
     // Entrada escalonada: stage sube de a uno cada 45 ms al abrir.
     property int stage: 0
@@ -87,7 +195,14 @@ Item {
             }
         }
         Reveal { step: 1; width: parent.width; height: search.implicitHeight
-            SearchSection { id: search; width: parent.width; onLaunched: root.done() } }
+            SearchSection { id: search; width: parent.width; onLaunched: root.done() }
+            // Аро выбора клавиатурной навигации (IslandMenu.currentIndex).
+            Rectangle {
+                anchors.fill: search; anchors.margins: -5; radius: 24
+                color: "transparent"; border.width: 2; border.color: Theme.fill
+                visible: root.page === "menu" && root.itemAt(root.currentIndex) === "search"
+            }
+        }
         Reveal {
             id: mediaReveal
             step: 2
@@ -121,6 +236,12 @@ Item {
                     width: parent.width
                     visible: ready && mainSliders.volAt >= 0
                     y: mainSliders.volFirst ? 0 : mainSliders.dispH + mainSliders.gap
+                    // Подсветка выбора клавиатурной навигации (IslandMenu.currentIndex).
+                    Rectangle {
+                        anchors.fill: parent; anchors.margins: -4; radius: height / 2
+                        color: "transparent"; border.width: 2; border.color: Theme.fill
+                        visible: root.page === "menu" && root.itemAt(root.currentIndex) === "volume"
+                    }
                 }
                 DisplaySection {
                     id: disp
@@ -128,6 +249,11 @@ Item {
                     visible: brightness
                     y: mainSliders.volFirst ? mainSliders.volH + mainSliders.gap : 0
                     brightness: mainSliders.sliders.indexOf("brightness") >= 0
+                    Rectangle {
+                        anchors.fill: parent; anchors.margins: -4; radius: height / 2
+                        color: "transparent"; border.width: 2; border.color: Theme.fill
+                        visible: root.page === "menu" && root.itemAt(root.currentIndex) === "brightness"
+                    }
                 }
             }
         }
