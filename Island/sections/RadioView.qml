@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
