@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Diego Ledesma (TRN1) — Minimo OS
+
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
@@ -8,7 +8,6 @@ import "../Common"
 import "../Character"
 import "sections"
 
-// Menú de la isla expandida: compone las secciones con entrada escalonada.
 Item {
     id: root
 
@@ -16,14 +15,26 @@ Item {
     property bool open: false
     readonly property bool searchFocused: search.hasFocus
     property alias character: chr
-    property string page: "menu"   // "menu" | "clip" | "cal" | "quickactions" | "notes" | "weather" | "radio" | "power"
+    property string page: "menu"
 
-    readonly property int navHeight: 32
+    readonly property int navHeight: 48
     readonly property int navMargin: 8
+    readonly property int navPad: 4
 
     implicitHeight: (page === "clip" ? clip.implicitHeight : page === "cal" ? cal.implicitHeight : page === "quickactions" ? quickActionsView.implicitHeight : page === "notes" ? notes.implicitHeight : page === "weather" ? weather.implicitHeight : page === "radio" ? radio.implicitHeight : page === "power" ? power.implicitHeight : col.implicitHeight) + 40 + navHeight + navMargin
 
     readonly property var tabs: ["menu", "clip", "cal", "quickactions", "notes", "weather", "radio", "power"]
+
+    readonly property var tabIcons: ({
+        "menu":         "home",
+        "clip":         "clipboard",
+        "cal":          "calendar",
+        "quickactions": "quickactions",
+        "notes":        "note",
+        "weather":      "clear-day",
+        "radio":        "music",
+        "power":        "logout"
+    })
 
     function enterTab(t) {
         if (t === "clip") clip.refresh()
@@ -41,10 +52,8 @@ Item {
     function showQuickActions() { page = "quickactions" }
     function showPower() { power.reset(); page = "power" }
 
-    // El buscador no se enfoca solo: se activa al hacerle clic.
     function opened() { search.reset() }
 
-    // Entrada escalonada: stage sube de a uno cada 45 ms al abrir.
     property int stage: 0
     Timer {
         id: stagger; interval: 45; repeat: true
@@ -78,7 +87,7 @@ Item {
             step: 0; width: parent.width; height: 48
             RowLayout {
                 anchors.fill: parent
-                spacing: 15  
+                spacing: 15
                 Character {
                     id: chr; size: 44; active: root.open && DisplayState.characterAnimated; Layout.alignment: Qt.AlignVCenter
                     MouseArea { anchors.fill: parent; anchors.margins: -4; cursorShape: Qt.PointingHandCursor; onClicked: m => chr.clicked((m.x - width / 2) / (width / 2)) }
@@ -93,7 +102,6 @@ Item {
                         font.pixelSize: 26; font.weight: Font.Medium
                         font.features: { "tnum": 1 }
                     }
-                    // Clic en la fecha → calendario.
                     Text {
                         text: I18n.longDate(clock.date)
                         color: dateMouse.containsMouse ? Theme.textPrimary : Theme.textSecondary; font.family: Theme.font; font.pixelSize: 12
@@ -117,7 +125,6 @@ Item {
             MediaSection {
                 id: media
                 width: parent.width
-
             }
         }
         Reveal {
@@ -189,7 +196,6 @@ Item {
         Behavior on opacity { NumberAnimation { duration: 220 } }
         onBack: root.page = "menu"
     }
-
 
     QuickActionsView {
         id: quickActionsView
@@ -265,25 +271,43 @@ Item {
         onDone: root.done()
     }
 
-    component TabArrow: Rectangle {
-        id: arrow
-        property string iconName: "chevron"
-        property real iconRotation: 0
+    component TabButton: Rectangle {
+        id: tab
+        property string iconName: "home"
+        property bool active: false
         signal clicked()
-        width: 32; height: 32; radius: 16
-        color: am.containsMouse ? Theme.textPrimary : Theme.hover
+
+        width: active ? 40 : 32
+        height: active ? 40 : 32
+        radius: height / 2
+        y: (40 - height) / 2
+
+        color: active
+               ? Theme.textPrimary
+               : (tabMouse.containsMouse ? Theme.hover : Theme.track)
+
+        Behavior on width  { NumberAnimation { duration: 220; easing.type: Easing.OutQuint } }
+        Behavior on height { NumberAnimation { duration: 220; easing.type: Easing.OutQuint } }
+        Behavior on radius { NumberAnimation { duration: 220; easing.type: Easing.OutQuint } }
+        Behavior on color  { ColorAnimation  { duration: 180 } }
+
         Icon {
             anchors.centerIn: parent
-            name: arrow.iconName
-            size: 18
-            rotation: arrow.iconRotation
-            tone: am.containsMouse ? "gray" : "dark"
+            name: tab.iconName
+            size: tab.active ? 20 : 16
+            tone: tab.active ? "gray" : "dark"
+            Behavior on size { NumberAnimation { duration: 220; easing.type: Easing.OutQuint } }
         }
-        MouseArea { id: am; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-            onClicked: arrow.clicked() }
+
+        MouseArea {
+            id: tabMouse
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: tab.clicked()
+        }
     }
 
-    // Горизонтальный ряд кнопок навигации
     Item {
         id: tabNav
         visible: root.open
@@ -292,30 +316,53 @@ Item {
         anchors.bottomMargin: root.navMargin
         anchors.horizontalCenter: parent.horizontalCenter
         height: root.navHeight
-        width: navRow.implicitWidth
+        width: Math.min(parent.width - 40, navRow.implicitWidth + 2 * root.navPad)
 
-        Row {
-            id: navRow
-            anchors.centerIn: parent
-            spacing: 12
+        Rectangle {
+            id: tabBg
+            anchors.fill: parent
+            radius: height / 2
+            color: Theme.track
+        }
 
-            TabArrow {
+        Flickable {
+            id: flick
+            anchors.fill: parent
+            anchors.leftMargin: root.navPad
+            anchors.rightMargin: root.navPad
+            anchors.topMargin: root.navPad
+            anchors.bottomMargin: root.navPad
+            contentWidth: navRow.implicitWidth
+            contentHeight: navRow.implicitHeight
+            clip: true
+            boundsBehavior: Flickable.StopAtBounds
+            interactive: contentWidth > width
+
+            Row {
+                id: navRow
                 anchors.verticalCenter: parent.verticalCenter
-                iconRotation: 90   // стрелка <-
-                onClicked: root.cyclePage(-1)
+                spacing: 4
+
+                Repeater {
+                    model: root.tabs
+                    delegate: TabButton {
+                        required property string modelData
+                        iconName: root.tabIcons[modelData] || "home"
+                        active: root.page === modelData
+                        onClicked: root.enterTab(modelData)
+                    }
+                }
             }
+        }
 
-            TabArrow {
-                anchors.verticalCenter: parent.verticalCenter
-                iconName: "close"
-                iconRotation: 0
-                onClicked: root.done()
-            }
-
-            TabArrow {
-                anchors.verticalCenter: parent.verticalCenter
-                iconRotation: -90    // стрелка ->
-                onClicked: root.cyclePage(1)
+        MouseArea {
+            id: wheelArea
+            anchors.fill: parent
+            acceptedButtons: Qt.NoButton
+            onWheel: w => {
+                if (w.angleDelta.y > 0) root.cyclePage(-1)
+                else if (w.angleDelta.y < 0) root.cyclePage(1)
+                w.accepted = true
             }
         }
     }

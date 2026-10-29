@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Diego Ledesma (TRN1) — Minimo OS
+
 pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
@@ -7,12 +7,7 @@ import "../../Common"
 import "../../Common/confirm.js" as Confirm
 import "../../Services"
 
-// Вкладка питания внутри острова (реализация из Power/PowerWindow.qml, которое
-// как отдельное окно удалено): «Завершить сеанс», «Перезагрузить», «Выключить».
-// Двойной клик/Enter с подтверждением (Confirm). Управление с клавиатуры — как в
-// QuickActionsView/NotesView: стрелки/Tab — выбор, Enter/Space — активировать,
-// Esc — закрыть островок, кнопка «назад» — вернуться в меню.
-// Вызов: qs -c minimo-shell ipc call power toggle (открывает остров на этой вкладке).
+
 Item {
     id: root
     signal back()
@@ -56,8 +51,6 @@ Item {
             root.press(id)
     }
 
-    // PowerView встраивается в IslandMenu, фокус у которого держит родитель
-    // (pill + unfocusLater в Island.qml): забираем фокус, когда страница становится активной.
     focus: enabled
 
     function requestKeyboardFocus() {
@@ -81,7 +74,6 @@ Item {
     onEnabledChanged: if (enabled) requestKeyboardFocus()
     Component.onCompleted: requestKeyboardFocus()
 
-    // Esc закрывает островок целиком (done), а кнопка «назад» возвращает в меню (back).
     Keys.onEscapePressed: event => {
         event.accepted = true
         root.reset()
@@ -97,7 +89,7 @@ Item {
     Keys.onEnterPressed:  event => { event.accepted = true; root.activateCurrent() }
     Keys.onSpacePressed:  event => { event.accepted = true; root.activateCurrent() }
 
-    implicitHeight: col.implicitHeight
+    implicitHeight: 32 + 16 + 112
 
     component RoundButton: Rectangle {
         id: rb
@@ -167,33 +159,39 @@ Item {
         onActivated: root.press(bid)
     }
 
-    Column {
-        id: col
+    Item {
+        id: header
         width: parent.width
-        spacing: 16
+        height: 32
+        anchors.top: parent.top
 
-        Item {
-            width: parent.width
-            height: 32
-            RoundButton { icon: "back"; onClicked: { root.reset(); root.back() } }
-            Text {
-                anchors.centerIn: parent
-                text: I18n.tr("Energy")
-                color: Theme.textPrimary
-                font.family: Theme.font
-                font.pixelSize: 15
-                font.weight: Font.DemiBold
-            }
+        RoundButton { icon: "back"; onClicked: { root.reset(); root.back() } }
+        Text {
+            anchors.centerIn: parent
+            text: I18n.tr("Energy")
+            color: Theme.textPrimary
+            font.family: Theme.font
+            font.pixelSize: 15
+            font.weight: Font.DemiBold
         }
+    }
+
+    Item {
+        id: btnArea
+        anchors.top: header.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
 
         Row {
             id: btnRow
-            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.centerIn: parent
+            anchors.verticalCenterOffset: 20 
             spacing: 16
 
-            BigButton { bid: "logout";   index: 0; icon: "logout";  label: I18n.tr("Log out") }
-            BigButton { bid: "reboot";   index: 1; icon: "restart"; label: I18n.tr("Restart") }
-            BigButton { bid: "poweroff"; index: 2; icon: "power";   label: I18n.tr("Shut down") }
+            BigButton { bid: "logout";   index: 0; icon: "logout";}
+            BigButton { bid: "reboot";   index: 1; icon: "restart";}
+            BigButton { bid: "poweroff"; index: 2; icon: "power";}
         }
     }
 }
