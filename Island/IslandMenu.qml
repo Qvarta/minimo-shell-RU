@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-
+// Copyright (c) 2026 Diego Ledesma (TRN1) — Minimo OS
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
@@ -20,8 +20,9 @@ Item {
     readonly property int navHeight: 48
     readonly property int navMargin: 8
     readonly property int navPad: 4
+    readonly property int navGap: 8
 
-    implicitHeight: (page === "clip" ? clip.implicitHeight : page === "cal" ? cal.implicitHeight : page === "quickactions" ? quickActionsView.implicitHeight : page === "notes" ? notes.implicitHeight : page === "weather" ? weather.implicitHeight : page === "radio" ? radio.implicitHeight : page === "power" ? power.implicitHeight : col.implicitHeight) + 40 + navHeight + navMargin
+    implicitHeight: (page === "clip" ? clip.implicitHeight : page === "cal" ? cal.implicitHeight : page === "quickactions" ? quickActionsView.implicitHeight : page === "notes" ? notes.implicitHeight : page === "weather" ? weather.implicitHeight : page === "radio" ? radio.implicitHeight : page === "power" ? power.implicitHeight : col.implicitHeight) + 40 + navGap + navHeight + navMargin
 
     readonly property var tabs: ["menu", "clip", "cal", "quickactions", "notes", "weather", "radio", "power"]
 
