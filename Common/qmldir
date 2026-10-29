@@ -13,7 +13,6 @@ singleton Media 1.0 Media.qml
 singleton Recorder 1.0 Recorder.qml
 singleton SettingsState 1.0 SettingsState.qml
 MSwitch 1.0 MSwitch.qml
-singleton CharacterBus 1.0 CharacterBus.qml
 singleton IdleState 1.0 IdleState.qml
 singleton SysStatus 1.0 SysStatus.qml
 singleton Notifs 1.0 Notifs.qml
