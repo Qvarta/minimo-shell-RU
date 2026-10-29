@@ -4,7 +4,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import "../../Common"
 
-// Notas dentro de la isla: lista (título = primera línea) y editor.
+// Notas dentro de la isla: lista (título = primera línea) и editor.
 // Se guardan solas (Notes, ~/.config/minimo-os/notes.json); "Eliminar" pide confirmación.
 Item {
     id: root
@@ -14,13 +14,74 @@ Item {
     property bool armed: false
     implicitHeight: col.implicitHeight
 
-    function reset() { close(); }
-    function open(id) { armed = false; editing = id; editor.text = Notes.get(id)?.text ?? ""; editor.forceActiveFocus(); editor.cursorPosition = editor.text.length }
+    // Индекс выбранной заметки в списке (когда editing === "").
+    property int currentIndex: 0
+
+    function reset() { close(); currentIndex = 0; }
+    function open(id) {
+        armed = false
+        const idx = Notes.notes.findIndex(n => n.id === id)
+        if (idx >= 0)
+            currentIndex = idx
+        editing = id
+        editor.text = Notes.get(id)?.text ?? ""
+        editor.forceActiveFocus()
+        editor.cursorPosition = editor.text.length
+    }
     function close() { if (editing !== "") Notes.flush(); editing = ""; armed = false; editor.focus = false; root.forceActiveFocus() }
     function goBack() { if (editing !== "") close(); else root.back() }
     function stamp(ms) {
         const d = new Date(ms), now = new Date()
         return d.toDateString() === now.toDateString() ? Qt.formatTime(d, "HH:mm") : d.toLocaleDateString(I18n.locale, I18n.lang === "en" ? "MMM d" : "d MMM")
+    }
+
+    // ───────── Навигация с клавиатуры ─────────
+    function moveSelection(delta) {
+        if (root.editing !== "")
+            return
+        const n = Notes.notes.length
+        if (n === 0)
+            return
+        currentIndex = (currentIndex + delta + n) % n
+        Qt.callLater(root.ensureVisible)
+    }
+
+    function openCurrent() {
+        if (root.editing !== "")
+            return
+        const n = Notes.notes.length
+        if (n === 0)
+            return
+        if (currentIndex >= n)
+            currentIndex = n - 1
+        root.open(Notes.notes[currentIndex].id)
+    }
+
+    function removeCurrent() {
+        if (root.editing === "")
+            return
+        const id = root.editing
+        root.editing = ""
+        root.armed = false
+        Notes.remove(id)
+        const n = Notes.notes.length
+        if (n > 0 && currentIndex >= n)
+            currentIndex = n - 1
+        root.forceActiveFocus()
+    }
+
+    function ensureVisible() {
+        if (!listFlick || listFlick.contentHeight <= listFlick.height)
+            return
+        const item = notesCol.children[root.currentIndex]
+        if (!item)
+            return
+        const top = item.y
+        const bottom = item.y + item.height
+        if (top < listFlick.contentY)
+            listFlick.contentY = top
+        else if (bottom > listFlick.contentY + listFlick.height)
+            listFlick.contentY = bottom - listFlick.height
     }
 
     // ───────── Фокус ─────────
@@ -46,7 +107,11 @@ Item {
     }
 
     onEnabledChanged: if (enabled) requestKeyboardFocus()
-    Component.onCompleted: requestKeyboardFocus()
+    Component.onCompleted: {
+        requestKeyboardFocus()
+        if (currentIndex >= Notes.notes.length)
+            currentIndex = Math.max(0, Notes.notes.length - 1)
+    }
 
     // Esc: если открыт редактор — закрыть редактор (вернуться к списку),
     // иначе — закрыть островок целиком. Кнопка «назад» всегда ведёт в меню.
@@ -57,6 +122,12 @@ Item {
         else
             root.done()
     }
+    Keys.onUpPressed:     event => { event.accepted = true; root.moveSelection(-1) }
+    Keys.onDownPressed:   event => { event.accepted = true; root.moveSelection(1)  }
+    Keys.onLeftPressed:   event => { event.accepted = true; root.moveSelection(-1) }
+    Keys.onRightPressed:  event => { event.accepted = true; root.moveSelection(1)  }
+    Keys.onReturnPressed: event => { event.accepted = true; root.openCurrent() }
+    Keys.onEnterPressed:  event => { event.accepted = true; root.openCurrent() }
 
     Timer { id: disarm; interval: 3000; onTriggered: root.armed = false }
 
@@ -101,8 +172,7 @@ Item {
                     focus: false
                     onClicked: {
                         if (!root.armed) { root.armed = true; disarm.restart(); return }
-                        const id = root.editing; root.editing = ""; root.armed = false; Notes.remove(id)
-                        root.forceActiveFocus()
+                        root.removeCurrent()
                     }
                 }
             }
@@ -117,6 +187,7 @@ Item {
             color: Theme.textSecondary; font.family: Theme.font; font.pixelSize: 13
         }
         Flickable {
+            id: listFlick
             visible: root.editing === "" && Notes.notes.length > 0
             width: parent.width
             height: visible ? Math.min(list.implicitHeight, 380) : 0
@@ -137,7 +208,10 @@ Item {
                             required property var modelData
                             required property int index
                             width: notesCol.width; height: 56
-                            Rectangle { anchors.fill: parent; anchors.margins: 4; radius: 14; color: nm.containsMouse ? Theme.hover : "transparent" }
+                            Rectangle {
+                                anchors.fill: parent; anchors.margins: 4; radius: 14
+                                color: (nm.containsMouse || nr.index === root.currentIndex) ? Theme.hover : "transparent"
+                            }
                             Column {
                                 x: 16; width: parent.width - 32 - when.implicitWidth - 8
                                 anchors.verticalCenter: parent.verticalCenter
@@ -165,7 +239,7 @@ Item {
                                 id: nm; anchors.fill: parent; hoverEnabled: true
                                 cursorShape: Qt.PointingHandCursor
                                 focus: false
-                                onClicked: { root.forceActiveFocus(); root.open(nr.modelData.id) }
+                                onClicked: { root.currentIndex = nr.index; root.forceActiveFocus(); root.open(nr.modelData.id) }
                             }
                         }
                     }

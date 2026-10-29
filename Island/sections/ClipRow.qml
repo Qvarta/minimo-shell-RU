@@ -11,6 +11,7 @@ Rectangle {
     property bool binary: false
     property bool pinned: false
     property bool removable: true
+    property bool active: false
     signal picked()
     signal pinToggled()
     signal removeRequested()
@@ -23,7 +24,8 @@ Rectangle {
 
     implicitHeight: Math.max(44, label.implicitHeight + 22)
     radius: 12
-    color: hov.hovered ? Theme.hover : "transparent"
+    // Как в NotesView: активный ряд подсвечивается так же, как под курсором.
+    color: (hov.hovered || row.active) ? Theme.hover : "transparent"
     Behavior on color { ColorAnimation { duration: 120 } }
 
     HoverHandler { id: hov }

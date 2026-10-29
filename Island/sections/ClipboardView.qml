@@ -14,16 +14,75 @@ Item {
     property bool armed: false        // "Borrar" pide un segundo clic
     implicitHeight: col.implicitHeight
 
-    function refresh() { armed = false; Clipboard.refresh() }
+    // Индекс выбранного элемента в объединённом списке: [pins..., history...]
+    property int currentIndex: 0
+
+    // Плоский список для навигации: сначала закреплённые, потом история.
+    readonly property var navItems: {
+        const out = []
+        for (const p of Clipboard.pins)
+            out.push({ kind: "pin", data: p })
+        for (const h of root.history)
+            out.push({ kind: "history", data: h })
+        return out
+    }
+
+    function refresh() { armed = false; currentIndex = 0; Clipboard.refresh() }
     readonly property var history: Clipboard.items.filter(i => i.binary || !Clipboard.isPinned(i.text))
 
+    // ───────── Навигация с клавиатуры ─────────
+    function moveSelection(delta) {
+        const n = root.navItems.length
+        if (n === 0)
+            return
+        currentIndex = (currentIndex + delta + n) % n
+        Qt.callLater(root.ensureVisible)
+    }
+
+    function activateCurrent() {
+        const item = root.navItems[root.currentIndex]
+        if (!item)
+            return
+        if (item.kind === "pin")
+            Clipboard.copyText(item.data)
+        else
+            Clipboard.copy(item.data)
+        root.picked()
+    }
+
+    function removeCurrent() {
+        const item = root.navItems[root.currentIndex]
+        if (!item || item.kind !== "history")
+            return
+        Clipboard.remove(item.data)
+        const n = root.navItems.length
+        if (n > 0 && currentIndex >= n)
+            currentIndex = n - 1
+    }
+
+    function ensureVisible() {
+        if (!flick || flick.contentHeight <= flick.height)
+            return
+        const item = list.children[root.currentIndex]
+        if (!item)
+            return
+        const top = item.y
+        const bottom = item.y + item.height
+        if (top < flick.contentY)
+            flick.contentY = top
+        else if (bottom > flick.contentY + flick.height)
+            flick.contentY = bottom - flick.height
+    }
+
     // ───────── Фокус ─────────
+    // Фокус ставим на flick, чтобы клавиши точно доходили до нас и не
+    // перехватывались IslandMenu / pill.
     focus: enabled
 
     function requestKeyboardFocus() {
         Qt.callLater(function() {
             if (root.enabled && root.visible)
-                root.forceActiveFocus()
+                flick.forceActiveFocus()
         })
         refocusTimer.restart()
     }
@@ -33,8 +92,8 @@ Item {
         interval: 200
         repeat: false
         onTriggered: {
-            if (root.enabled && root.visible && !root.activeFocus)
-                root.forceActiveFocus()
+            if (root.enabled && root.visible && !flick.activeFocus)
+                flick.forceActiveFocus()
         }
     }
 
@@ -64,7 +123,7 @@ Item {
                     id: bm; anchors.fill: parent; hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
                     focus: false
-                    onClicked: { root.forceActiveFocus(); root.back() }
+                    onClicked: { flick.forceActiveFocus(); root.back() }
                 }
             }
             Text {
@@ -83,7 +142,7 @@ Item {
                     id: cm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
                     focus: false
                     onClicked: {
-                        root.forceActiveFocus()
+                        flick.forceActiveFocus()
                         if (!root.armed) { root.armed = true; disarm.restart() } else { root.armed = false; Clipboard.clear() }
                     }
                 }
@@ -98,6 +157,20 @@ Item {
             clip: true
             boundsBehavior: Flickable.StopAtBounds
             interactive: contentHeight > height
+            // Клавиши ловим здесь, а не на root: flick — реальный получатель фокуса.
+            focus: true
+
+            Keys.onEscapePressed: event => {
+                event.accepted = true
+                root.done()
+            }
+            Keys.onUpPressed:     event => { event.accepted = true; root.moveSelection(-1) }
+            Keys.onDownPressed:   event => { event.accepted = true; root.moveSelection(1)  }
+            Keys.onLeftPressed:   event => { event.accepted = true; root.moveSelection(-1) }
+            Keys.onRightPressed:  event => { event.accepted = true; root.moveSelection(1)  }
+            Keys.onReturnPressed: event => { event.accepted = true; root.activateCurrent() }
+            Keys.onEnterPressed:  event => { event.accepted = true; root.activateCurrent() }
+            Keys.onDeletePressed: event => { event.accepted = true; root.removeCurrent() }
 
             Column {
                 id: list
@@ -113,11 +186,13 @@ Item {
                     model: Clipboard.pins
                     delegate: ClipRow {
                         required property string modelData
+                        required property int index
                         width: list.width
                         text: modelData
                         pinned: true
                         removable: false
-                        onPicked: { Clipboard.copyText(modelData); root.picked() }
+                        active: index === root.currentIndex
+                        onPicked: { root.currentIndex = index; Clipboard.copyText(modelData); root.picked() }
                         onPinToggled: Clipboard.unpin(modelData)
                     }
                 }
@@ -131,10 +206,12 @@ Item {
                     model: root.history
                     delegate: ClipRow {
                         required property var modelData
+                        required property int index
                         width: list.width
                         text: modelData.text
                         binary: modelData.binary
-                        onPicked: { Clipboard.copy(modelData); root.picked() }
+                        active: (Clipboard.pins.length + index) === root.currentIndex
+                        onPicked: { root.currentIndex = Clipboard.pins.length + index; Clipboard.copy(modelData); root.picked() }
                         onPinToggled: Clipboard.pin(modelData)
                         onRemoveRequested: Clipboard.remove(modelData)
                     }
