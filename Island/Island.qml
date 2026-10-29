@@ -345,9 +345,11 @@ PanelWindow {
                 win.panel = false; win.expanded = true; menu.showQuickActions()
             }
             else if (cmd === "power") {
-                // Panel de energía: ahora es una ventana propia (Power/PowerWindow.qml),
-                // no una página de la isla — así obtiene foco exclusivo del compositor.
-                win.collapse(); PowerState.show()
+                // qs -c minimo-shell ipc call power toggle: вкладка питания в острове
+                // (Power/PowerWindow.qml как отдельное окно удалено). Toggle: если уже
+                // открыта эта вкладка — закрыть остров, иначе — открыть/переключить.
+                if (win.expanded && menu.page === "power") win.collapse()
+                else { win.panel = false; win.shown = true; hideTimer.stop(); win.expanded = true; menu.showPower() }
             }
             else if (cmd === "clipboard") {
                 // Super+V: abre la isla en el portapapeles (o la cierra si ya está ahí).
