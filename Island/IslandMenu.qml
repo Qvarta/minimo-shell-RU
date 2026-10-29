@@ -196,9 +196,12 @@ Item {
         }
         Reveal { step: 1; width: parent.width; height: search.implicitHeight
             SearchSection { id: search; width: parent.width; onLaunched: root.done() }
-            // Аро выбора клавиатурной навигации (IslandMenu.currentIndex).
+            // Аро выбора клавиатурной навигации (IslandMenu.currentIndex). Позиционируется
+            // через x/y/width/height, а не якорями: внутри Column вертикальные якоря запрещены.
             Rectangle {
-                anchors.fill: search; anchors.margins: -5; radius: 24
+                x: -5; y: -5
+                width: box.width + 10; height: box.height + 10
+                radius: 24
                 color: "transparent"; border.width: 2; border.color: Theme.fill
                 visible: root.page === "menu" && root.itemAt(root.currentIndex) === "search"
             }
@@ -236,12 +239,9 @@ Item {
                     width: parent.width
                     visible: ready && mainSliders.volAt >= 0
                     y: mainSliders.volFirst ? 0 : mainSliders.dispH + mainSliders.gap
-                    // Подсветка выбора клавиатурной навигации (IslandMenu.currentIndex).
-                    Rectangle {
-                        anchors.fill: parent; anchors.margins: -4; radius: height / 2
-                        color: "transparent"; border.width: 2; border.color: Theme.fill
-                        visible: root.page === "menu" && root.itemAt(root.currentIndex) === "volume"
-                    }
+                    // Подсветка выбора клавиатурной навигации рисуется внутри самого
+                    // слайдера: Rectangle с якорями внутри Column ломает раскладку.
+                    selectionRole: root.page === "menu" && root.itemAt(root.currentIndex) === "volume" ? "volume" : ""
                 }
                 DisplaySection {
                     id: disp
@@ -249,11 +249,7 @@ Item {
                     visible: brightness
                     y: mainSliders.volFirst ? mainSliders.volH + mainSliders.gap : 0
                     brightness: mainSliders.sliders.indexOf("brightness") >= 0
-                    Rectangle {
-                        anchors.fill: parent; anchors.margins: -4; radius: height / 2
-                        color: "transparent"; border.width: 2; border.color: Theme.fill
-                        visible: root.page === "menu" && root.itemAt(root.currentIndex) === "brightness"
-                    }
+                    selectionRole: root.page === "menu" && root.itemAt(root.currentIndex) === "brightness" ? "brightness" : ""
                 }
             }
         }

@@ -19,4 +19,15 @@ MSlider {
     iconClickable: true
     onIconClicked: if (ready) sink.audio.muted = !sink.audio.muted
     onMoved: v => { if (ready) { sink.audio.volume = v; if (v > 0) sink.audio.muted = false } }
+
+    // Подсветка клавиатурной навигации из IslandMenu: рисуется dentro del propio
+    // slider (Item), no como hijo de un Column, donde los anclajes verticales
+    // están prohibidos y rompen el layout.
+    Rectangle {
+        anchors.fill: parent; anchors.margins: -4; radius: height / 2
+        color: "transparent"; border.width: 2; border.color: Theme.fill
+        visible: root.selectionRole === "volume" && root.visible
+    }
+    // Rol de la selección de teclado actual (IslandMenu.currentIndex).
+    property string selectionRole: ""
 }
