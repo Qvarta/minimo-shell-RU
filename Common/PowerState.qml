@@ -5,20 +5,10 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 
-// Estado del panel de energía (ventana independiente, como el lanzador).
-// Desde la terminal:
-//   qs -c minimo-shell ipc call power open|close|toggle
+// Estado del panel de energía. La ventana independiente (Power/PowerWindow.qml)
+// fue eliminada: el panel ahora es una pestaña de la isla (Island/sections/PowerView.qml).
+// Para abrirla desde la terminal se usa CharacterBus (IpcHandler "power"):
+//   qs -c minimo-shell ipc call power toggle
 Singleton {
     id: root
-    property bool open: false
-    function toggle() { open = !open }
-    function show() { open = true }
-    function hide() { open = false }
-
-    IpcHandler {
-        target: "power"
-        function toggle(): void { root.toggle() }
-        function open(): void { root.show() }
-        function close(): void { root.hide() }
-    }
 }
