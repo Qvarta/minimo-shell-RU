@@ -16,11 +16,6 @@ Item {
     signal moved(real v)
     signal iconClicked()
 
-    // Управление с клавиатуры (IslandMenu): шаг = 5% диапазона, как колесо мыши.
-    function stepBy(delta) { s.moved(Math.max(s.from, Math.min(s.to, s.value + delta * (s.to - s.from) * 0.05))) }
-    function increase() { s.stepBy(1) }
-    function decrease() { s.stepBy(-1) }
-
     implicitHeight: 40
     implicitWidth: 320
 
