@@ -18,13 +18,11 @@ Item {
     property alias character: chr
     property string page: "menu"   // "menu" | "clip" | "cal" | "quickactions" | "notes" | "weather" | "radio" | "power"
 
-    // Высота панели навигации по вкладкам и зазор под ней.
     readonly property int navHeight: 32
     readonly property int navMargin: 8
 
     implicitHeight: (page === "clip" ? clip.implicitHeight : page === "cal" ? cal.implicitHeight : page === "quickactions" ? quickActionsView.implicitHeight : page === "notes" ? notes.implicitHeight : page === "weather" ? weather.implicitHeight : page === "radio" ? radio.implicitHeight : page === "power" ? power.implicitHeight : col.implicitHeight) + 40 + navHeight + navMargin
 
-    // Вкладки для циклической навигации стрелками внизу.
     readonly property var tabs: ["menu", "clip", "cal", "quickactions", "notes", "weather", "radio", "power"]
 
     function enterTab(t) {
@@ -34,7 +32,6 @@ Item {
         page = t
     }
 
-    // Циклический переход по вкладкам: n = -1 назад, n = +1 вперёд.
     function cyclePage(n) {
         const i = tabs.indexOf(page)
         enterTab(tabs[(i + n + tabs.length) % tabs.length])
