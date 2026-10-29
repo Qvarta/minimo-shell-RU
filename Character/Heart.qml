@@ -3,6 +3,7 @@
 import QtQuick
 import QtQuick.Shapes
 import "../Common"
+import "../Services"
 
 // Corazón plano de las caricias, del color del cuerpo del personaje (negro en claro,
 // blanco en oscuro). Aparece con un "pop" (overshoot), sube con deriva y un vaivén

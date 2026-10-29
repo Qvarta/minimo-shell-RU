@@ -7,3 +7,4 @@ singleton Brightness 1.0 Brightness.qml
 singleton Niri 1.0 Niri.qml
 singleton Compositor 1.0 Compositor.qml
 singleton RadioService 1.0 RadioService.qml
+singleton CharacterBus 1.0 CharacterBus.qml
