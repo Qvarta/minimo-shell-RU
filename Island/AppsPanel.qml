@@ -4,6 +4,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Services.SystemTray
 import "../Common"
+import "../Services"
 import "../Character"
 
 // Panel "En segundo plano" (deslizar la isla de derecha a izquierda): las apps de la

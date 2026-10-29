@@ -3,6 +3,7 @@
 import QtQuick
 import Quickshell
 import "../../Common"
+import "../../Services"
 
 // Buscador de aplicaciones instaladas (DesktopEntries).
 Column {

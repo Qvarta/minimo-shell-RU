@@ -3,6 +3,7 @@
 import QtQuick
 import QtQuick.Effects
 import "../Common"
+import "../Services"
 
 // Personaje de Minimo OS (v2, según reference2): esfera negra mate con dos ojos
 // pastilla blancos, PARALELOS. La "cara" (el par de ojos) se desliza por la
