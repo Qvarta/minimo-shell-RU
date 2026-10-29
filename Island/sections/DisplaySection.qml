@@ -8,7 +8,11 @@ Column {
     id: root
     property bool brightness: true
     spacing: 8
+    // Управление с клавиатуры из IslandMenu (пробрасываем к ползунку яркости).
+    function increase() { if (slider.visible) slider.increase() }
+    function decrease() { if (slider.visible) slider.decrease() }
     MSlider {
+        id: slider
         width: parent.width
         visible: root.brightness
         icon: "sun"
