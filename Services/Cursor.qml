@@ -4,7 +4,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
-import "../Services"
+import "."
 
 // Положение курсора: Hyprland использует IPC-скрипт, остальные сессии — MouseArea
 // на слое обоев (для пустого рабочего стола).

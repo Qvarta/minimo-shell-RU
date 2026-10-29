@@ -4,6 +4,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import "../Services"
 
 // Mini mascota: tres medidores que se calculan a partir de marcas de tiempo (sin
 // tick de fondo). Solo mientras el panel está abierto se recalcula una vez por minuto.

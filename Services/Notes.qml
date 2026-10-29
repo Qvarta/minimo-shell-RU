@@ -4,7 +4,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
-import "notes.js" as N
+import "../scripts/notes.js" as N
 
 // Notas de la isla, en ~/.config/minimo-os/notes.json. Escritura atómica (FileView escribe
 // un temporal y lo renombra); al editar se guarda 500 ms después de la última tecla.

@@ -5,6 +5,7 @@ import Quickshell.Widgets
 import Quickshell
 import Quickshell.Io
 import "../Common"
+import "../Services"
 import "../Character"
 
 // Estado compacto: personaje + hora (HH:mm).
@@ -19,7 +20,7 @@ Item {
     implicitHeight: Theme.compactH + (hasShot ? shot.boxH + shot.side : 0)
 
     // Notificación en curso (la isla la muestra junto al personaje, sin taparlo).
-    readonly property var notif: Notifs.current   // cola en Common/Notifs.qml
+    readonly property var notif: Notifs.current   // cola en Services/Notifs.qml
     readonly property bool notifQuiet: notif !== null && Notifs.fromFocused(notif)
     property bool vpnActive: false
 

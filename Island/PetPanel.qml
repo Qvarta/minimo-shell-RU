@@ -2,6 +2,7 @@
 // Copyright (c) 2026 Diego Ledesma (TRN1) — Minimo OS
 import QtQuick
 import "../Common"
+import "../Services"
 import "../Character"
 
 // Minimo como mascota (se abre deslizando hacia abajo sobre la isla).
