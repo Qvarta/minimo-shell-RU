@@ -12,7 +12,7 @@ Column {
     id: root
     spacing: 18
     property bool shown: false
-    property string version: ""
+    property string version: "1.0.0"
     property string hyprVersion: ""
     property string niriVersion: ""
     property string qsVersion: ""
@@ -22,10 +22,10 @@ Column {
     onShownChanged: if (shown) { greetLater.restart(); if (Compositor.session !== "niri" && !root.hyprVersion) hv.running = true; if (!root.niriVersion) nv.running = true; if (!root.qsVersion) qv.running = true }
     Timer { id: greetLater; interval: 350; onTriggered: chr.react("greet") }
 
-    FileView {
-        path: Qt.resolvedUrl("../VERSION").toString().replace("file://", "")
-        onLoaded: root.version = text().trim()
-    }
+    // FileView {
+    //     path: Qt.resolvedUrl("../VERSION").toString().replace("file://", "")
+    //     onLoaded: root.version = text().trim()
+    // }
     Process {
         id: hv
         command: ["hyprctl", "version"]
