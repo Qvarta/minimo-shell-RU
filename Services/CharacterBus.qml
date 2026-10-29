@@ -46,12 +46,6 @@ Singleton {
         function pet(): void { root.islandCommand("pet") }
     }
     IpcHandler {
-        target: "power"
-        // Открыть/закрыть вкладку питания островка:
-        //   qs -c minimo-shell ipc call power toggle
-        function toggle(): void { root.islandCommand("power") }
-    }
-    IpcHandler {
         target: "radio"
         function play(name: string): string {
             if (!RadioService.stationAt(name)) return "desconocida: " + name

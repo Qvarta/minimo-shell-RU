@@ -4,7 +4,6 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import "../Common"
-import "../Services"
 
 // Fondo animado: video o GIF en bucle con mpvpaper (opcional). Se elige con el selector
 // de archivos; mientras está activo reemplaza al fondo estático (que vuelve al quitarlo).

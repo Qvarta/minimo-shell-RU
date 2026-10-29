@@ -3,7 +3,6 @@
 pragma Singleton
 import QtQuick
 import Quickshell
-import "../Services"
 import "i18n.js" as D
 
 // Idioma de la interfaz (español / inglés / ruso). Uso: I18n.tr("English key", arg1, …).

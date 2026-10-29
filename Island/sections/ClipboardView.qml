@@ -3,7 +3,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import "../../Common"
-import "../../Services"
 
 // Portapapeles dentro de la isla: fijados arriba, historial debajo.
 // Clic en un elemento: lo copia y cierra la isla (pegar con Ctrl+V).

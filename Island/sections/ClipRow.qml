@@ -2,7 +2,6 @@
 // Copyright (c) 2026 Diego Ledesma (TRN1) — Minimo OS
 import QtQuick
 import "../../Common"
-import "../../Services"
 
 // Elemento del portapapeles: texto (2 líneas como máximo) o "Imagen".
 // Clic: copiar. Al pasar el mouse: fijar/soltar y quitar.

@@ -4,7 +4,6 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
-import "../Services"
 
 // Estado de la ventana de Ajustes. Desde Hyprland / terminal:
 //   qs -p ~/Proyectos/minimo-os/minimo-shell ipc call settings toggle

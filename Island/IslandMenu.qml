@@ -16,12 +16,11 @@ Item {
     property bool open: false
     readonly property bool searchFocused: search.hasFocus
     property alias character: chr
-    property string page: "menu"   // "menu" | "clip" | "cal" | "quickactions" | "notes" | "weather" | "radio" | "power"
-    implicitHeight: (page === "clip" ? clip.implicitHeight : page === "cal" ? cal.implicitHeight : page === "quickactions" ? quickActionsView.implicitHeight : page === "notes" ? notes.implicitHeight : page === "weather" ? weather.implicitHeight : page === "radio" ? radio.implicitHeight : page === "power" ? powerView.implicitHeight : col.implicitHeight) + 40
+    property string page: "menu"   // "menu" | "clip" | "cal" | "quickactions" | "notes" | "weather" | "radio"
+    implicitHeight: (page === "clip" ? clip.implicitHeight : page === "cal" ? cal.implicitHeight : page === "quickactions" ? quickActionsView.implicitHeight : page === "notes" ? notes.implicitHeight : page === "weather" ? weather.implicitHeight : page === "radio" ? radio.implicitHeight : col.implicitHeight) + 40
 
     function showClipboard() { clip.refresh(); page = "clip" }
     function showQuickActions() { page = "quickactions" }
-    function showPower() { powerView.reset(); page = "power" }
 
     // El buscador no se enfoca solo: se activa al hacerle clic.
     function opened() { search.reset() }
@@ -33,7 +32,7 @@ Item {
         running: root.open && root.stage < 6
         onTriggered: root.stage++
     }
-    onOpenChanged: if (!open) { stage = 0; page = "menu"; notes.reset(); powerView.reset() }
+    onOpenChanged: if (!open) { stage = 0; page = "menu"; notes.reset() }
 
     SystemClock { id: clock; precision: SystemClock.Minutes }
 
@@ -226,20 +225,6 @@ Item {
         opacity: root.page === "radio" ? 1 : 0
         visible: opacity > 0
         enabled: root.page === "radio"
-        Behavior on x { NumberAnimation { duration: 320; easing.type: Easing.OutQuint } }
-        Behavior on opacity { NumberAnimation { duration: 220 } }
-        onBack: root.page = "menu"
-        onDone: root.done()
-    }
-
-    PowerView {
-        id: powerView
-        x: root.page === "power" ? 20 : root.width * 0.3
-        y: 20
-        width: root.width - 40
-        opacity: root.page === "power" ? 1 : 0
-        visible: opacity > 0
-        enabled: root.page === "power"
         Behavior on x { NumberAnimation { duration: 320; easing.type: Easing.OutQuint } }
         Behavior on opacity { NumberAnimation { duration: 220 } }
         onBack: root.page = "menu"

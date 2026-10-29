@@ -3,7 +3,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import "../../Common"
-import "../../Services"
 import "../../Common/calendar.js" as Cal
 
 // Calendario dentro de la isla (se abre con clic en la fecha): mes con hoy marcado,

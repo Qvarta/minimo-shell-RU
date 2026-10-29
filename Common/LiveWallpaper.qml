@@ -5,8 +5,8 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import Quickshell.Hyprland
-import "."
-import "../scripts/livewall.js" as LW
+import "../Services"
+import "livewall.js" as LW
 
 // Fondo animado con mpvpaper (opcional, AUR): un solo proceso para todos los monitores,
 // decodificación por hardware, sin audio. Para gastar lo mínimo se pausa (IPC de mpv):
@@ -29,7 +29,7 @@ Singleton {
 
     // Sin bindings en running/command: antes \`running: root.active\` se rompía al asignar
     // \`player.running = false\` para cambiar de archivo, y después de Quitar ya no arrancaba otro.
-    // Ahora el ciclo lo decide scripts/livewall.js (nunca dos procesos; reinicio tras exited).
+    // Ahora el ciclo lo decide Common/livewall.js (nunca dos procesos; reinicio tras exited).
     property var lw: LW.initial()
     readonly property string wanted: active ? DisplayState.liveWallpaper : ""
     onWantedChanged: sync()

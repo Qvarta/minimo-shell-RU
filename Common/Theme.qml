@@ -3,7 +3,6 @@
 pragma Singleton
 import QtQuick
 import Quickshell
-import "../Services"
 
 // Tokens visuales de Minimo OS. Claro (blanco, estilo iOS) u oscuro (casi negro, estilo
 // Apple). Todo color de la shell sale de acá; los

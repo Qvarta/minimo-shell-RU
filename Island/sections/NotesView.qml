@@ -3,7 +3,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import "../../Common"
-import "../../Services"
 
 // Notas dentro de la isla: lista (título = primera línea) и editor.
 // Se guardan solas (Notes, ~/.config/minimo-os/notes.json); "Eliminar" pide confirmación.
