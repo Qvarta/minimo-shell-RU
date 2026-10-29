@@ -1,5 +1,5 @@
 qs -c minimo-shell ipc call island quickactions
-qs -c minimo-shell ipc call power open
+qs -c minimo-shell ipc call power toggle
 qs -c minimo-shell ipc call launcher toggle
 qs -c minimo-shell ipc call settings toggle
 qs -c minimo-shell ipc call character list
