@@ -334,6 +334,12 @@ PanelWindow {
             if (cmd === "show") { win.shown = true; hideTimer.stop() }
             else if (cmd === "hide") { win.expanded = false; win.shown = false }
             else if (cmd === "open") win.expanded = true
+            else if (cmd === "toggle") {
+                // qs -c minimo-shell ipc call island toggle: abre el menú de la isla
+                // o lo cierra si ya estaba abierto.
+                if (win.expanded) win.collapse()
+                else { win.panel = false; win.shown = true; hideTimer.stop(); win.expanded = true }
+            }
             else if (cmd === "quickactions") {
                 // Открыть вкладку быстрых действий напрямую через IPC.
                 win.panel = false; win.expanded = true; menu.showQuickActions()

@@ -32,7 +32,7 @@ Item {
         running: root.open && root.stage < 6
         onTriggered: root.stage++
     }
-    onOpenChanged: if (!open) { stage = 0; page = "menu"; actions.reset(); notes.reset() }
+    onOpenChanged: if (!open) { stage = 0; page = "menu"; notes.reset() }
 
     SystemClock { id: clock; precision: SystemClock.Minutes }
 
@@ -131,13 +131,6 @@ Item {
                 }
             }
         }
-        Reveal { step: 4; width: parent.width; height: actions.implicitHeight
-            ActionsSection {
-                id: actions
-                anchors.horizontalCenter: parent.horizontalCenter
-                onDone: root.done()
-                onQuickActions: root.page = "quickactions"
-            } }
     }
 
     MenuButton {
@@ -145,7 +138,7 @@ Item {
         anchors.top: parent.top; anchors.topMargin: 20
         anchors.right: parent.right; anchors.rightMargin: 5
         visible: root.open && root.page === "menu"
-        onActivated: { actions.reset(); root.done(); SettingsState.show() }
+        onActivated: { root.done(); SettingsState.show() }
     }
 
     ClipboardView {
