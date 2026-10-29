@@ -2,16 +2,15 @@
 // Copyright (c) 2026 Diego Ledesma (TRN1) — Minimo OS
 import QtQuick
 import QtQuick.Effects
+import Quickshell
 import Quickshell.Services.Mpris
 import "../../Common"
+import "../../Services"
 
-// Reproductor MPRIS: carátula, título/artista, controles de línea y progreso.
 Item {
     id: root
     readonly property var players: Mpris.players.values
-    // Reproductor activo, reactivo a Mpris.players: primero el que suena; si no, uno en
-    // pausa con título. Se ignoran entradas "fantasma" (apps Chromium/Electron que dejan un
-    // MPRIS detenido y sin metadatos al cerrar la pestaña/medio) y el proxy playerctld.
+
     function usable(p) {
         if (!p || (p.dbusName || "").indexOf("playerctld") >= 0) return false
         if (p.isPlaying) return true
@@ -22,8 +21,44 @@ Item {
         for (const p of players) if (usable(p)) return p
         return null
     }
-    visible: player !== null
+    visible: player !== null || RadioService.isPlaying
     implicitHeight: visible ? 64 : 0
+
+    readonly property bool playerIsVlc: {
+        if (!player) return false
+        var id = (player.identity || "").toLowerCase()
+        var name = (player.dbusName || "").toLowerCase()
+        return id.indexOf("vlc") >= 0 || name.indexOf("vlc") >= 0
+    }
+
+    readonly property bool radioActive: RadioService.isPlaying
+        && RadioService.currentPlayingStation !== ""
+        && (player === null || playerIsVlc)
+
+    readonly property url radioArtUrl: RadioService.currentPlayingStation !== ""
+        ? Qt.resolvedUrl("../../assets/png/" + RadioService.currentPlayingStation + ".png")
+        : ""
+
+    readonly property bool showTitleLine: {
+        if (radioActive) return RadioService.currentTrack !== ""
+        return player !== null
+    }
+
+    readonly property string displayTitle: {
+        if (radioActive) return RadioService.currentTrack
+        if (!player) return ""
+        return player.trackTitle || I18n.tr("Untitled")
+    }
+
+    readonly property string displayArtist: {
+        if (radioActive) {
+            if (RadioService.currentTrack === "" && RadioService.currentArtist === "")
+                return RadioService.currentPlayingStation
+            return RadioService.currentArtist || ""
+        }
+        if (!player) return ""
+        return player.trackArtist || player.identity || ""
+    }
 
     Timer {
         running: root.visible && root.player !== null && root.player.isPlaying
@@ -31,7 +66,6 @@ Item {
         onTriggered: root.player.positionChanged()
     }
 
-    // Carátula circular (recorte real con máscara), gira como un vinilo al reproducir.
     Item {
         id: art
         width: 48; height: 48
@@ -42,13 +76,12 @@ Item {
 
         NumberAnimation {
             target: art; property: "angle"
-            running: root.visible && root.player !== null && art.hasArt
-            paused: running && !root.player.isPlaying
+            running: root.visible && (root.radioActive || (root.player !== null && root.player.isPlaying)) && art.hasArt
+            paused: running && !(root.radioActive || (root.player !== null && root.player.isPlaying))
             from: art.angle; to: art.angle + 360
             duration: 8000; loops: Animation.Infinite
         }
 
-        // Fallback: círculo gris claro con ícono de nota.
         Rectangle {
             anchors.fill: parent
             radius: width / 2
@@ -57,8 +90,6 @@ Item {
             Icon { anchors.centerIn: parent; name: "music"; tone: "gray"; size: 20 }
         }
 
-        // La carátula gira DENTRO de una capa (a 2x); la máscara circular no gira.
-        // Así el borde lo define solo la máscara suavizada: sin aro, sin dientes, sin halo.
         Item {
             id: coverLayer
             anchors.fill: parent
@@ -73,24 +104,17 @@ Item {
                 anchors.centerIn: parent
                 width: parent.width; height: parent.height
                 rotation: art.angle
-                source: root.player ? root.player.trackArtUrl : ""
+                source: {
+                    if (root.radioActive && root.radioArtUrl.toString() !== "")
+                        return root.radioArtUrl
+                    return root.player ? root.player.trackArtUrl : ""
+                }
                 fillMode: Image.PreserveAspectCrop
                 asynchronous: true
                 smooth: true
                 mipmap: true
                 antialiasing: true
                 sourceSize: Qt.size(art.width * 2, art.height * 2)
-
-                function statusName(status) {
-                    switch (status) {
-                    case Image.Null: return "Null"
-                    case Image.Ready: return "Ready"
-                    case Image.Loading: return "Loading"
-                    case Image.Error: return "Error"
-                    default: return "Unknown(" + status + ")"
-                    }
-                }
-
             }
         }
         Item {
@@ -105,14 +129,12 @@ Item {
         MultiEffect {
             anchors.fill: parent
             visible: art.hasArt
-
             source: coverLayer
             maskEnabled: true
             maskSource: circleMask
             maskThresholdMin: 0.5
             maskSpreadAtMin: 1.0
         }
-        // Agujero central sutil, como un disco.
         Rectangle {
             anchors.centerIn: parent
             width: 7; height: 7; radius: 3.5
@@ -129,18 +151,20 @@ Item {
         spacing: 2
         Text {
             width: parent.width; elide: Text.ElideRight
-            text: root.player ? (root.player.trackTitle || I18n.tr("Untitled")) : ""
+            visible: root.showTitleLine
+            text: root.displayTitle
             color: Theme.textPrimary; font.family: Theme.font; font.pixelSize: 13; font.weight: Font.DemiBold
         }
         Text {
             width: parent.width; elide: Text.ElideRight
-            text: root.player ? (root.player.trackArtist || root.player.identity) : ""
+            visible: text !== ""
+            text: root.displayArtist
             color: Theme.textSecondary; font.family: Theme.font; font.pixelSize: 12
         }
         Item { width: 1; height: 6 }
         Rectangle {
             width: parent.width; height: 3; radius: 1.5; color: Theme.track
-            visible: root.player !== null && root.player.lengthSupported && root.player.length > 0
+            visible: root.player !== null && !root.radioActive && root.player.lengthSupported && root.player.length > 0
             Rectangle {
                 height: parent.height; radius: 1.5; color: Theme.fill
                 width: root.player && root.player.length > 0 ? parent.width * Math.min(1, root.player.position / root.player.length) : 0
@@ -155,9 +179,24 @@ Item {
         spacing: 8
         Repeater {
             model: [
-                { i: "prev", a: "prev", ok: root.player !== null && root.player.canGoPrevious },
-                { i: root.player && root.player.isPlaying ? "pause" : "play", a: "play", ok: root.player !== null && root.player.canTogglePlaying },
-                { i: "next", a: "next", ok: root.player !== null && root.player.canGoNext }
+                {
+                    i: "prev", a: "prev",
+                    ok: root.radioActive ? RadioService.stations.length > 0
+                                         : (root.player !== null && root.player.canGoPrevious)
+                },
+                {
+                    i: root.radioActive
+                        ? (RadioService.isPlaying ? "pause" : "play")
+                        : (root.player && root.player.isPlaying ? "pause" : "play"),
+                    a: "play",
+                    ok: root.radioActive ? true
+                                         : (root.player !== null && root.player.canTogglePlaying)
+                },
+                {
+                    i: "next", a: "next",
+                    ok: root.radioActive ? RadioService.stations.length > 0
+                                         : (root.player !== null && root.player.canGoNext)
+                }
             ]
             delegate: Item {
                 required property var modelData
@@ -168,9 +207,15 @@ Item {
                     enabled: modelData.ok
                     cursorShape: Qt.PointingHandCursor
                     onClicked: {
-                        if (modelData.a === "prev") root.player.previous()
-                        else if (modelData.a === "next") root.player.next()
-                        else root.player.togglePlaying()
+                        if (root.radioActive) {
+                            if (modelData.a === "prev") RadioService.prev()
+                            else if (modelData.a === "next") RadioService.next()
+                            else RadioService.toggleCurrent()
+                        } else if (root.player) {
+                            if (modelData.a === "prev") root.player.previous()
+                            else if (modelData.a === "next") root.player.next()
+                            else root.player.togglePlaying()
+                        }
                     }
                 }
             }

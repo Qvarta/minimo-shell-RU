@@ -1,260 +1,16 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
-import Quickshell.Io
 import "../../Common"
-
+import "../../Services"
 
 Item {
     id: root
     signal back()
     signal done()
 
-    // ───────────────────────── Файл состояния ─────────────────────────
-    readonly property string dir: Quickshell.env("HOME") + "/.config/minimo-os"
-    readonly property string fileUrl: "file://" + dir + "/radio.json"
-    readonly property string defaultStationsPath: Quickshell.env("HOME") + "/.config/minimo-os/radio-stations.json"
-    readonly property string bundledStationsPath: Qt.resolvedUrl("../../assets/radio-stations.json").toString().replace("file://", "")
+    readonly property bool isPlaying: RadioService.isPlaying
 
-    property bool loaded: false
-    property var stations: []
-    property string currentPlayingStation: ""
-    property string currentPlayingProcessState: ""
-    property string currentTrack: ""
-    property string currentArtist: ""
-
-    readonly property bool isPlaying: currentPlayingStation !== "" && currentPlayingProcessState === "start"
-
-    function stationAt(name) { return stations.find(s => s.name === name) ?? null }
-
-    // ─────────────────────── Чтение / запись radio.json ───────────────────────
-    Process {
-        id: catProc
-        running: true
-        command: ["sh", "-c", "cat '" + root.dir + "/radio.json' 2>/dev/null || true"]
-        stdout: StdioCollector {
-            onStreamFinished: root.applyState(text)
-        }
-        onExited: {
-            if (!root.loaded)
-                loadDefaults.restart()
-        }
-    }
-
-    FileView {
-        id: defaultsView
-        path: "file://" + root.defaultStationsPath
-        blockLoading: true
-        printErrors: false
-    }
-
-    // Если radio-stations.json нет в ~/.config/minimo-os — копируем из assets
-    function ensureDefaults(callback) {
-        copyDefaultsProc.callback = callback
-        copyDefaultsProc.command = ["sh", "-c",
-            "mkdir -p '" + root.dir + "' && " +
-            "if [ ! -f '" + root.defaultStationsPath + "' ]; then " +
-            "  cp '" + root.bundledStationsPath + "' '" + root.defaultStationsPath + "' 2>/dev/null || true; " +
-            "fi"
-        ]
-        copyDefaultsProc.running = true
-    }
-
-    Process {
-        id: copyDefaultsProc
-        running: false
-        property var callback: null
-        onExited: {
-            if (callback) callback()
-            callback = null
-        }
-    }
-
-    Timer {
-        id: loadDefaults
-        interval: 150
-        repeat: false
-        onTriggered: {
-            if (root.loaded)
-                return
-            root.ensureDefaults(function() {
-                if (root.loaded)
-                    return
-                var list = []
-                try {
-                    defaultsView.reload()   
-                    var j = JSON.parse(defaultsView.text())
-                    var arr = Array.isArray(j) ? j : (j && Array.isArray(j.stations) ? j.stations : [])
-                    list = arr.map(s => ({ name: s.name || "", url: s.url || "" })).filter(s => s.name && s.url)
-                } catch (e) {
-                    console.warn("RadioView: no se pudo leer stations.json:", e)
-                }
-                root.stations = list
-                root.loaded = true
-                root.save()
-            })
-        }
-    }
-
-    function applyState(text) {
-        var st = null
-        if (text && text.trim() !== "") {
-            try {
-                st = JSON.parse(text)
-            } catch (e) {
-                console.warn("RadioView: radio.json inválido:", e)
-            }
-        }
-        if (st && typeof st === "object") {
-            root.currentPlayingStation = st.currentPlayingStation || ""
-            root.currentPlayingProcessState = st.currentPlayingProcessState || ""
-            root.currentTrack = st.currentTrack || ""
-            root.currentArtist = st.currentArtist || ""
-            if (Array.isArray(st.stations))
-                root.stations = st.stations.map(s => ({ name: s.name || "", url: s.url || "" })).filter(s => s.name && s.url)
-            root.loaded = true
-        } else {
-            loadDefaults.restart()
-        }
-        if (root.currentPlayingProcessState === "start")
-            root.stopPlayback()
-    }
-
-    function serialize() {
-        return JSON.stringify({
-            stations: root.stations,
-            currentPlayingStation: root.currentPlayingStation,
-            currentPlayingProcessState: root.currentPlayingProcessState,
-            currentTrack: root.currentTrack,
-            currentArtist: root.currentArtist
-        }, null, 2)
-    }
-
-    function save() {
-        if (!loaded) return                 
-        writeProc.command = ["sh", "-c", "mkdir -p '" + root.dir + "' && cat > '" + root.dir + "/radio.json'", root.serialize()]
-        writeProc.running = true
-    }
-    Process {
-        id: writeProc
-        running: false
-    }
-
-    // ───────────────────────── Воспроизведение (cvlc) ─────────────────────────
-    function playStation(name) {
-        var st = stationAt(name)
-        if (!st)
-            return
-        stopPlayback()
-        currentPlayingStation = name
-        currentPlayingProcessState = "start"
-        currentTrack = ""
-        currentArtist = ""
-        save()
-        cvlcProcess.running = true
-    }
-
-    function stopPlayback() {
-        cvlcProcess.running = false
-        killProc.command = ["sh", "-c", "kill -9 $(ps aux | grep -E '[c]vlc|[v]lc' | awk '{print $2}') 2>/dev/null || true"]
-        killProc.running = true
-        currentPlayingStation = ""
-        currentPlayingProcessState = ""
-        save()
-    }
-    Process {
-        id: killProc
-        running: false
-    }
-
-    property var cvlcCommand: []
-    Process {
-        id: cvlcProcess
-        running: false
-        command: root.cvlcCommand
-        stdout: SplitParser {
-            onRead: data => root.parseMetadata(data)
-        }
-        stderr: SplitParser {
-            onRead: data => root.parseMetadata(data)
-        }
-        onStarted: {
-            currentTrack = ""
-            currentArtist = ""
-            save()
-        }
-        onExited: {
-            if (root.currentPlayingStation !== "")
-                root.stopPlayback()
-        }
-    }
-
-    function toggle(name) {
-        if (isPlaying && currentPlayingStation === name) {
-            stopPlayback()
-        } else if (isPlaying) {
-            stopPlayback()
-            switchTimer.stationToPlay = name
-            switchTimer.restart()
-        } else {
-            buildCommand(name)
-            playStation(name)
-        }
-    }
-    Timer {
-        id: switchTimer
-        interval: 100
-        repeat: false
-        property string stationToPlay: ""
-        onTriggered: {
-            if (stationToPlay) {
-                root.buildCommand(stationToPlay)
-                root.playStation(stationToPlay)
-                stationToPlay = ""
-            }
-        }
-    }
-
-    function buildCommand(name) {
-        var st = stationAt(name)
-        if (!st) {
-            root.cvlcCommand = ["true"]
-            return
-        }
-        root.cvlcCommand = ["sh", "-c", "cvlc -vvv --intf dummy " + st.url.replace(/'/g, "'\"'\"'") + " 2>&1"]
-    }
-
-    // ───────────────────────── Метаданные (icy) ─────────────────────────
-    function parseMetadata(line) {
-        var icyTitleMatch = line.match(/New Icy-Title=(.+)$/i)
-        if (icyTitleMatch) {
-            parseArtistTitle(icyTitleMatch[1].trim())
-            return
-        }
-        var icyNameMatch = line.match(/Icy-Name:\s*(.+)/i)
-        if (icyNameMatch)
-            return
-    }
-
-    function parseArtistTitle(text) {
-        text = text.trim()
-        const separators = [" - ", " – ", " — ", ": ", " | ", " / ", " by "]
-        for (var i = 0; i < separators.length; i++) {
-            const sep = separators[i]
-            const index = text.indexOf(sep)
-            if (index > 0) {
-                currentArtist = text.substring(0, index).trim()
-                currentTrack = text.substring(index + sep.length).trim()
-                save()
-                return
-            }
-        }
-        currentArtist = ""
-        currentTrack = text
-        save()
-    }
-
-    // ───────────────────────── Сетка станций ─────────────────────────
     property int currentIndex: 0
     readonly property int columns: 3
     readonly property real cellSpacing: 8
@@ -263,113 +19,78 @@ Item {
         return Qt.resolvedUrl("../../assets/png/" + stationName + ".png")
     }
 
-    function getCurrentRow() { return Math.floor(currentIndex / columns) }
-    function getCurrentColumn() { return currentIndex % columns }
-
     function ensureVisible() {
-        if (gridView.count <= currentIndex || gridView.contentHeight <= gridView.height) return;
-        const row = Math.floor(currentIndex / columns);
-        const cellTop = row * gridView.cellHeight;
-        const cellBottom = cellTop + gridView.cellHeight;
-        if (cellTop < gridView.contentY) {
-            gridView.contentY = cellTop;
-        } else if (cellBottom > gridView.contentY + gridView.height) {
-            gridView.contentY = cellBottom - gridView.height;
-        }
+        if (gridView.count <= currentIndex || gridView.contentHeight <= gridView.height) return
+        const row = Math.floor(currentIndex / columns)
+        const cellTop = row * gridView.cellHeight
+        const cellBottom = cellTop + gridView.cellHeight
+        if (cellTop < gridView.contentY) gridView.contentY = cellTop
+        else if (cellBottom > gridView.contentY + gridView.height) gridView.contentY = cellBottom - gridView.height
     }
 
     function selectStation(index) {
-        if (index >= 0 && index < stations.length) {
+        if (index >= 0 && index < RadioService.stations.length) {
             currentIndex = index
             Qt.callLater(ensureVisible)
         }
     }
 
     function moveSelection(deltaX, deltaY) {
-        if (stations.length === 0)
-            return
-        const currentRow = getCurrentRow()
-        const currentCol = getCurrentColumn()
-        const newRow = currentRow + deltaY
-        var newCol = currentCol + deltaX
-        var newIndex = newRow * columns + newCol
-
+        if (RadioService.stations.length === 0) return
+        const currentRow = Math.floor(currentIndex / columns)
+        const currentCol = currentIndex % columns
         if (deltaY !== 0) {
-            if (newRow >= 0 && newRow < Math.ceil(stations.length / columns)) {
-                const maxColInNewRow = Math.min(columns - 1, stations.length - 1 - newRow * columns)
-                if (maxColInNewRow >= 0) {
-                    newCol = Math.min(currentCol, maxColInNewRow)
-                    selectStation(newRow * columns + newCol)
-                }
+            const newRow = currentRow + deltaY
+            if (newRow >= 0 && newRow < Math.ceil(RadioService.stations.length / columns)) {
+                const maxCol = Math.min(columns - 1, RadioService.stations.length - 1 - newRow * columns)
+                if (maxCol >= 0) selectStation(newRow * columns + Math.min(currentCol, maxCol))
             }
         } else if (deltaX !== 0) {
-            if (newIndex >= 0 && newIndex < stations.length) {
-                if (Math.floor(newIndex / columns) === currentRow)
-                    selectStation(newIndex)
-            }
+            const newIndex = currentRow * columns + currentCol + deltaX
+            if (newIndex >= 0 && newIndex < RadioService.stations.length
+                && Math.floor(newIndex / columns) === currentRow)
+                selectStation(newIndex)
         }
     }
 
     function activateCurrentStation() {
-        if (currentIndex >= 0 && currentIndex < stations.length)
-            toggle(stations[currentIndex].name)
+        if (currentIndex >= 0 && currentIndex < RadioService.stations.length)
+            RadioService.toggle(RadioService.stations[currentIndex].name)
     }
 
     Connections {
-        target: root
-        enabled: true
-        function onCurrentPlayingStationChanged() { syncIndex() }
+        target: RadioService
+        function onStateChanged() { syncIndex() }
     }
     function syncIndex() {
-        if (!currentPlayingStation)
-            return
-        for (var i = 0; i < stations.length; i++) {
-            if (stations[i].name === currentPlayingStation) {
-                if (currentIndex !== i) {
-                    currentIndex = i
-                    Qt.callLater(ensureVisible)
-                }
+        if (!RadioService.currentPlayingStation) return
+        for (var i = 0; i < RadioService.stations.length; i++) {
+            if (RadioService.stations[i].name === RadioService.currentPlayingStation) {
+                if (currentIndex !== i) { currentIndex = i; Qt.callLater(ensureVisible) }
                 return
             }
         }
     }
 
-    // RadioView is embedded in IslandMenu, whose parent keeps its own focus.
-    // Claim focus whenever this page becomes active so arrow/Enter keys reach us.
     focus: enabled
 
     function requestKeyboardFocus() {
         Qt.callLater(function() {
-            if (root.enabled && root.visible)
-                root.forceActiveFocus()
+            if (root.enabled && root.visible) root.forceActiveFocus()
         })
-        // Повторная попытка: Island.qml запускает unfocusLater (150 мс), который
-        // возвращает фокус на pill после открытия через IPC.
         refocusTimer.restart()
     }
 
     Timer {
         id: refocusTimer
-        interval: 200
-        repeat: false
-        onTriggered: {
-            if (root.enabled && root.visible && !root.activeFocus)
-                root.forceActiveFocus()
-        }
+        interval: 200; repeat: false
+        onTriggered: if (root.enabled && root.visible && !root.activeFocus) root.forceActiveFocus()
     }
 
     onEnabledChanged: if (enabled) requestKeyboardFocus()
+    Component.onCompleted: requestKeyboardFocus()
 
-    Component.onCompleted: {
-        requestKeyboardFocus()
-        root.ensureDefaults(null)
-    }
-
-    // Esc закрывает островок целиком (done), а кнопка «назад» возвращает в меню (back).
-    Keys.onEscapePressed: event => {
-        event.accepted = true
-        root.done()
-    }
+    Keys.onEscapePressed: event => { event.accepted = true; root.done() }
     Keys.onUpPressed: event => { event.accepted = true; moveSelection(0, -1) }
     Keys.onDownPressed: event => { event.accepted = true; moveSelection(0, 1) }
     Keys.onLeftPressed: event => { event.accepted = true; moveSelection(-1, 0) }
@@ -382,21 +103,17 @@ Item {
     component RoundButton: Rectangle {
         id: rb
         property string icon
-        property real iconRotation: 0
         signal clicked()
         width: 32; height: 32; radius: 16
         color: rbm.containsMouse ? Theme.hover : Theme.surface
-        Icon { anchors.centerIn: parent; name: rb.icon; size: 18; rotation: rb.iconRotation }
+        Icon { anchors.centerIn: parent; name: rb.icon; size: 18 }
         MouseArea {
             id: rbm
             anchors.fill: parent
             hoverEnabled: true
             cursorShape: Qt.PointingHandCursor
             focus: false
-            onClicked: {
-                root.forceActiveFocus()
-                rb.clicked()
-            }
+            onClicked: { root.forceActiveFocus(); rb.clicked() }
         }
     }
 
@@ -405,7 +122,6 @@ Item {
         width: parent.width
         spacing: 14
 
-        // Заголовок
         Item {
             width: parent.width
             height: 32
@@ -413,15 +129,10 @@ Item {
             Text {
                 anchors.centerIn: parent
                 width: parent.width - 80
-                text: root.isPlaying
-                    ? root.currentPlayingStation
-                    : I18n.tr("Radio")
-                color: Theme.textPrimary
-                font.family: Theme.font
-                font.pixelSize: 15
-                font.weight: Font.DemiBold
-                elide: Text.ElideRight
-                horizontalAlignment: Text.AlignHCenter
+                text: RadioService.isPlaying ? RadioService.currentPlayingStation : I18n.tr("Radio")
+                color: Theme.textPrimary; font.family: Theme.font
+                font.pixelSize: 15; font.weight: Font.DemiBold
+                elide: Text.ElideRight; horizontalAlignment: Text.AlignHCenter
             }
         }
 
@@ -429,14 +140,13 @@ Item {
             id: gridView
             width: parent.width
             height: Math.min(contentHeight, 3 * cellHeight)
-            model: root.stations
+            model: RadioService.stations
             cacheBuffer: 100
             boundsBehavior: Flickable.StopAtBounds
             clip: true
             interactive: contentHeight > height
             cellWidth: Math.floor((width - (root.columns - 1) * root.cellSpacing) / root.columns)
             cellHeight: cellWidth + 44
-
 
             delegate: Item {
                 id: delegateContainer
@@ -447,14 +157,8 @@ Item {
 
                 readonly property bool isSelected: index === root.currentIndex
                 readonly property bool isHovered: mouseArea.containsMouse
-                readonly property bool isNowPlaying: root.isPlaying && root.currentPlayingStation === modelData.name
+                readonly property bool isNowPlaying: RadioService.isPlaying && RadioService.currentPlayingStation === modelData.name
                 readonly property bool isActive: isSelected || isHovered || isNowPlaying
-
-                function updateImageVisibility() {
-                    if (stationImageSource.status === Image.Ready)
-                        stationImage.visible = !isNowPlaying
-                }
-                onIsNowPlayingChanged: updateImageVisibility()
 
                 Rectangle {
                     anchors.fill: parent
@@ -473,7 +177,7 @@ Item {
                         onClicked: {
                             root.forceActiveFocus()
                             root.currentIndex = delegateContainer.index
-                            root.toggle(modelData.name)
+                            RadioService.toggle(modelData.name)
                         }
                     }
 
@@ -483,28 +187,17 @@ Item {
                         spacing: 6
 
                         Rectangle {
-                            id: imageSquare
-                            width: parent.width
-                            height: width
+                            width: parent.width; height: width
                             color: delegateContainer.isNowPlaying ? "transparent" : Theme.field
-                            radius: 12
-                            clip: true
+                            radius: 12; clip: true
                             scale: delegateContainer.isActive ? 1.1 : 1.0
                             Behavior on scale { NumberAnimation { duration: 200; easing.type: Easing.InOutQuad } }
                             transformOrigin: Item.Center
 
-                            // Плейсхолдер
                             Rectangle {
                                 id: iconPlaceholder
-                                anchors.fill: parent
-                                radius: 12
-                                color: Theme.field
-                                Icon {
-                                    anchors.centerIn: parent
-                                    name: "music"
-                                    size: Math.min(parent.width * 0.4, 34)
-                                    tone: "gray"
-                                }
+                                anchors.fill: parent; radius: 12; color: Theme.field
+                                Icon { anchors.centerIn: parent; name: "music"; size: Math.min(parent.width * 0.4, 34); tone: "gray" }
                             }
 
                             Image {
@@ -512,9 +205,7 @@ Item {
                                 anchors.fill: parent
                                 source: root.getImageUrl(modelData.name)
                                 fillMode: Image.PreserveAspectCrop
-                                smooth: true
-                                cache: true
-                                asynchronous: true
+                                smooth: true; cache: true; asynchronous: true
                                 visible: false
                                 onStatusChanged: {
                                     if (status === Image.Ready) {
@@ -526,49 +217,33 @@ Item {
                                     }
                                 }
                             }
-
                             Image {
                                 id: stationImage
                                 anchors.fill: parent
                                 source: stationImageSource.source
                                 fillMode: Image.PreserveAspectCrop
-                                smooth: true
-                                visible: false
+                                smooth: true; visible: false
                             }
-
                             ShaderEffect {
                                 id: playingShader
                                 anchors.fill: parent
                                 visible: delegateContainer.isNowPlaying && stationImageSource.status === Image.Ready
-                                property var source: ShaderEffectSource {
-                                    sourceItem: stationImageSource
-                                    hideSource: true
-                                    live: true
-                                }
+                                property var source: ShaderEffectSource { sourceItem: stationImageSource; hideSource: true; live: true }
                                 property real time: shaderAnimator.animTime
                                 property color bgWidget: Theme.card
                                 property vector2d resolution: Qt.vector2d(width, height)
                                 property color bgColor1: "#2C7BFF"
                                 fragmentShader: Qt.resolvedUrl("../../shaders/ring.qsb")
-
                                 Item {
                                     id: shaderAnimator
                                     property real animTime: 0
-                                    NumberAnimation on animTime {
-                                        loops: Animation.Infinite
-                                        from: 0
-                                        to: 1000
-                                        duration: 60000
-                                        running: playingShader.visible
-                                    }
+                                    NumberAnimation on animTime { loops: Animation.Infinite; from: 0; to: 1000; duration: 60000; running: playingShader.visible }
                                 }
                             }
-
                             Rectangle {
                                 visible: delegateContainer.isNowPlaying
                                 anchors { top: parent.top; right: parent.right; margins: 4 }
-                                width: 24; height: 24; radius: 12
-                                color: Theme.fill
+                                width: 24; height: 24; radius: 12; color: Theme.fill
                                 Icon { anchors.centerIn: parent; name: "volume"; size: 14; tone: "white" }
                             }
                         }
@@ -590,7 +265,6 @@ Item {
                 }
             }
 
-            // Пустое состояние
             Text {
                 anchors.centerIn: parent
                 visible: gridView.count === 0

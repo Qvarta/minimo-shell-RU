@@ -5,21 +5,16 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 
-// Canal para disparar reacciones del personaje y mostrar la isla desde afuera:
-//   qs -p ~/Proyectos/minimo-os/minimo-shell ipc call character react giggle
-//   qs -p ~/Proyectos/minimo-os/minimo-shell ipc call character list | look 0.9 0 | sleep | wake
-//   qs -p ~/Proyectos/minimo-os/minimo-shell ipc call island reveal|dismiss|open|close|toggle
 Singleton {
     id: root
     signal react(string name)
     signal islandCommand(string cmd)
     signal gaze(real x, real y, int ms)
     signal pet()
-    // Escritura en campos de texto del shell (el personaje entrecierra los ojos para leer).
     signal typed()
     signal typingStopped()
-    signal squintFor(int ms)        // depuración: qs ipc call character squint 2000
-    property int hearts: 0          // corazones vivos (tope de partículas)
+    signal squintFor(int ms)
+    property int hearts: 0
     readonly property var names: ["hop", "doubleHop", "giggle", "lookAround", "surprise",
                                   "wink", "dizzy", "yawn", "curious", "greet", "happyBounce", "startled"]
 
@@ -30,9 +25,7 @@ Singleton {
             root.react(name); return "ok"
         }
         function list(): string { return root.names.join(" ") }
-        // Forzar la mirada (x, y en -1..1) durante unos segundos.
         function look(x: real, y: real): void { root.gaze(x, y, 4000) }
-        // Caricia (como varios clics seguidos sobre el personaje).
         function pet(): void { root.pet() }
         function squint(ms: int): void { root.squintFor(ms > 0 ? ms : 2000) }
         function sleep(): void { IdleState.sleepNow() }
@@ -44,8 +37,6 @@ Singleton {
         function dismiss(): void { root.islandCommand("hide") }
         function open(): void { root.islandCommand("open") }
         function close(): void { root.islandCommand("close") }
-        // Abrir/cerrar el menú de la isla desde afuera:
-        //   qs -c minimo-shell ipc call island toggle
         function toggle(): void { root.islandCommand("toggle") }
         function status(): void { root.islandCommand("status") }
         function apps(): void { root.islandCommand("apps") }
@@ -53,5 +44,22 @@ Singleton {
         function quickactions(): void { root.islandCommand("quickactions") }
         function power(): void { root.islandCommand("power") }
         function pet(): void { root.islandCommand("pet") }
+    }
+    IpcHandler {
+        target: "radio"
+        function play(name: string): string {
+            if (!RadioService.stationAt(name)) return "desconocida: " + name
+            RadioService.playStation(name); return "ok"
+        }
+        function stop(): void { RadioService.stop() }
+        function toggle(): void { RadioService.toggleCurrent() }
+        function prev(): void { RadioService.prev() }
+        function next(): void { RadioService.next() }
+        function list(): string {
+            return RadioService.stations.map(s => s.name).join("\n")
+        }
+        function current(): string {
+            return RadioService.isPlaying ? RadioService.currentPlayingStation : ""
+        }
     }
 }
