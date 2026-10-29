@@ -5,6 +5,7 @@ import QtQuick.Effects
 import Quickshell
 import Quickshell.Wayland
 import "../Common"
+import "../Services"
 
 // Lanzador estilo Spotlight (Super+B): tarjeta blanca centrada, buscador grande,
 // resultados con iconos, navegación con teclado. Clic afuera o Escape cierra.
