@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Diego Ledesma (TRN1) — Minimo OS
 import QtQuick
+import "../Services"
+
 
 // Slider estilo Centro de Control: pista gruesa gris, relleno negro, icono adentro.
 Item {

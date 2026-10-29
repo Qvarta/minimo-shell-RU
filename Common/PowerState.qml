@@ -4,6 +4,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import "../Services"
 
 // Estado del panel de energía. La ventana independiente (Power/PowerWindow.qml)
 // fue eliminada: el panel ahora es una pestaña de la isla (Island/sections/PowerView.qml).

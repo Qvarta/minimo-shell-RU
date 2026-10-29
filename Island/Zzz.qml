@@ -2,6 +2,7 @@
 // Copyright (c) 2026 Diego Ledesma (TRN1) — Minimo OS
 import QtQuick
 import "../Common"
+import "../Services"
 
 // "z" que flotan hacia arriba y se desvanecen mientras el personaje duerme.
 Item {

@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Diego Ledesma (TRN1) — Minimo OS
 import QtQuick
+import "../Services"
 
-// Монохромная SVG-иконка из единственного исходного набора assets/icons/src/.
-// tone сохраняет прежнюю семантику вызовов: dark, gray или white.
-// Цвет применяется шейдером, поэтому копии SVG для разных тем не нужны.
+
 Item {
     id: root
 

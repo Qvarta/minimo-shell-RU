@@ -4,6 +4,8 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import "../Services"
+
 
 // Estado persistente de la interfaz y del fondo de pantalla.
 Singleton {

@@ -2,6 +2,7 @@
 // Copyright (c) 2026 Diego Ledesma (TRN1) — Minimo OS
 import QtQuick
 import "../Common"
+import "../Services"
 
 // Botón circular gris claro con icono de línea y etiqueta gris debajo.
 // Sin filete: el círculo se distingue por icono, etiqueta y hover. El foco por teclado se
