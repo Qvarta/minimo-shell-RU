@@ -17,7 +17,12 @@ Item {
     readonly property bool searchFocused: search.hasFocus
     property alias character: chr
     property string page: "menu"   // "menu" | "clip" | "cal" | "quickactions" | "notes" | "weather" | "radio" | "power"
-    implicitHeight: (page === "clip" ? clip.implicitHeight : page === "cal" ? cal.implicitHeight : page === "quickactions" ? quickActionsView.implicitHeight : page === "notes" ? notes.implicitHeight : page === "weather" ? weather.implicitHeight : page === "radio" ? radio.implicitHeight : page === "power" ? power.implicitHeight : col.implicitHeight) + 40
+
+    // Высота панели навигации по вкладкам и зазор под ней.
+    readonly property int navHeight: 32
+    readonly property int navMargin: 8
+
+    implicitHeight: (page === "clip" ? clip.implicitHeight : page === "cal" ? cal.implicitHeight : page === "quickactions" ? quickActionsView.implicitHeight : page === "notes" ? notes.implicitHeight : page === "weather" ? weather.implicitHeight : page === "radio" ? radio.implicitHeight : page === "power" ? power.implicitHeight : col.implicitHeight) + 40 + navHeight + navMargin
 
     // Вкладки для циклической навигации стрелками внизу.
     readonly property var tabs: ["menu", "clip", "cal", "quickactions", "notes", "weather", "radio", "power"]
@@ -263,40 +268,58 @@ Item {
         onDone: root.done()
     }
 
-    // Круглая кнопка со стрелкой (chevron, повёрнутый влево/вправо).
     component TabArrow: Rectangle {
         id: arrow
+        property string iconName: "chevron"
         property real iconRotation: 0
         signal clicked()
         width: 32; height: 32; radius: 16
-        color: am.containsMouse ? Theme.hover : Theme.surface
-        Icon { anchors.centerIn: parent; name: "chevron"; size: 18; rotation: arrow.iconRotation }
+        color: am.containsMouse ? Theme.textPrimary : Theme.hover
+        Icon {
+            anchors.centerIn: parent
+            name: arrow.iconName
+            size: 18
+            rotation: arrow.iconRotation
+            tone: am.containsMouse ? "gray" : "dark"
+        }
         MouseArea { id: am; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
             onClicked: arrow.clicked() }
     }
 
-    // Горизонтальный ряд кнопок навигации по вкладкам внизу: <- прижат к левому краю, -> к правому.
+    // Горизонтальный ряд кнопок навигации
     Item {
         id: tabNav
         visible: root.open
         z: 10
         anchors.bottom: parent.bottom
-        anchors.bottomMargin: 4
-        anchors.left: parent.left; anchors.leftMargin: 20
-        anchors.right: parent.right; anchors.rightMargin: 20
-        height: 32
+        anchors.bottomMargin: root.navMargin
+        anchors.horizontalCenter: parent.horizontalCenter
+        height: root.navHeight
+        width: navRow.implicitWidth
 
-        TabArrow {
-            anchors.left: parent.left
-            anchors.verticalCenter: parent.verticalCenter
-            iconRotation: -90   // стрелка <-
-            onClicked: root.cyclePage(-1)
-        }
-        TabArrow {
-            anchors.right: parent.right
-            anchors.verticalCenter: parent.verticalCenter
-            iconRotation: 90    // стрелка ->
-            onClicked: root.cyclePage(1)
+        Row {
+            id: navRow
+            anchors.centerIn: parent
+            spacing: 12
+
+            TabArrow {
+                anchors.verticalCenter: parent.verticalCenter
+                iconRotation: 90   // стрелка <-
+                onClicked: root.cyclePage(-1)
+            }
+
+            TabArrow {
+                anchors.verticalCenter: parent.verticalCenter
+                iconName: "close"
+                iconRotation: 0
+                onClicked: root.done()
+            }
+
+            TabArrow {
+                anchors.verticalCenter: parent.verticalCenter
+                iconRotation: -90    // стрелка ->
+                onClicked: root.cyclePage(1)
+            }
         }
     }
 }
