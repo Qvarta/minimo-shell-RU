@@ -8,7 +8,7 @@ import Quickshell.Io
 // Canal para disparar reacciones del personaje y mostrar la isla desde afuera:
 //   qs -p ~/Proyectos/minimo-os/minimo-shell ipc call character react giggle
 //   qs -p ~/Proyectos/minimo-os/minimo-shell ipc call character list | look 0.9 0 | sleep | wake
-//   qs -p ~/Proyectos/minimo-os/minimo-shell ipc call island reveal|dismiss|open|close
+//   qs -p ~/Proyectos/minimo-os/minimo-shell ipc call island reveal|dismiss|open|close|toggle
 Singleton {
     id: root
     signal react(string name)
@@ -44,6 +44,9 @@ Singleton {
         function dismiss(): void { root.islandCommand("hide") }
         function open(): void { root.islandCommand("open") }
         function close(): void { root.islandCommand("close") }
+        // Abrir/cerrar el menú de la isla desde afuera:
+        //   qs -c minimo-shell ipc call island toggle
+        function toggle(): void { root.islandCommand("toggle") }
         function status(): void { root.islandCommand("status") }
         function apps(): void { root.islandCommand("apps") }
         function clipboard(): void { root.islandCommand("clipboard") }
