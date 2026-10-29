@@ -8,7 +8,6 @@ Icon 1.0 Icon.qml
 VectorIcon 1.0 VectorIcon.qml
 singleton Apps 1.0 Apps.qml
 singleton LauncherState 1.0 LauncherState.qml
-singleton PowerState 1.0 PowerState.qml
 singleton Media 1.0 Media.qml
 singleton Recorder 1.0 Recorder.qml
 singleton SettingsState 1.0 SettingsState.qml

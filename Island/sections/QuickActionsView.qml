@@ -15,14 +15,16 @@ Item {
     signal clipboard()
     signal notes()
     signal radio()
+    signal power()
 
     readonly property var builtins: [
         { id: "radio", label: I18n.tr("Radio"), icon: "music" },
         { id: "capture", label: I18n.tr("Screenshot"), icon: "capture" },
         { id: "notes", label: I18n.tr("Notes"), icon: "note" },
         { id: "clipboard", label: I18n.tr("Clipboard"), icon: "clipboard" },
+        { id: "power", label: I18n.tr("Energy"), icon: "power" },
     ]
-    readonly property var buttons: ["radio", "capture", "notes", "clipboard"]
+    readonly property var buttons: ["radio", "capture", "notes", "clipboard", "power"]
     property int currentIndex: 0
 
     function moveSelection(delta) {
@@ -118,6 +120,8 @@ Item {
             root.notes();
         else if (id === "radio")
             root.radio();
+        else if (id === "power")
+            root.power();
     }
 
     component RoundButton: Rectangle {
