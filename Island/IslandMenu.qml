@@ -22,8 +22,9 @@ Item {
     readonly property int navItemGap: 4
     readonly property int navPad: 4
     readonly property int navGap: 12
-    readonly property int contentX: navWidth + navGap + 8
-    readonly property int contentWidth: Math.max(0, width - contentX - 20)
+    readonly property int navInset: 8
+    readonly property int contentX: 20
+    readonly property int contentWidth: Math.max(0, width - contentX * 2)
     readonly property int navHeight: tabs.length * navItemSize + (tabs.length - 1) * navItemGap + 2 * navPad
 
     readonly property real activePageHeight: page === "clip" ? clip.implicitHeight
@@ -305,105 +306,5 @@ Item {
         onDone: root.done()
     }
 
-    component TabButton: Item {
-        id: tab
-        property string iconName: "home"
-        property bool active: false
-        signal clicked()
 
-        width: root.navItemSize
-        height: root.navItemSize
-
-        Rectangle {
-            id: tabBackground
-            anchors.centerIn: parent
-            width: tab.active ? 40 : 32
-            height: tab.active ? 40 : 32
-            radius: height / 2
-
-            color: tab.active
-                   ? Theme.textPrimary
-                   : (tabMouse.containsMouse ? Theme.hover : Theme.track)
-
-            Behavior on width  { NumberAnimation { duration: 220; easing.type: Easing.OutQuint } }
-            Behavior on height { NumberAnimation { duration: 220; easing.type: Easing.OutQuint } }
-            Behavior on radius { NumberAnimation { duration: 220; easing.type: Easing.OutQuint } }
-            Behavior on color  { ColorAnimation  { duration: 180 } }
-        }
-
-        Icon {
-            anchors.centerIn: parent
-            name: tab.iconName
-            size: tab.active ? 20 : 16
-            tone: tab.active ? "gray" : "dark"
-            Behavior on size { NumberAnimation { duration: 220; easing.type: Easing.OutQuint } }
-        }
-
-        MouseArea {
-            id: tabMouse
-            anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: tab.clicked()
-        }
-    }
-
-    Item {
-        id: tabNav
-        visible: root.open
-        z: 10
-        anchors.left: parent.left
-        anchors.leftMargin: 8
-        anchors.verticalCenter: parent.verticalCenter
-        height: root.navHeight
-        width: root.navWidth
-
-        Rectangle {
-            id: tabBg
-            anchors.fill: parent
-            radius: height / 2
-            color: Theme.track
-        }
-
-        Flickable {
-            id: flick
-            anchors.fill: parent
-            anchors.leftMargin: root.navPad
-            anchors.rightMargin: root.navPad
-            anchors.topMargin: root.navPad
-            anchors.bottomMargin: root.navPad
-            contentWidth: navRow.implicitWidth
-            contentHeight: navRow.implicitHeight
-            clip: true
-            boundsBehavior: Flickable.StopAtBounds
-            interactive: contentHeight > height
-
-            Column {
-                id: navRow
-                anchors.horizontalCenter: parent.horizontalCenter
-                spacing: root.navItemGap
-
-                Repeater {
-                    model: root.tabs
-                    delegate: TabButton {
-                        required property string modelData
-                        iconName: root.tabIcons[modelData] || "home"
-                        active: root.page === modelData
-                        onClicked: root.enterTab(modelData)
-                    }
-                }
-            }
-        }
-
-        MouseArea {
-            id: wheelArea
-            anchors.fill: parent
-            acceptedButtons: Qt.NoButton
-            onWheel: w => {
-                if (w.angleDelta.y > 0) root.cyclePage(-1)
-                else if (w.angleDelta.y < 0) root.cyclePage(1)
-                w.accepted = true
-            }
-        }
-    }
 }
