@@ -126,10 +126,10 @@ Item {
         Card {
             Row2 { icon: "chip"; label: "CPU"; value: root.r ? root.r.cpu + "%" + (root.r.temp !== null && root.r.temp !== undefined ? " · " + root.r.temp + " °C" : "") : "…" }
             Bar { frac: root.r ? root.r.cpu / 100 : 0 }
-            Row2 { icon: "apps"; label: I18n.tr("Memory"); value: root.r ? SystemInfo.gib(root.r.memUsed) + " / " + SystemInfo.gib(root.r.memTotal) + " GB" : "…" }
-            Bar { frac: root.r ? root.r.memUsed / root.r.memTotal : 0 }
-            Row2 { icon: "folder"; label: I18n.tr("Disk"); value: root.r ? Math.round(100 * root.r.diskUsed / root.r.diskTotal) + "% · " + SystemInfo.gib(root.r.diskTotal - root.r.diskUsed) + " GB libres" : "…" }
-            Bar { frac: root.r ? root.r.diskUsed / root.r.diskTotal : 0 }
+            Row2 { icon: "apps"; label: I18n.tr("Memory"); value: root.r && root.r.memTotal > 0 ? SystemInfo.gib(root.r.memUsed) + " / " + SystemInfo.gib(root.r.memTotal) + " GB" : "…" }
+            Bar { frac: root.r && root.r.memTotal > 0 ? root.r.memUsed / root.r.memTotal : 0 }
+            Row2 { icon: "folder"; label: I18n.tr("Disk"); value: root.r && root.r.diskTotal > 0 ? Math.round(100 * root.r.diskUsed / root.r.diskTotal) + "% · " + SystemInfo.gib(root.r.diskTotal - root.r.diskUsed) + " GB libres" : "…" }
+            Bar { frac: root.r && root.r.diskTotal > 0 ? root.r.diskUsed / root.r.diskTotal : 0 }
             Row2 {
                 visible: !!root.bat
                 icon: "battery"; label: I18n.tr("Battery")
@@ -145,8 +145,9 @@ Item {
         }
 
         // Dispositivos
-        Title { text: I18n.tr("Devices"); topPadding: 4 }
+        Title { visible: !!(root.d && (root.d.audio || root.d.bluetooth.length || root.d.keyboards.length || root.d.mice.length || root.d.usb.length)); text: I18n.tr("Devices"); topPadding: 4 }
         Card {
+            visible: !!(root.d && (root.d.audio || root.d.bluetooth.length || root.d.keyboards.length || root.d.mice.length || root.d.usb.length))
             Repeater { model: root.d ? root.d.keyboards : []; Row2 { required property var modelData; icon: "keyboard"; label: I18n.tr("Keyboard"); value: modelData } }
             Repeater { model: root.d ? root.d.mice : []; Row2 { required property var modelData; icon: "mouse"; label: I18n.tr("Mouse"); value: modelData } }
             Row2 { visible: !!(root.d && root.d.audio); icon: "volume"; label: "Audio"; value: root.d ? root.d.audio : "" }
