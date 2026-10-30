@@ -284,8 +284,6 @@ Singleton {
                 mins: seconds > 0 ? Math.round(seconds / 60) : null
             }
         });
-        console.info("[SystemInfo][UPower] Using UPower battery:",
-            JSON.stringify({ percentage: pct, status: status, secondsRemaining: seconds }));
     }
 
     function refreshGpu() {
