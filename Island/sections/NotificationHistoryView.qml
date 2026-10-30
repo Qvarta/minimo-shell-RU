@@ -80,7 +80,7 @@ Item {
             }
             Text {
                 anchors.centerIn: parent
-                text: I18n.tr("Notification history")
+                text: I18n.tr("Notifications")
                 color: Theme.textPrimary; font.family: Theme.font
                 font.pixelSize: 15; font.weight: Font.DemiBold
             }
@@ -141,7 +141,7 @@ Item {
                                 width: parent.width
                                 spacing: 7
                                 Text {
-                                    width: parent.width - appName.implicitWidth - 8
+                                    width: parent.width - appName.width - 8 - 32
                                     text: row.modelData.summary || I18n.tr("Notification")
                                     color: Theme.textPrimary; font.family: Theme.font
                                     font.pixelSize: 13; font.weight: Font.DemiBold
@@ -149,6 +149,7 @@ Item {
                                 }
                                 Text {
                                     id: appName
+                                    width: Math.min(implicitWidth, parent.width * 0.35)
                                     text: row.modelData.appName || ""
                                     color: Theme.textSecondary; font.family: Theme.font
                                     font.pixelSize: 10; elide: Text.ElideRight
