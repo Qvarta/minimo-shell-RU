@@ -14,7 +14,7 @@ Item {
     readonly property bool isPlaying: RadioService.isPlaying
 
     property int currentIndex: 0
-    readonly property int columns: Math.max(4, Math.min(5, Math.floor((gridView.width + cellSpacing) / 80)))
+    readonly property int columns: 4
     readonly property real cellSpacing: 8
 
     function getImageUrl(stationName) {
