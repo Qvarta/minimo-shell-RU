@@ -15,6 +15,70 @@ import "../Services"
 Singleton {
     id: root
     property var queue: []
+    property var history: []             // [{ id, appName, summary, body, urgency, received }]
+    property bool historyLoaded: false
+    property var pendingHistory: []
+    property int historySerial: 0
+    readonly property string historyDir: Quickshell.env("HOME") + "/.config/minimo-os"
+    readonly property int maxHistory: 100
+
+    function record(n) {
+        const entry = {
+            id: String(Date.now()) + "-" + String(++historySerial),
+            appName: n.appName || n.desktopEntry || "",
+            summary: n.summary || "",
+            body: n.body || "",
+            urgency: Number(n.urgency),
+            received: Date.now()
+        }
+        if (!historyLoaded) pendingHistory = pendingHistory.concat([entry])
+        else {
+            history = [entry].concat(history).slice(0, maxHistory)
+            saveHistory()
+        }
+    }
+    function saveHistory() {
+        if (historyLoaded) historyFile.setText(JSON.stringify(history.slice(0, maxHistory)))
+    }
+    function removeHistory(id) {
+        history = history.filter(item => item.id !== id)
+        saveHistory()
+    }
+    function clearHistory() {
+        history = []
+        pendingHistory = []
+        saveHistory()
+    }
+
+    Process {
+        command: ["mkdir", "-p", root.historyDir]
+        onExited: historyFile.path = root.historyDir + "/notifications.json"
+    }
+    FileView {
+        id: historyFile
+        blockLoading: false
+        printErrors: false
+        atomicWrites: true
+        onLoaded: {
+            let saved = []
+            try {
+                const parsed = JSON.parse(text())
+                if (Array.isArray(parsed)) saved = parsed.filter(item =>
+                    item && typeof item.id === "string" &&
+                    typeof item.summary === "string" && typeof item.received === "number")
+            } catch (e) {}
+            root.history = root.pendingHistory.concat(saved).slice(0, root.maxHistory)
+            root.pendingHistory = []
+            root.historyLoaded = true
+            root.saveHistory()
+        }
+        onLoadFailed: {
+            root.history = root.pendingHistory.slice(0, root.maxHistory)
+            root.pendingHistory = []
+            root.historyLoaded = true
+            root.saveHistory()
+        }
+    }
     readonly property var current: queue.length > 0 ? queue[0] : null
     property bool dnd: false
     // Mouse encima de alguna isla (una por monitor): no corre el tiempo.
@@ -86,8 +150,9 @@ Singleton {
         persistenceSupported: false
         onNotification: n => {
             const critical = n.urgency === NotificationUrgency.Critical
-            if (root.dnd && !critical) { n.expire(); return }
             if (root.queue.indexOf(n) >= 0) return          // reemplazo de una ya en cola: se actualiza sola
+            root.record(n)
+            if (root.dnd && !critical) { n.expire(); return }
             n.tracked = true
             // Si la app cierra/reemplaza la notificación, sale de la cola.
             n.closed.connect(() => { root.queue = root.queue.filter(x => x !== n) })
