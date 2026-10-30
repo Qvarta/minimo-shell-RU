@@ -409,7 +409,12 @@ var weatherTranslations = {
     "Couldn't connect": ["No se pudo conectar", "Не удалось подключиться"],
     "Clear clipboard": ["Borrar", "Очистить"],
     "Screenshot saved": ["Captura guardada", "Снимок сохранён"],
-    "Copied to the clipboard": ["Copiada al portapapeles", "Скопирован в буфер обмена"]
+    "Copied to the clipboard": ["Copiada al portapapeles", "Скопирован в буфер обмена"],
+    "Notification history": ["Historial de notificaciones", "История уведомлений"],
+    "Clear history": ["Borrar historial", "Очистить историю"],
+    "Notification": ["Notificación", "Уведомление"],
+    "No additional text": ["Sin texto adicional", "Нет дополнительного текста"],
+    "No notifications yet.": ["Todavía no hay notificaciones.", "Уведомлений пока нет."]
 }
 for (var key in weatherTranslations) {
     if (!Object.prototype.hasOwnProperty.call(weatherTranslations, key)) continue
