@@ -37,8 +37,8 @@ Item {
         : page === "power" ? power.implicitHeight
         : col.implicitHeight
 
-    // Reserve enough room for the complete navigation even when the selected page is empty.
-    implicitHeight: Math.max(activePageHeight, navHeight) + 40
+    // The content card follows the active page; the outer Island reserves space for navigation.
+    implicitHeight: activePageHeight + 40
 
     readonly property var tabs: ["menu", "clip", "notifications", "cal", "quickactions", "notes", "weather", "radio", "power"]
 
