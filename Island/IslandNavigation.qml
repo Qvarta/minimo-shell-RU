@@ -58,7 +58,7 @@ Item {
     Rectangle {
         anchors.fill: parent
         radius: height / 2
-        color: Theme.track
+        color: Theme.card
     }
 
     Flickable {
