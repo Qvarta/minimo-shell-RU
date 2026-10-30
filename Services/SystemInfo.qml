@@ -69,7 +69,7 @@ Singleton {
 
     function parseCpu(output) {
         const line = output.trim().split("\n").find(value => value.startsWith("cpu "));
-        const fields = line ? line.trim().split(/\\s+/) : [];
+        const fields = line ? line.trim().split(/\s+/) : [];
         if (fields.length < 5) {
             if (!cpuReadWarningShown) {
                 console.warn("[SystemInfo][CPU] Invalid /proc/stat output:", output.slice(0, 160));
@@ -105,10 +105,11 @@ Singleton {
     }
 
     property string temperatureDebugSignature: ""
+    property int lastLoggedCpuTemperature: -1
     function parseTemperature(output) {
         const sensors = [];
         let selected = null;
-        const lines = output.trim().split("\\n");
+        const lines = output.trim().split("\n");
         for (const line of lines) {
             const fields = line.split("|");
             if (fields.length < 3) continue;
@@ -132,7 +133,10 @@ Singleton {
         }
         if (selected) {
             res = Object.assign({}, res, { temp: selected.value });
-            console.info("[SystemInfo][Temperature] Selected CPU sensor:", JSON.stringify(selected.sensor));
+            if (lastLoggedCpuTemperature !== selected.value) {
+                console.info("[SystemInfo][Temperature] Selected CPU sensor:", JSON.stringify(selected.sensor));
+                lastLoggedCpuTemperature = selected.value;
+            }
         } else if (res.temp !== null) {
             res = Object.assign({}, res, { temp: null });
         }
