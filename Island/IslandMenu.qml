@@ -17,15 +17,15 @@ Item {
     property alias character: chr
     property string page: "menu"
 
-    readonly property int navWidth: 48
     readonly property int navItemSize: 40
     readonly property int navItemGap: 4
     readonly property int navPad: 4
     readonly property int navGap: 12
     readonly property int navInset: 8
+    readonly property int navWidth: tabs.length * navItemSize + (tabs.length - 1) * navItemGap + 2 * navPad
     readonly property int contentX: 20
     readonly property int contentWidth: Math.max(0, width - contentX * 2)
-    readonly property int navHeight: tabs.length * navItemSize + (tabs.length - 1) * navItemGap + 2 * navPad
+    readonly property int navHeight: navItemSize + 2 * navPad
 
     readonly property real activePageHeight: page === "clip" ? clip.implicitHeight
         : page === "notifications" ? notificationHistory.implicitHeight
@@ -37,7 +37,7 @@ Item {
         : page === "power" ? power.implicitHeight
         : col.implicitHeight
 
-    // The content card follows the active page; the outer Island reserves space for navigation.
+    // The content card follows the active page; navigation is laid out separately below it.
     implicitHeight: activePageHeight + 40
 
     readonly property var tabs: ["menu", "clip", "notifications", "cal", "quickactions", "notes", "weather", "radio", "power"]
