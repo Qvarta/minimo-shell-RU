@@ -189,7 +189,9 @@ Item {
                         spacing: 6
 
                         Rectangle {
-                            width: parent.width; height: width
+                            width: parent.width / 2
+                            height: width
+                            anchors.horizontalCenter: parent.horizontalCenter
                             color: delegateContainer.isNowPlaying ? "transparent" : Theme.field
                             radius: 12; clip: true
                             scale: delegateContainer.isActive ? 1.1 : 1.0
