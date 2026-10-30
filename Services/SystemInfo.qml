@@ -45,6 +45,10 @@ Singleton {
     readonly property bool online: connectivity === "full"
 
     property var previousCpu: null
+    property bool cpuReadWarningShown: false
+    property bool batteryReadWarningShown: false
+    property string batteryDebugSignature: ""
+    property double batteryDebugLastAt: 0
 
     function gib(bytes) {
         return (Math.max(0, Number(bytes) || 0) / 1073741824).toFixed(1).replace(".", ",");
@@ -66,7 +70,13 @@ Singleton {
 
     function parseCpu() {
         const fields = cpuStat.text().trim().split(/\s+/);
-        if (fields.length < 5 || fields[0] !== "cpu") return;
+        if (fields.length < 5 || fields[0] !== "cpu") {
+            if (!cpuReadWarningShown) {
+                console.warn("[SystemInfo] Could not parse /proc/stat CPU line:", cpuStat.text().slice(0, 100));
+                cpuReadWarningShown = true;
+            }
+            return;
+        }
         const values = fields.slice(1).map(Number);
         const total = values.reduce((sum, value) => sum + value, 0);
         const idle = (values[3] || 0) + (values[4] || 0);
@@ -163,29 +173,113 @@ Singleton {
         return "Not charging";
     }
 
+    function parseSysfsBattery(output) {
+        const fields = output.trim().split("|");
+        if (fields.length < 2 || !fields[0]) return;
+        const pct = Number(fields[0]);
+        if (!Number.isFinite(pct)) return;
+        const rawState = fields[1].trim().toLowerCase();
+        const status = rawState === "charging" ? "Charging"
+            : rawState === "discharging" ? "Discharging"
+            : rawState === "full" ? "Full" : "Not charging";
+        res = Object.assign({}, res, {
+            battery: { pct: Math.max(0, Math.min(100, Math.round(pct))), status: status, mins: null }
+        });
+    }
+
     function refreshBattery() {
-        const devices = UPower.devices.values;
+        // UPower.devices is an ObjectModel; its values property exposes the
+        // connected UPowerDevice objects as a JavaScript list.
+        const model = UPower.devices;
+        const devices = model ? model.values : [];
+        const display = UPower.displayDevice;
+
+        const describeDevice = device => {
+            if (!device) return null;
+            let type = "unknown";
+            let state = "unknown";
+            try { type = UPowerDeviceType.toString(device.type); } catch (error) {}
+            try { state = UPowerDeviceState.toString(device.state); } catch (error) {}
+            return {
+                type: type,
+                ready: device.ready,
+                isLaptopBattery: device.isLaptopBattery,
+                isPresent: device.isPresent,
+                powerSupply: device.powerSupply,
+                percentage: device.percentage,
+                state: state,
+                timeToEmpty: device.timeToEmpty,
+                timeToFull: device.timeToFull,
+                nativePath: device.nativePath,
+                model: device.model
+            };
+        };
+
+        const deviceDetails = [];
         let battery = null;
         for (let i = 0; i < devices.length; i++) {
             const device = devices[i];
-            if (device && device.isLaptopBattery && device.isPresent !== false && device.ready) {
+            const details = describeDevice(device);
+            deviceDetails.push(details);
+            if (!battery && device && device.isLaptopBattery && device.isPresent !== false && device.ready) {
                 battery = device;
-                break;
             }
         }
-        if (!battery && UPower.displayDevice && UPower.displayDevice.ready)
-            battery = UPower.displayDevice;
+
+        // displayDevice is a separate aggregate object and is not in devices.
+        if (!battery && display && display.ready && Number.isFinite(Number(display.percentage))) {
+            battery = display;
+        }
+
+        const displayDetails = describeDevice(display);
+        const selectedDetails = describeDevice(battery);
+        const signature = JSON.stringify({
+            count: devices.length,
+            devices: deviceDetails,
+            displayDevice: displayDetails,
+            selected: selectedDetails
+        });
+        const now = Date.now();
+        if (signature !== batteryDebugSignature || now - batteryDebugLastAt >= 15000) {
+            console.info("[SystemInfo][UPower] snapshot:",
+                JSON.stringify({
+                    devicesCount: devices.length,
+                    devices: deviceDetails,
+                    displayDevice: displayDetails,
+                    selected: selectedDetails
+                }));
+            batteryDebugSignature = signature;
+            batteryDebugLastAt = now;
+        }
 
         if (!battery) {
-            res = Object.assign({}, res, { battery: null });
+            if (!batteryReadWarningShown) {
+                console.warn("[SystemInfo][UPower] No usable battery selected. " +
+                    "Check whether the daemon is running and whether displayDevice.ready is true.");
+                batteryReadWarningShown = true;
+            }
+            if (!batteryProcess.running) batteryProcess.running = true;
             return;
         }
 
-        const status = batteryStatus(battery);
+        let status = "Unknown";
+        try {
+            status = batteryStatus(battery);
+        } catch (error) {
+            console.warn("[SystemInfo][UPower] Failed to decode battery state:", error);
+        }
         const seconds = status === "Discharging" ? battery.timeToEmpty : battery.timeToFull;
+        const percentage = Number(battery.percentage);
+        if (!Number.isFinite(percentage)) {
+            console.warn("[SystemInfo][UPower] Selected battery has invalid percentage:",
+                battery.percentage, "device:", JSON.stringify(selectedDetails));
+            return;
+        }
+        const pct = Math.round(percentage <= 1 ? percentage * 100 : percentage);
+        batteryReadWarningShown = false;
         res = Object.assign({}, res, {
             battery: {
-                pct: Math.round(battery.percentage),
+                pct: Math.max(0, Math.min(100, pct)),
                 status: status,
                 mins: seconds > 0 ? Math.round(seconds / 60) : null
             }
@@ -216,6 +310,13 @@ Singleton {
         path: "/proc/stat"
         printErrors: false
         onLoaded: root.parseCpu()
+        onTextChanged: root.parseCpu()
+        onLoadFailed: error => {
+            if (!root.cpuReadWarningShown) {
+                console.warn("[SystemInfo] Failed to read /proc/stat:", error);
+                root.cpuReadWarningShown = true;
+            }
+        }
     }
     FileView {
         id: memInfo
@@ -243,9 +344,20 @@ Singleton {
             onStreamFinished: root.parseDisk(text)
         }
     }
+    // Fallback for systems where UPower is unavailable or does not expose
+    // the internal battery. Reads the standard Linux power_supply sysfs API.
+    Process {
+        id: batteryProcess
+        command: ["sh", "-c", "for d in /sys/class/power_supply/*; do [ -r \"$d/type\" ] || continue; IFS= read -r t < \"$d/type\" || continue; [ \"$t\" = Battery ] || continue; IFS= read -r cap < \"$d/capacity\" || continue; IFS= read -r st < \"$d/status\" || st=Unknown; printf '%s|%s\\n' \"$cap\" \"$st\"; exit 0; done"]
+        stdout: StdioCollector {
+            onStreamFinished: root.parseSysfsBattery(text)
+        }
+    }
     Process {
         id: gpuProcess
-        command: ["nvidia-smi", "--query-gpu=name,utilization.gpu,temperature.gpu", "--format=csv,noheader,nounits"]
+        // Keep NVIDIA support optional: avoid Process start warnings on systems
+        // without the proprietary NVIDIA command-line utility.
+        command: ["sh", "-c", "command -v nvidia-smi >/dev/null 2>&1 || exit 0; exec nvidia-smi --query-gpu=name,utilization.gpu,temperature.gpu --format=csv,noheader,nounits"]
         stdout: StdioCollector {
             onStreamFinished: root.parseGpu(text)
         }
@@ -313,8 +425,8 @@ Singleton {
     Connections {
         target: UPower
         ignoreUnknownSignals: true
-        function onDevicesChanged() { root.refreshBattery() }
-        function onDisplayDeviceChanged() { root.refreshBattery() }
+        function onDevicesChanged() { console.info("[SystemInfo][UPower] devices model changed"); root.refreshBattery() }
+        function onDisplayDeviceChanged() { console.info("[SystemInfo][UPower] displayDevice changed"); root.refreshBattery() }
     }
 
     Component.onCompleted: {
@@ -326,5 +438,6 @@ Singleton {
         refreshDevices();
         refreshBattery();
         console.info("[SystemInfo] Quickshell system information service is running");
+        console.info("[SystemInfo][UPower] Initial state: devices model =", UPower.devices, "displayDevice =", UPower.displayDevice);
     }
 }
