@@ -17,12 +17,27 @@ Item {
     property alias character: chr
     property string page: "menu"
 
-    readonly property int navHeight: 48
-    readonly property int navMargin: 8
+    readonly property int navWidth: 48
+    readonly property int navItemSize: 40
+    readonly property int navItemGap: 4
     readonly property int navPad: 4
-    readonly property int navGap: 8
+    readonly property int navGap: 12
+    readonly property int contentX: navWidth + navGap + 8
+    readonly property int contentWidth: Math.max(0, width - contentX - 20)
+    readonly property int navHeight: tabs.length * navItemSize + (tabs.length - 1) * navItemGap + 2 * navPad
 
-    implicitHeight: (page === "clip" ? clip.implicitHeight : page === "notifications" ? notificationHistory.implicitHeight : page === "cal" ? cal.implicitHeight : page === "quickactions" ? quickActionsView.implicitHeight : page === "notes" ? notes.implicitHeight : page === "weather" ? weather.implicitHeight : page === "radio" ? radio.implicitHeight : page === "power" ? power.implicitHeight : col.implicitHeight) + 40 + navGap + navHeight + navMargin
+    readonly property real activePageHeight: page === "clip" ? clip.implicitHeight
+        : page === "notifications" ? notificationHistory.implicitHeight
+        : page === "cal" ? cal.implicitHeight
+        : page === "quickactions" ? quickActionsView.implicitHeight
+        : page === "notes" ? notes.implicitHeight
+        : page === "weather" ? weather.implicitHeight
+        : page === "radio" ? radio.implicitHeight
+        : page === "power" ? power.implicitHeight
+        : col.implicitHeight
+
+    // Reserve enough room for the complete navigation even when the selected page is empty.
+    implicitHeight: Math.max(activePageHeight, navHeight) + 40
 
     readonly property var tabs: ["menu", "clip", "notifications", "cal", "quickactions", "notes", "weather", "radio", "power"]
 
@@ -77,14 +92,14 @@ Item {
 
     Column {
         id: col
-        x: root.page === "menu" ? 20 : -root.width * 0.3
+        x: root.page === "menu" ? root.contentX : root.width + 20
         y: 20
         opacity: root.page === "menu" ? 1 : 0
         visible: opacity > 0
         enabled: root.page === "menu"
         Behavior on x { NumberAnimation { duration: 320; easing.type: Easing.OutQuint } }
         Behavior on opacity { NumberAnimation { duration: 220 } }
-        width: parent.width - 40
+        width: root.contentWidth
         spacing: 22
 
         Reveal {
@@ -166,16 +181,17 @@ Item {
     MenuButton {
         icon: "settings"
         anchors.top: parent.top; anchors.topMargin: 20
-        anchors.right: parent.right; anchors.rightMargin: 5
+        anchors.left: parent.left
+        anchors.leftMargin: root.contentX + root.contentWidth - width - 5
         visible: root.open && root.page === "menu"
         onActivated: { root.done(); SettingsState.show() }
     }
 
     ClipboardView {
         id: clip
-        x: root.page === "clip" ? 20 : root.width * 0.3
+        x: root.page === "clip" ? root.contentX : root.width + 20
         y: 20
-        width: root.width - 40
+        width: root.contentWidth
         opacity: root.page === "clip" ? 1 : 0
         visible: opacity > 0
         enabled: root.page === "clip"
@@ -188,9 +204,9 @@ Item {
 
     NotificationHistoryView {
         id: notificationHistory
-        x: root.page === "notifications" ? 20 : root.width * 0.3
+        x: root.page === "notifications" ? root.contentX : root.width + 20
         y: 20
-        width: root.width - 40
+        width: root.contentWidth
         opacity: root.page === "notifications" ? 1 : 0
         visible: opacity > 0
         enabled: root.page === "notifications"
@@ -202,9 +218,9 @@ Item {
 
     CalendarView {
         id: cal
-        x: root.page === "cal" ? 20 : root.width * 0.3
+        x: root.page === "cal" ? root.contentX : root.width + 20
         y: 20
-        width: root.width - 40
+        width: root.contentWidth
         today: clock.date
         locale: I18n.locale
         opacity: root.page === "cal" ? 1 : 0
@@ -217,9 +233,9 @@ Item {
 
     QuickActionsView {
         id: quickActionsView
-        x: root.page === "quickactions" ? 20 : root.width * 0.3
+        x: root.page === "quickactions" ? root.contentX : root.width + 20
         y: 20
-        width: root.width - 40
+        width: root.contentWidth
         opacity: root.page === "quickactions" ? 1 : 0
         visible: opacity > 0
         enabled: root.page === "quickactions"
@@ -235,9 +251,9 @@ Item {
 
     PowerView {
         id: power
-        x: root.page === "power" ? 20 : root.width * 0.3
+        x: root.page === "power" ? root.contentX : root.width + 20
         y: 20
-        width: root.width - 40
+        width: root.contentWidth
         opacity: root.page === "power" ? 1 : 0
         visible: opacity > 0
         enabled: root.page === "power"
@@ -249,9 +265,9 @@ Item {
 
     NotesView {
         id: notes
-        x: root.page === "notes" ? 20 : root.width * 0.3
+        x: root.page === "notes" ? root.contentX : root.width + 20
         y: 20
-        width: root.width - 40
+        width: root.contentWidth
         opacity: root.page === "notes" ? 1 : 0
         visible: opacity > 0
         enabled: root.page === "notes"
@@ -263,9 +279,9 @@ Item {
 
     WeatherView {
         id: weather
-        x: root.page === "weather" ? 20 : root.width * 0.3
+        x: root.page === "weather" ? root.contentX : root.width + 20
         y: 20
-        width: root.width - 40
+        width: root.contentWidth
         locale: I18n.locale
         opacity: root.page === "weather" ? 1 : 0
         visible: opacity > 0
@@ -277,9 +293,9 @@ Item {
 
     RadioView {
         id: radio
-        x: root.page === "radio" ? 20 : root.width * 0.3
+        x: root.page === "radio" ? root.contentX : root.width + 20
         y: 20
-        width: root.width - 40
+        width: root.contentWidth
         opacity: root.page === "radio" ? 1 : 0
         visible: opacity > 0
         enabled: root.page === "radio"
@@ -289,25 +305,31 @@ Item {
         onDone: root.done()
     }
 
-    component TabButton: Rectangle {
+    component TabButton: Item {
         id: tab
         property string iconName: "home"
         property bool active: false
         signal clicked()
 
-        width: active ? 40 : 32
-        height: active ? 40 : 32
-        radius: height / 2
-        y: (40 - height) / 2
+        width: root.navItemSize
+        height: root.navItemSize
 
-        color: active
-               ? Theme.textPrimary
-               : (tabMouse.containsMouse ? Theme.hover : Theme.track)
+        Rectangle {
+            id: tabBackground
+            anchors.centerIn: parent
+            width: tab.active ? 40 : 32
+            height: tab.active ? 40 : 32
+            radius: height / 2
 
-        Behavior on width  { NumberAnimation { duration: 220; easing.type: Easing.OutQuint } }
-        Behavior on height { NumberAnimation { duration: 220; easing.type: Easing.OutQuint } }
-        Behavior on radius { NumberAnimation { duration: 220; easing.type: Easing.OutQuint } }
-        Behavior on color  { ColorAnimation  { duration: 180 } }
+            color: tab.active
+                   ? Theme.textPrimary
+                   : (tabMouse.containsMouse ? Theme.hover : Theme.track)
+
+            Behavior on width  { NumberAnimation { duration: 220; easing.type: Easing.OutQuint } }
+            Behavior on height { NumberAnimation { duration: 220; easing.type: Easing.OutQuint } }
+            Behavior on radius { NumberAnimation { duration: 220; easing.type: Easing.OutQuint } }
+            Behavior on color  { ColorAnimation  { duration: 180 } }
+        }
 
         Icon {
             anchors.centerIn: parent
@@ -330,11 +352,11 @@ Item {
         id: tabNav
         visible: root.open
         z: 10
-        anchors.bottom: parent.bottom
-        anchors.bottomMargin: root.navMargin
-        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.left: parent.left
+        anchors.leftMargin: 8
+        anchors.verticalCenter: parent.verticalCenter
         height: root.navHeight
-        width: Math.min(parent.width - 40, navRow.implicitWidth + 2 * root.navPad)
+        width: root.navWidth
 
         Rectangle {
             id: tabBg
@@ -354,12 +376,12 @@ Item {
             contentHeight: navRow.implicitHeight
             clip: true
             boundsBehavior: Flickable.StopAtBounds
-            interactive: contentWidth > width
+            interactive: contentHeight > height
 
-            Row {
+            Column {
                 id: navRow
-                anchors.verticalCenter: parent.verticalCenter
-                spacing: 4
+                anchors.horizontalCenter: parent.horizontalCenter
+                spacing: root.navItemGap
 
                 Repeater {
                     model: root.tabs
