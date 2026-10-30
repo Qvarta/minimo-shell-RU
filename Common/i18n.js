@@ -410,7 +410,7 @@ var weatherTranslations = {
     "Clear clipboard": ["Borrar", "Очистить"],
     "Screenshot saved": ["Captura guardada", "Снимок сохранён"],
     "Copied to the clipboard": ["Copiada al portapapeles", "Скопирован в буфер обмена"],
-    "Notification history": ["Historial de notificaciones", "История уведомлений"],
+    "Notifications": ["Notificaciones", "Уведомления"],
     "Clear history": ["Borrar historial", "Очистить историю"],
     "Notification": ["Notificación", "Уведомление"],
     "No additional text": ["Sin texto adicional", "Нет дополнительного текста"],
