@@ -45,6 +45,8 @@ Singleton {
     readonly property bool online: connectivity === "full"
 
     property var previousCpu: null
+    property bool cpuReadWarningShown: false
+    property bool batteryReadWarningShown: false
 
     function gib(bytes) {
         return (Math.max(0, Number(bytes) || 0) / 1073741824).toFixed(1).replace(".", ",");
@@ -66,7 +68,13 @@ Singleton {
 
     function parseCpu() {
         const fields = cpuStat.text().trim().split(/\s+/);
-        if (fields.length < 5 || fields[0] !== "cpu") return;
+        if (fields.length < 5 || fields[0] !== "cpu") {
+            if (!cpuReadWarningShown) {
+                console.warn("[SystemInfo] Could not parse /proc/stat CPU line:", cpuStat.text().slice(0, 100));
+                cpuReadWarningShown = true;
+            }
+            return;
+        }
         const values = fields.slice(1).map(Number);
         const total = values.reduce((sum, value) => sum + value, 0);
         const idle = (values[3] || 0) + (values[4] || 0);
@@ -173,19 +181,32 @@ Singleton {
                 break;
             }
         }
-        if (!battery && UPower.displayDevice && UPower.displayDevice.ready)
-            battery = UPower.displayDevice;
+        // Prefer a physical laptop battery, but fall back to UPower's aggregate
+        // DisplayDevice. The latter is intentionally not part of UPower.devices.
+        if (!battery) {
+            const display = UPower.displayDevice;
+            if (display && display.ready && Number.isFinite(Number(display.percentage)))
+                battery = display;
+        }
 
         if (!battery) {
+            if (!batteryReadWarningShown) {
+                console.info("[SystemInfo] UPower has no ready laptop battery or display device");
+                batteryReadWarningShown = true;
+            }
             res = Object.assign({}, res, { battery: null });
             return;
         }
 
         const status = batteryStatus(battery);
         const seconds = status === "Discharging" ? battery.timeToEmpty : battery.timeToFull;
+        const percentage = Number(battery.percentage);
+        const pct = Math.round(percentage <= 1 ? percentage * 100 : percentage);
+        if (!Number.isFinite(pct)) return;
+        batteryReadWarningShown = false;
         res = Object.assign({}, res, {
             battery: {
-                pct: Math.round(battery.percentage),
+                pct: Math.max(0, Math.min(100, pct)),
                 status: status,
                 mins: seconds > 0 ? Math.round(seconds / 60) : null
             }
@@ -216,6 +237,13 @@ Singleton {
         path: "/proc/stat"
         printErrors: false
         onLoaded: root.parseCpu()
+        onTextChanged: root.parseCpu()
+        onLoadFailed: error => {
+            if (!root.cpuReadWarningShown) {
+                console.warn("[SystemInfo] Failed to read /proc/stat:", error);
+                root.cpuReadWarningShown = true;
+            }
+        }
     }
     FileView {
         id: memInfo
@@ -245,7 +273,9 @@ Singleton {
     }
     Process {
         id: gpuProcess
-        command: ["nvidia-smi", "--query-gpu=name,utilization.gpu,temperature.gpu", "--format=csv,noheader,nounits"]
+        // Keep NVIDIA support optional: avoid Process start warnings on systems
+        // without the proprietary NVIDIA command-line utility.
+        command: ["sh", "-c", "command -v nvidia-smi >/dev/null 2>&1 || exit 0; exec nvidia-smi --query-gpu=name,utilization.gpu,temperature.gpu --format=csv,noheader,nounits"]
         stdout: StdioCollector {
             onStreamFinished: root.parseGpu(text)
         }
