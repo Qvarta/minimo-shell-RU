@@ -352,10 +352,6 @@ Singleton {
         stdout: StdioCollector {
             onStreamFinished: root.parseCpu(text)
         }
-        onExited: (exitCode, exitStatus) => {
-            if (exitCode !== 0)
-                
-        }
     }
     Process {
         id: temperatureProcess
@@ -364,10 +360,6 @@ Singleton {
         command: ["sh", "-c", "for d in /sys/class/thermal/thermal_zone*; do [ -r \"$d/temp\" ] || continue; t=unknown; [ ! -r \"$d/type\" ] || IFS= read -r t < \"$d/type\"; IFS= read -r v < \"$d/temp\" || continue; printf 'thermal:%s|%s|%s\\n' \"$d\" \"$t\" \"$v\"; done; for d in /sys/class/hwmon/hwmon*; do [ -d \"$d\" ] || continue; for f in \"$d\"/temp*_input; do [ -r \"$f\" ] || continue; n=${f%_input}; label=unknown; [ ! -r \"${n}_label\" ] || IFS= read -r label < \"${n}_label\"; IFS= read -r v < \"$f\" || continue; printf 'hwmon:%s|%s|%s\\n' \"$f\" \"$label\" \"$v\"; done; done"]
         stdout: StdioCollector {
             onStreamFinished: root.parseTemperature(text)
-        }
-        onExited: (exitCode, exitStatus) => {
-            if (exitCode !== 0)
-                
         }
     }
     Process {
