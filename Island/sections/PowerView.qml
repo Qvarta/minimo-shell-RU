@@ -34,19 +34,23 @@ Item {
     function reset() { disarm.stop(); st = Confirm.disarm(st) }
     Timer { id: disarm; interval: 3000; onTriggered: root.st = Confirm.disarm(root.st) }
 
-    // ───────── Навигация с клавиатуры ─────────
-    readonly property var buttonIds: ["logout", "reboot", "poweroff"]
+    // ───────── Данные кнопок  ─────────
+    readonly property var builtins: [
+        { id: "logout",   label: I18n.tr("Logout"),    icon: "logout" },
+        { id: "reboot",   label: I18n.tr("Reboot"),    icon: "restart" },
+        { id: "poweroff", label: I18n.tr("Power off"), icon: "power" },
+    ]
+    readonly property var buttons: ["logout", "reboot", "poweroff"]
     property int currentIndex: 0
 
     function moveSelection(delta) {
-        const n = buttonIds.length
-        if (n === 0)
+        if (buttons.length === 0)
             return
-        currentIndex = ((currentIndex + delta) % n + n) % n
+        currentIndex = (currentIndex + delta + buttons.length) % buttons.length
     }
 
     function activateCurrent() {
-        const id = buttonIds[currentIndex]
+        const id = buttons[currentIndex]
         if (id !== undefined)
             root.press(id)
     }
@@ -81,15 +85,10 @@ Item {
     }
     Keys.onUpPressed:    event => { event.accepted = true; root.moveSelection(-1) }
     Keys.onDownPressed:  event => { event.accepted = true; root.moveSelection(1) }
-    Keys.onLeftPressed:  event => { event.accepted = true; root.moveSelection(-1) }
-    Keys.onRightPressed: event => { event.accepted = true; root.moveSelection(1) }
-    Keys.onTabPressed:   event => { event.accepted = true; root.moveSelection((event.modifiers & Qt.ShiftModifier) ? -1 : 1) }
-    Keys.onBacktabPressed: event => { event.accepted = true; root.moveSelection(-1) }
     Keys.onReturnPressed: event => { event.accepted = true; root.activateCurrent() }
     Keys.onEnterPressed:  event => { event.accepted = true; root.activateCurrent() }
-    Keys.onSpacePressed:  event => { event.accepted = true; root.activateCurrent() }
 
-    implicitHeight: 32 + 16 + 112
+    implicitHeight: col.implicitHeight
 
     component RoundButton: Rectangle {
         id: rb
@@ -113,85 +112,128 @@ Item {
         }
     }
 
-    component BigButton: Item {
+    component ActionButton: Item {
         id: btn
-        required property string bid
-        required property int index
+
+        property string bid
         property string icon
         property string label
-        readonly property bool isArmed: root.armed === bid
-        readonly property bool focused: index === root.currentIndex
+        property bool active: false
+        property bool armed: false
+
         signal activated()
-        width: 104; height: 112
+
+        implicitWidth: 220
+        implicitHeight: 52
+        width: implicitWidth
+        height: implicitHeight
 
         Rectangle {
-            id: circle
-            anchors.horizontalCenter: parent.horizontalCenter
-            width: 72; height: 72; radius: 36
-            color: isArmed ? Theme.danger : (focused || mouse.containsMouse) ? Theme.fill : Theme.surface
-            scale: mouse.pressed ? 0.92 : 1
-            Behavior on color { ColorAnimation { duration: Theme.durFast } }
-            Behavior on scale { NumberAnimation { duration: 120; easing.type: Easing.OutQuad } }
-            Icon { anchors.centerIn: parent; name: btn.icon; size: 32; tone: (isArmed || focused) ? "white" : "dark" }
+            id: background
+            anchors.fill: parent
+            radius: 14
+            color: btn.armed ? Theme.danger
+                 : (btn.active || mouse.containsMouse) ? Theme.hover
+                 : Theme.surface
+            scale: mouse.pressed ? 0.98 : 1
+
+            Behavior on color {
+                ColorAnimation { duration: Theme.durFast }
+            }
+            Behavior on scale {
+                NumberAnimation { duration: 120; easing.type: Easing.OutQuad }
+            }
+
+            Rectangle {
+                anchors.left: parent.left
+                anchors.leftMargin: 10
+                anchors.verticalCenter: parent.verticalCenter
+                width: 40
+                height: 40
+                radius: 20
+                color: btn.armed ? Theme.danger
+                     : (btn.active ? Theme.field : Theme.hover)
+
+                Icon {
+                    anchors.centerIn: parent
+                    name: btn.icon
+                    size: 24
+                    tone: btn.armed ? "white" : "dark"
+                }
+            }
+
+            Text {
+                anchors.left: parent.left
+                anchors.leftMargin: 62
+                anchors.right: parent.right
+                anchors.rightMargin: 12
+                anchors.verticalCenter: parent.verticalCenter
+                text: btn.armed ? I18n.tr("Confirm") : btn.label
+                color: btn.armed ? Theme.textPrimary : (btn.active ? Theme.textPrimary : Theme.textSecondary)
+                font.family: Theme.font
+                font.pixelSize: 13
+                font.weight: (btn.armed || btn.active) ? Font.DemiBold : Font.Normal
+                elide: Text.ElideRight
+                verticalAlignment: Text.AlignVCenter
+            }
         }
-        Text {
-            anchors.top: circle.bottom; anchors.topMargin: 10
-            anchors.horizontalCenter: parent.horizontalCenter
-            width: btn.width - 4
-            horizontalAlignment: Text.AlignHCenter
-            elide: Text.ElideRight
-            text: isArmed ? I18n.tr("Confirm") : btn.label
-            color: isArmed ? Theme.danger : (focused ? Theme.textPrimary : Theme.textSecondary)
-            font.family: Theme.font; font.pixelSize: 13; font.weight: (isArmed || focused) ? Font.DemiBold : Font.Normal
-        }
+
         MouseArea {
             id: mouse
-            anchors.fill: circle
+            anchors.fill: parent
             hoverEnabled: true
             cursorShape: Qt.PointingHandCursor
             focus: false
             onClicked: {
-                root.currentIndex = btn.index
                 root.forceActiveFocus()
                 btn.activated()
             }
         }
-        onActivated: root.press(bid)
     }
 
-    Item {
-        id: header
+    Column {
+        id: col
         width: parent.width
-        height: 32
-        anchors.top: parent.top
+        spacing: 16
 
-        RoundButton { icon: "back"; onClicked: { root.reset(); root.back() } }
-        Text {
-            anchors.centerIn: parent
-            text: I18n.tr("Energy")
-            color: Theme.textPrimary
-            font.family: Theme.font
-            font.pixelSize: 15
-            font.weight: Font.DemiBold
+        Item {
+            width: parent.width
+            height: 32
+            RoundButton { icon: "back"; onClicked: { root.reset(); root.back() } }
+            Text {
+                anchors.centerIn: parent
+                text: I18n.tr("Energy")
+                color: Theme.textPrimary
+                font.family: Theme.font
+                font.pixelSize: 15
+                font.weight: Font.DemiBold
+            }
         }
-    }
 
-    Item {
-        id: btnArea
-        anchors.top: header.bottom
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.bottom: parent.bottom
-
-        Row {
-            id: btnRow
-            anchors.centerIn: parent
-            anchors.verticalCenterOffset: 20 
-            spacing: 16
-
-            BigButton { bid: "logout";   index: 0; icon: "logout";}
-            BigButton { bid: "reboot";   index: 1; icon: "restart";}
-            BigButton { bid: "poweroff"; index: 2; icon: "power";}
+        Grid {
+            anchors.horizontalCenter: parent.horizontalCenter
+            visible: root.buttons.length > 0
+            columns: 1
+            rowSpacing: 4
+            Repeater {
+                id: actionRepeater
+                model: root.buttons
+                delegate: ActionButton {
+                    id: b
+                    required property int index
+                    required property string modelData
+                    readonly property var item: root.builtins.find(x => x.id === modelData)
+                    bid: modelData
+                    icon: item ? item.icon : ""
+                    label: item ? item.label : ""
+                    active: index === root.currentIndex
+                    armed: root.armed === modelData
+                    onActivated: {
+                        root.currentIndex = index
+                        root.press(b.modelData)
+                    }
+                }
+            }
         }
     }
 }
