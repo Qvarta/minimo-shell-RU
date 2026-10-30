@@ -72,7 +72,7 @@ Singleton {
         const fields = line ? line.trim().split(/\s+/) : [];
         if (fields.length < 5) {
             if (!cpuReadWarningShown) {
-                console.warn("[SystemInfo][CPU] Invalid /proc/stat output:", output.slice(0, 160));
+                
                 cpuReadWarningShown = true;
             }
             return;
@@ -80,7 +80,7 @@ Singleton {
         // Linux guest/guest_nice are already included in user/nice; exclude them.
         const values = fields.slice(1, 9).map(Number);
         if (values.some(value => !Number.isFinite(value))) {
-            console.warn("[SystemInfo][CPU] Non-numeric /proc/stat counters:", line);
+            
             return;
         }
         const total = values.reduce((sum, value) => sum + value, 0);
@@ -92,14 +92,14 @@ Singleton {
                 const cpu = Math.max(0, Math.min(100, Math.round(100 * (totalDelta - idleDelta) / totalDelta)));
                 res = Object.assign({}, res, { cpu: cpu });
                 if (!cpuReadWarningShown) {
-                    console.info("[SystemInfo][CPU] Monitoring active; first usage sample:", cpu + "%");
+                    
                     cpuReadWarningShown = true;
                 }
             } else {
-                console.warn("[SystemInfo][CPU] Counters did not advance:", totalDelta, idleDelta);
+                
             }
         } else {
-            console.info("[SystemInfo][CPU] Initial counters read successfully; waiting for next sample");
+            
         }
         previousCpu = { total: total, idle: idle };
     }
@@ -128,13 +128,13 @@ Singleton {
         }
         const signature = JSON.stringify(sensors);
         if (signature !== temperatureDebugSignature) {
-            console.info("[SystemInfo][Temperature] Sensors discovered:", signature || "none");
+            
             temperatureDebugSignature = signature;
         }
         if (selected) {
             res = Object.assign({}, res, { temp: selected.value });
             if (lastLoggedCpuTemperature !== selected.value) {
-                console.info("[SystemInfo][Temperature] Selected CPU sensor:", JSON.stringify(selected.sensor));
+                
                 lastLoggedCpuTemperature = selected.value;
             }
         } else if (res.temp !== null) {
@@ -283,21 +283,14 @@ Singleton {
         });
         const now = Date.now();
         if (signature !== batteryDebugSignature || now - batteryDebugLastAt >= 15000) {
-            console.info("[SystemInfo][UPower] snapshot:",
-                JSON.stringify({
-                    devicesCount: devices.length,
-                    devices: deviceDetails,
-                    displayDevice: displayDetails,
-                    selected: selectedDetails
-                }));
+            
             batteryDebugSignature = signature;
             batteryDebugLastAt = now;
         }
 
         if (!battery) {
             if (!batteryReadWarningShown) {
-                console.warn("[SystemInfo][UPower] No usable battery selected. " +
-                    "Check whether the daemon is running and whether displayDevice.ready is true.");
+                
                 batteryReadWarningShown = true;
             }
             if (!batteryProcess.running) batteryProcess.running = true;
@@ -308,13 +301,12 @@ Singleton {
         try {
             status = batteryStatus(battery);
         } catch (error) {
-            console.warn("[SystemInfo][UPower] Failed to decode battery state:", error);
+            
         }
         const seconds = status === "Discharging" ? battery.timeToEmpty : battery.timeToFull;
         const percentage = Number(battery.percentage);
         if (!Number.isFinite(percentage)) {
-            console.warn("[SystemInfo][UPower] Selected battery has invalid percentage:",
-                battery.percentage, "device:", JSON.stringify(selectedDetails));
+            
             return;
         }
         const pct = Math.round(percentage <= 1 ? percentage * 100 : percentage);
@@ -362,7 +354,7 @@ Singleton {
         }
         onExited: (exitCode, exitStatus) => {
             if (exitCode !== 0)
-                console.warn("[SystemInfo][CPU] /proc/stat reader exited:", exitCode, exitStatus);
+                
         }
     }
     Process {
@@ -375,7 +367,7 @@ Singleton {
         }
         onExited: (exitCode, exitStatus) => {
             if (exitCode !== 0)
-                console.warn("[SystemInfo][Temperature] Sensor scan exited:", exitCode, exitStatus);
+                
         }
     }
     Process {
@@ -465,8 +457,8 @@ Singleton {
     Connections {
         target: UPower
         ignoreUnknownSignals: true
-        function onDevicesChanged() { console.info("[SystemInfo][UPower] devices model changed"); root.refreshBattery() }
-        function onDisplayDeviceChanged() { console.info("[SystemInfo][UPower] displayDevice changed"); root.refreshBattery() }
+        function onDevicesChanged() { root.refreshBattery() }
+        function onDisplayDeviceChanged() { root.refreshBattery() }
     }
 
     Component.onCompleted: {
@@ -477,7 +469,6 @@ Singleton {
         refreshNetwork();
         refreshDevices();
         refreshBattery();
-        console.info("[SystemInfo] Quickshell system information service is running");
-        console.info("[SystemInfo][UPower] Initial state: devices model =", UPower.devices, "displayDevice =", UPower.displayDevice);
+
     }
 }
