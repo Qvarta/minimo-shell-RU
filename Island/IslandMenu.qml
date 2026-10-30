@@ -22,13 +22,14 @@ Item {
     readonly property int navPad: 4
     readonly property int navGap: 8
 
-    implicitHeight: (page === "clip" ? clip.implicitHeight : page === "cal" ? cal.implicitHeight : page === "quickactions" ? quickActionsView.implicitHeight : page === "notes" ? notes.implicitHeight : page === "weather" ? weather.implicitHeight : page === "radio" ? radio.implicitHeight : page === "power" ? power.implicitHeight : col.implicitHeight) + 40 + navGap + navHeight + navMargin
+    implicitHeight: (page === "clip" ? clip.implicitHeight : page === "notifications" ? notificationHistory.implicitHeight : page === "cal" ? cal.implicitHeight : page === "quickactions" ? quickActionsView.implicitHeight : page === "notes" ? notes.implicitHeight : page === "weather" ? weather.implicitHeight : page === "radio" ? radio.implicitHeight : page === "power" ? power.implicitHeight : col.implicitHeight) + 40 + navGap + navHeight + navMargin
 
-    readonly property var tabs: ["menu", "clip", "cal", "quickactions", "notes", "weather", "radio", "power"]
+    readonly property var tabs: ["menu", "clip", "notifications", "cal", "quickactions", "notes", "weather", "radio", "power"]
 
     readonly property var tabIcons: ({
         "menu":         "home",
         "clip":         "clipboard",
+        "notifications": "bell",
         "cal":          "calendar",
         "quickactions": "quickactions",
         "notes":        "note",
@@ -39,6 +40,7 @@ Item {
 
     function enterTab(t) {
         if (t === "clip") clip.refresh()
+        else if (t === "notifications") notificationHistory.reset()
         else if (t === "cal") cal.reset()
         else if (t === "power") power.reset()
         page = t
@@ -50,6 +52,7 @@ Item {
     }
 
     function showClipboard() { clip.refresh(); page = "clip" }
+    function showNotifications() { notificationHistory.reset(); page = "notifications" }
     function showQuickActions() { page = "quickactions" }
     function showPower() { power.reset(); page = "power" }
 
