@@ -91,7 +91,7 @@ Item {
                 color: root.armed ? Theme.fill : (clearMouse.containsMouse ? Theme.hover : Theme.surface)
                 Text {
                     id: clearLabel; anchors.centerIn: parent
-                    text: root.armed ? I18n.tr("Confirm") : I18n.tr("Clear history")
+                    text: root.armed ? I18n.tr("Confirm") : I18n.tr("Clear")
                     color: root.armed ? Theme.onAccent : Theme.textPrimary
                     font.family: Theme.font; font.pixelSize: 12
                 }
@@ -180,7 +180,7 @@ Item {
                             anchors.right: parent.right; anchors.rightMargin: 5
                             anchors.top: parent.top; anchors.topMargin: 5
                             width: 26; height: 26; radius: 13
-                            visible: hover.containsMouse
+                            visible: hover.hovered
                             color: removeMouse.containsMouse ? Theme.field : "transparent"
                             Icon { anchors.centerIn: parent; name: "close"; size: 14 }
                             MouseArea {
