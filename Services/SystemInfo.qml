@@ -19,7 +19,7 @@ Singleton {
             refreshAll();
             resourceTimer.start();
             diskTimer.start();
-            connectivityTimer.start();
+            gpuTimer.start();
         }
     }
     function release() {
@@ -27,7 +27,7 @@ Singleton {
         if (users === 0) {
             resourceTimer.stop();
             diskTimer.stop();
-            connectivityTimer.stop();
+            gpuTimer.stop();
         }
     }
 
@@ -227,6 +227,7 @@ Singleton {
         id: thermalType
         path: "/sys/class/thermal/thermal_zone0/type"
         printErrors: false
+        onLoaded: root.parseTemperature()
     }
     FileView {
         id: thermalTemp
@@ -264,6 +265,12 @@ Singleton {
         }
     }
     Timer {
+        id: gpuTimer
+        interval: 8000
+        repeat: true
+        onTriggered: root.refreshGpu()
+    }
+    Timer {
         id: diskTimer
         interval: 30000
         repeat: true
@@ -271,6 +278,7 @@ Singleton {
     }
     Timer {
         id: connectivityTimer
+        running: true
         interval: 10000
         repeat: true
         onTriggered: {
@@ -282,24 +290,29 @@ Singleton {
 
     Connections {
         target: Networking
+        ignoreUnknownSignals: true
         function onConnectivityChanged() { root.refreshNetwork() }
     }
     Connections {
         target: Network
+        ignoreUnknownSignals: true
         function onWiredChanged() { root.refreshNetwork() }
         function onSsidChanged() { root.refreshNetwork() }
         function onSignalChanged() { root.refreshNetwork() }
     }
     Connections {
         target: Pipewire
+        ignoreUnknownSignals: true
         function onDefaultAudioSinkChanged() { root.refreshDevices() }
     }
     Connections {
         target: Bluetooth
+        ignoreUnknownSignals: true
         function onDevicesChanged() { root.refreshDevices() }
     }
     Connections {
         target: UPower
+        ignoreUnknownSignals: true
         function onDevicesChanged() { root.refreshBattery() }
         function onDisplayDeviceChanged() { root.refreshBattery() }
     }
