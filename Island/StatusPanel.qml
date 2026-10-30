@@ -128,7 +128,7 @@ Item {
             Bar { frac: root.r ? root.r.cpu / 100 : 0 }
             Row2 { icon: "apps"; label: I18n.tr("Memory"); value: root.r && root.r.memTotal > 0 ? SystemInfo.gib(root.r.memUsed) + " / " + SystemInfo.gib(root.r.memTotal) + " GB" : "…" }
             Bar { frac: root.r && root.r.memTotal > 0 ? root.r.memUsed / root.r.memTotal : 0 }
-            Row2 { icon: "folder"; label: I18n.tr("Disk"); value: root.r && root.r.diskTotal > 0 ? Math.round(100 * root.r.diskUsed / root.r.diskTotal) + "% · " + SystemInfo.gib(root.r.diskTotal - root.r.diskUsed) + " GB libres" : "…" }
+            Row2 { icon: "folder"; label: I18n.tr("Disk"); value: root.r && root.r.diskTotal > 0 ? Math.round(100 * root.r.diskUsed / root.r.diskTotal) + "% · " + SystemInfo.gib(root.r.diskTotal - root.r.diskUsed) + " GB " + I18n.tr("free") : "…" }
             Bar { frac: root.r && root.r.diskTotal > 0 ? root.r.diskUsed / root.r.diskTotal : 0 }
             Row2 {
                 visible: !!root.bat
