@@ -7,5 +7,3 @@ qs -c minimo-shell ipc call island toggle
 
 qs -c minimo-shell ipc call volume increase
 qs -c minimo-shell ipc call volume decrease
-
-сделать шейдер в island_menu для радио
