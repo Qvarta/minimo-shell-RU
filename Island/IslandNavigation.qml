@@ -21,13 +21,13 @@ Item {
         property bool active: false
         signal clicked()
 
-        width: root.itemSize
-        height: root.itemSize
+        width: active ? 40 : 32
+        height: active ? 40 : 32
 
         Rectangle {
             anchors.centerIn: parent
-            width: tab.active ? 40 : 32
-            height: tab.active ? 40 : 32
+            width: parent.width
+            height: parent.height
             radius: height / 2
             color: tab.active
                    ? Theme.textPrimary
