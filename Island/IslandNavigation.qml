@@ -64,15 +64,15 @@ Item {
     Flickable {
         anchors.fill: parent
         anchors.margins: root.padding
-        contentWidth: navColumn.implicitWidth
-        contentHeight: navColumn.implicitHeight
+        contentWidth: navRow.implicitWidth
+        contentHeight: navRow.implicitHeight
         clip: true
         boundsBehavior: Flickable.StopAtBounds
-        interactive: contentHeight > height
+        interactive: contentWidth > width
 
-        Column {
-            id: navColumn
-            anchors.horizontalCenter: parent.horizontalCenter
+        Row {
+            id: navRow
+            anchors.verticalCenter: parent.verticalCenter
             spacing: root.itemGap
 
             Repeater {
