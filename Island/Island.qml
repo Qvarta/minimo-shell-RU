@@ -249,7 +249,7 @@ PanelWindow {
         // Elástico: mientras se arrastra, la píldora se estira y se corre un poco con el dedo.
         readonly property real pull: hoverZone.pulling ? hoverZone.dragDy / (1 + hoverZone.dragDy / 70) : 0
         readonly property real rubber: hoverZone.dragging ? hoverZone.dragDx / (1 + Math.abs(hoverZone.dragDx) / 60) : 0
-        width: win.expanded ? Theme.expandedW
+        width: win.expanded ? Theme.expandedW + menu.navWidth + menu.navGap + menu.navInset * 2
              : win.panel ? Theme.expandedW
              : Math.max(Theme.compactW, compact.implicitWidth + Theme.compactPadX * 2) + Math.abs(rubber) * 1.2
         height: win.expanded ? Math.min(menu.implicitHeight, Theme.maxExpandedH)
@@ -283,8 +283,10 @@ PanelWindow {
 
         IslandMenu {
             id: menu
+            x: menu.navInset + menu.navWidth + menu.navGap
+            y: 0
             width: Theme.expandedW
-            anchors.horizontalCenter: parent.horizontalCenter
+            height: implicitHeight
             anchors.top: parent.top
             open: win.expanded
             opacity: win.expanded ? 1 : 0
@@ -292,6 +294,23 @@ PanelWindow {
             enabled: win.expanded
             Behavior on opacity { NumberAnimation { duration: Theme.durFast } }
             onDone: win.collapse()
+        }
+
+        IslandNavigation {
+            id: tabNavigation
+            x: menu.navInset
+            anchors.verticalCenter: parent.verticalCenter
+            width: menu.navWidth
+            height: menu.navHeight
+            tabs: menu.tabs
+            tabIcons: menu.tabIcons
+            currentPage: menu.page
+            visible: win.expanded
+            opacity: win.expanded ? 1 : 0
+            enabled: win.expanded
+            Behavior on opacity { NumberAnimation { duration: Theme.durFast } }
+            onTabSelected: page => menu.enterTab(page)
+            onCycleRequested: delta => menu.cyclePage(delta)
         }
 
         StatusPanel {
