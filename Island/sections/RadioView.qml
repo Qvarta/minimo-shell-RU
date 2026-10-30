@@ -190,7 +190,7 @@ Item {
                         spacing: 6
 
                         Rectangle {
-                            width: parent.width / 2
+                            width: parent.width
                             height: width
                             anchors.horizontalCenter: parent.horizontalCenter
                             color: delegateContainer.isNowPlaying ? "transparent" : Theme.field
