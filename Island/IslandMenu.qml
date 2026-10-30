@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-
+// Copyright (c) 2026 Diego Ledesma (TRN1) — Minimo OS
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
@@ -37,8 +37,11 @@ Item {
         : page === "power" ? power.implicitHeight
         : col.implicitHeight
 
+    // The content card follows the active page; navigation is laid out separately below it.
+    implicitHeight: activePageHeight + 40
 
-    readonly property var tabs: ["menu", "clip", "notifications", "cal", "quickactions", "notes", "weather", "radio", "power"]
+    // readonly property var tabs: ["menu", "clip", "notifications", "cal", "quickactions", "notes", "weather", "radio", "power"]
+    readonly property var tabs: ["menu", "clip", "notifications", "quickactions", "notes", "radio", "power"]
 
     readonly property var tabIcons: ({
         "menu":         "home",
