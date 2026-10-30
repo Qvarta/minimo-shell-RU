@@ -444,6 +444,6 @@ Singleton {
         refreshNetwork();
         refreshDevices();
         refreshBattery();
-        console.info("[SystemInfo] Quickshell system information service is running");
+        console.info("[SystemInfo] The service is running");
     }
 }
