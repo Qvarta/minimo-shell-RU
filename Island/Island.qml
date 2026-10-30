@@ -249,10 +249,10 @@ PanelWindow {
         // Elástico: mientras se arrastra, la píldora se estira y se corre un poco con el dedo.
         readonly property real pull: hoverZone.pulling ? hoverZone.dragDy / (1 + hoverZone.dragDy / 70) : 0
         readonly property real rubber: hoverZone.dragging ? hoverZone.dragDx / (1 + Math.abs(hoverZone.dragDx) / 60) : 0
-        width: win.expanded ? Theme.expandedW + menu.navWidth + menu.navGap + menu.navInset * 2
+        width: win.expanded ? Math.max(Theme.expandedW, menu.navWidth + menu.navInset * 2)
              : win.panel ? Theme.expandedW
              : Math.max(Theme.compactW, compact.implicitWidth + Theme.compactPadX * 2) + Math.abs(rubber) * 1.2
-        height: win.expanded ? Math.min(Math.max(menu.implicitHeight, menu.navHeight + 40), Theme.maxExpandedH)
+        height: win.expanded ? Math.min(menu.implicitHeight + menu.navGap + menu.navHeight, Theme.maxExpandedH)
               : win.panel ? Math.min(win.panelKind === "apps" ? apps.implicitHeight : win.panelKind === "pet" ? pet.implicitHeight : status.implicitHeight, Theme.maxExpandedH)
               : compact.implicitHeight + pull * 0.65   // al tirar hacia abajo: se estira y baja un poco
         x: (win.width - width) / 2 + rubber * 0.5
@@ -294,7 +294,7 @@ PanelWindow {
 
         IslandMenu {
             id: menu
-            x: menu.navInset + menu.navWidth + menu.navGap
+            x: (parent.width - width) / 2
             y: 0
             width: Theme.expandedW
             height: implicitHeight
@@ -309,8 +309,8 @@ PanelWindow {
 
         IslandNavigation {
             id: tabNavigation
-            x: menu.navInset
-            anchors.verticalCenter: parent.verticalCenter
+            x: (parent.width - width) / 2
+            y: menu.height + menu.navGap
             width: menu.navWidth
             height: menu.navHeight
             tabs: menu.tabs
