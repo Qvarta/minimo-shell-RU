@@ -55,10 +55,9 @@ Singleton {
     }
 
     function refreshAll() {
-        cpuStat.reload();
+        cpuProcess.running = true;
         memInfo.reload();
-        thermalType.reload();
-        thermalTemp.reload();
+        temperatureProcess.running = true;
         refreshDisk();
         refreshNetwork();
         refreshDevices();
@@ -68,16 +67,22 @@ Singleton {
             Networking.checkConnectivity();
     }
 
-    function parseCpu() {
-        const fields = cpuStat.text().trim().split(/\s+/);
-        if (fields.length < 5 || fields[0] !== "cpu") {
+    function parseCpu(output) {
+        const line = output.trim().split("\n").find(value => value.startsWith("cpu "));
+        const fields = line ? line.trim().split(/\s+/) : [];
+        if (fields.length < 5) {
             if (!cpuReadWarningShown) {
-                console.warn("[SystemInfo] Could not parse /proc/stat CPU line:", cpuStat.text().slice(0, 100));
+                console.warn("[SystemInfo][CPU] Invalid /proc/stat output:", output.slice(0, 160));
                 cpuReadWarningShown = true;
             }
             return;
         }
-        const values = fields.slice(1).map(Number);
+        // Linux guest/guest_nice are already included in user/nice; exclude them.
+        const values = fields.slice(1, 9).map(Number);
+        if (values.some(value => !Number.isFinite(value))) {
+            console.warn("[SystemInfo][CPU] Non-numeric /proc/stat counters:", line);
+            return;
+        }
         const total = values.reduce((sum, value) => sum + value, 0);
         const idle = (values[3] || 0) + (values[4] || 0);
         if (previousCpu !== null) {
@@ -86,9 +91,55 @@ Singleton {
             if (totalDelta > 0) {
                 const cpu = Math.max(0, Math.min(100, Math.round(100 * (totalDelta - idleDelta) / totalDelta)));
                 res = Object.assign({}, res, { cpu: cpu });
+                if (!cpuReadWarningShown) {
+                    console.info("[SystemInfo][CPU] Monitoring active; first usage sample:", cpu + "%");
+                    cpuReadWarningShown = true;
+                }
+            } else {
+                console.warn("[SystemInfo][CPU] Counters did not advance:", totalDelta, idleDelta);
             }
+        } else {
+            console.info("[SystemInfo][CPU] Initial counters read successfully; waiting for next sample");
         }
         previousCpu = { total: total, idle: idle };
+    }
+
+    property string temperatureDebugSignature: ""
+    property int lastLoggedCpuTemperature: -1
+    function parseTemperature(output) {
+        const sensors = [];
+        let selected = null;
+        const lines = output.trim().split("\n");
+        for (const line of lines) {
+            const fields = line.split("|");
+            if (fields.length < 3) continue;
+            const source = fields[0].trim();
+            const label = fields[1].trim();
+            const raw = Number(fields[2]);
+            if (!Number.isFinite(raw) || raw <= 0) continue;
+            const name = (source + " " + label).toLowerCase();
+            const sensor = { source: source, label: label, celsius: Math.round(raw / 1000) };
+            sensors.push(sensor);
+            if (name.match(/cpu|package|x86_pkg|tctl|tdie|soc/)) {
+                const priority = name.match(/package|x86_pkg|tctl|tdie/) ? 2 : 1;
+                if (!selected || priority > selected.priority)
+                    selected = { priority: priority, value: sensor.celsius, sensor: sensor };
+            }
+        }
+        const signature = JSON.stringify(sensors);
+        if (signature !== temperatureDebugSignature) {
+            console.info("[SystemInfo][Temperature] Sensors discovered:", signature || "none");
+            temperatureDebugSignature = signature;
+        }
+        if (selected) {
+            res = Object.assign({}, res, { temp: selected.value });
+            if (lastLoggedCpuTemperature !== selected.value) {
+                console.info("[SystemInfo][Temperature] Selected CPU sensor:", JSON.stringify(selected.sensor));
+                lastLoggedCpuTemperature = selected.value;
+            }
+        } else if (res.temp !== null) {
+            res = Object.assign({}, res, { temp: null });
+        }
     }
 
     function parseMemory() {
@@ -306,37 +357,36 @@ Singleton {
     }
 
     FileView {
-        id: cpuStat
-        path: "/proc/stat"
-        printErrors: false
-        onLoaded: root.parseCpu()
-        onTextChanged: root.parseCpu()
-        onLoadFailed: error => {
-            if (!root.cpuReadWarningShown) {
-                console.warn("[SystemInfo] Failed to read /proc/stat:", error);
-                root.cpuReadWarningShown = true;
-            }
-        }
-    }
-    FileView {
         id: memInfo
         path: "/proc/meminfo"
         printErrors: false
         onLoaded: root.parseMemory()
     }
-    FileView {
-        id: thermalType
-        path: "/sys/class/thermal/thermal_zone0/type"
-        printErrors: false
-        onLoaded: root.parseTemperature()
-    }
-    FileView {
-        id: thermalTemp
-        path: "/sys/class/thermal/thermal_zone0/temp"
-        printErrors: false
-        onLoaded: root.parseTemperature()
-    }
 
+    Process {
+        id: cpuProcess
+        command: ["cat", "/proc/stat"]
+        stdout: StdioCollector {
+            onStreamFinished: root.parseCpu(text)
+        }
+        onExited: (exitCode, exitStatus) => {
+            if (exitCode !== 0)
+                console.warn("[SystemInfo][CPU] /proc/stat reader exited:", exitCode, exitStatus);
+        }
+    }
+    Process {
+        id: temperatureProcess
+        // Enumerate all thermal zones and hwmon sensors; thermal_zone0 is not
+        // necessarily the CPU and many machines expose CPU temperature via hwmon.
+        command: ["sh", "-c", "for d in /sys/class/thermal/thermal_zone*; do [ -r \"$d/temp\" ] || continue; t=unknown; [ ! -r \"$d/type\" ] || IFS= read -r t < \"$d/type\"; IFS= read -r v < \"$d/temp\" || continue; printf 'thermal:%s|%s|%s\\n' \"$d\" \"$t\" \"$v\"; done; for d in /sys/class/hwmon/hwmon*; do [ -d \"$d\" ] || continue; for f in \"$d\"/temp*_input; do [ -r \"$f\" ] || continue; n=${f%_input}; label=unknown; [ ! -r \"${n}_label\" ] || IFS= read -r label < \"${n}_label\"; IFS= read -r v < \"$f\" || continue; printf 'hwmon:%s|%s|%s\\n' \"$f\" \"$label\" \"$v\"; done; done"]
+        stdout: StdioCollector {
+            onStreamFinished: root.parseTemperature(text)
+        }
+        onExited: (exitCode, exitStatus) => {
+            if (exitCode !== 0)
+                console.warn("[SystemInfo][Temperature] Sensor scan exited:", exitCode, exitStatus);
+        }
+    }
     Process {
         id: diskProcess
         command: ["df", "-B1", "--output=used,size", "/"]
@@ -368,10 +418,9 @@ Singleton {
         interval: 2000
         repeat: true
         onTriggered: {
-            cpuStat.reload();
+            cpuProcess.running = true;
             memInfo.reload();
-            thermalType.reload();
-            thermalTemp.reload();
+            temperatureProcess.running = true;
             root.refreshBattery();
             root.refreshDevices();
         }
