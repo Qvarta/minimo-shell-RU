@@ -231,7 +231,7 @@ PanelWindow {
         radius: pill.radius
         color: Theme.card
         Behavior on color { ColorAnimation { duration: 250 } }
-        opacity: win.shown ? 1 : 0
+        opacity: win.shown && !win.expanded ? 1 : 0
         Behavior on opacity { NumberAnimation { duration: Theme.durFast } }
         layer.enabled: true
         layer.effect: MultiEffect {
@@ -258,7 +258,7 @@ PanelWindow {
         x: (win.width - width) / 2 + rubber * 0.5
         y: win.shown ? Theme.topMargin + pull * 0.35 : -height - 64
         radius: Math.min(height / 2, Theme.radiusCard)
-        color: Theme.card
+        color: win.expanded ? "transparent" : Theme.card
         Behavior on color { ColorAnimation { duration: 250 } }
         clip: true
 
@@ -279,6 +279,17 @@ PanelWindow {
             opacity: win.open ? 0 : 1
             visible: opacity > 0
             Behavior on opacity { NumberAnimation { duration: Theme.durFast } }
+        }
+
+        Rectangle {
+            id: menuSurface
+            x: menu.x
+            y: menu.y
+            width: menu.width
+            height: menu.height
+            radius: Theme.radiusCard
+            color: Theme.card
+            visible: win.expanded
         }
 
         IslandMenu {
