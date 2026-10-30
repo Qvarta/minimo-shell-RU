@@ -14,21 +14,21 @@ Item {
     implicitHeight: col.implicitHeight + 32
 
     onOpenChanged: {
-        open ? SysStatus.acquire() : SysStatus.release()
+        open ? SystemInfo.acquire() : SystemInfo.release()
         if (open) greetLater.restart()
     }
     Timer { id: greetLater; interval: 280; onTriggered: chr.react("greet") }
 
     // Ánimo del personaje según el estado: sin internet → preocupado; CPU >85 % o
     // temperatura alta (≥85 °C CPU / ≥85 °C GPU) → cansado; si no, feliz.
-    readonly property string mood: SysStatus.known && !SysStatus.online ? "worried"
+    readonly property string mood: SystemInfo.known && !SystemInfo.online ? "worried"
         : (r && (r.cpu > 85 || (r.temp !== null && r.temp !== undefined && r.temp >= 85)))
-          || (SysStatus.gpu && SysStatus.gpu.temp >= 85) ? "tired" : ""
-    Component.onDestruction: if (open) SysStatus.release()
+          || (SystemInfo.gpu && SystemInfo.gpu.temp >= 85) ? "tired" : ""
+    Component.onDestruction: if (open) SystemInfo.release()
 
-    readonly property var r: SysStatus.res
-    readonly property var n: SysStatus.net
-    readonly property var d: SysStatus.dev
+    readonly property var r: SystemInfo.res
+    readonly property var n: SystemInfo.net
+    readonly property var d: SystemInfo.dev
     readonly property var bat: r ? r.battery : null
     function batText(b) {
         if (!b) return ""
@@ -107,15 +107,15 @@ Item {
         // Con Wi-Fi y todo bien, la fila de Wi-Fi ya lo dice: la de estado solo aparece con
         // cable, sin conexión o con un problema (sin internet, portal).
         Card {
-            visible: !(root.n && root.n.type === "wifi" && Network.hasWifi && SysStatus.online)
+            visible: !(root.n && root.n.type === "wifi" && Network.hasWifi && SystemInfo.online)
             Row2 {
                 icon: root.n && root.n.type === "wifi" ? "wifi" : "ethernet"
                 label: !root.n || !root.n.type ? I18n.tr("Not connected") : (root.n.type === "wifi" ? "Internet" : "Ethernet")
-                value: !SysStatus.known ? I18n.tr("Checking…")
-                     : SysStatus.online ? I18n.tr("Connected")
-                     : SysStatus.connectivity === "portal" ? I18n.tr("Sign-in required")
-                     : SysStatus.connectivity === "limited" ? I18n.tr("No internet (limited network)") : I18n.tr("No internet")
-                valueColor: SysStatus.known && !SysStatus.online ? Theme.danger : Theme.textSecondary
+                value: !SystemInfo.known ? I18n.tr("Checking…")
+                     : SystemInfo.online ? I18n.tr("Connected")
+                     : SystemInfo.connectivity === "portal" ? I18n.tr("Sign-in required")
+                     : SystemInfo.connectivity === "limited" ? I18n.tr("No internet (limited network)") : I18n.tr("No internet")
+                valueColor: SystemInfo.known && !SystemInfo.online ? Theme.danger : Theme.textSecondary
             }
         }
         WifiSection { width: parent.width; active: root.open }
@@ -126,10 +126,10 @@ Item {
         Card {
             Row2 { icon: "chip"; label: "CPU"; value: root.r ? root.r.cpu + "%" + (root.r.temp !== null && root.r.temp !== undefined ? " · " + root.r.temp + " °C" : "") : "…" }
             Bar { frac: root.r ? root.r.cpu / 100 : 0 }
-            Row2 { icon: "apps"; label: I18n.tr("Memory"); value: root.r ? SysStatus.gib(root.r.memUsed) + " / " + SysStatus.gib(root.r.memTotal) + " GB" : "…" }
-            Bar { frac: root.r ? root.r.memUsed / root.r.memTotal : 0 }
-            Row2 { icon: "folder"; label: I18n.tr("Disk"); value: root.r ? Math.round(100 * root.r.diskUsed / root.r.diskTotal) + "% · " + SysStatus.gib(root.r.diskTotal - root.r.diskUsed) + " GB libres" : "…" }
-            Bar { frac: root.r ? root.r.diskUsed / root.r.diskTotal : 0 }
+            Row2 { icon: "apps"; label: I18n.tr("Memory"); value: root.r && root.r.memTotal > 0 ? SystemInfo.gib(root.r.memUsed) + " / " + SystemInfo.gib(root.r.memTotal) + " GB" : "…" }
+            Bar { frac: root.r && root.r.memTotal > 0 ? root.r.memUsed / root.r.memTotal : 0 }
+            Row2 { icon: "folder"; label: I18n.tr("Disk"); value: root.r && root.r.diskTotal > 0 ? Math.round(100 * root.r.diskUsed / root.r.diskTotal) + "% · " + SystemInfo.gib(root.r.diskTotal - root.r.diskUsed) + " GB libres" : "…" }
+            Bar { frac: root.r && root.r.diskTotal > 0 ? root.r.diskUsed / root.r.diskTotal : 0 }
             Row2 {
                 visible: !!root.bat
                 icon: "battery"; label: I18n.tr("Battery")
@@ -138,15 +138,16 @@ Item {
             }
             Bar { visible: !!root.bat; frac: root.bat ? root.bat.pct / 100 : 0; lowIsBad: true }
             Row2 {
-                visible: !!SysStatus.gpu
-                icon: "display"; label: SysStatus.gpu ? SysStatus.gpu.name : "GPU"
-                value: SysStatus.gpu ? SysStatus.gpu.util + "% · " + SysStatus.gpu.temp + " °C" : ""
+                visible: !!SystemInfo.gpu
+                icon: "display"; label: SystemInfo.gpu ? SystemInfo.gpu.name : "GPU"
+                value: SystemInfo.gpu ? SystemInfo.gpu.util + "% · " + SystemInfo.gpu.temp + " °C" : ""
             }
         }
 
         // Dispositivos
-        Title { text: I18n.tr("Devices"); topPadding: 4 }
+        Title { visible: !!(root.d && (root.d.audio || root.d.bluetooth.length || root.d.keyboards.length || root.d.mice.length || root.d.usb.length)); text: I18n.tr("Devices"); topPadding: 4 }
         Card {
+            visible: !!(root.d && (root.d.audio || root.d.bluetooth.length || root.d.keyboards.length || root.d.mice.length || root.d.usb.length))
             Repeater { model: root.d ? root.d.keyboards : []; Row2 { required property var modelData; icon: "keyboard"; label: I18n.tr("Keyboard"); value: modelData } }
             Repeater { model: root.d ? root.d.mice : []; Row2 { required property var modelData; icon: "mouse"; label: I18n.tr("Mouse"); value: modelData } }
             Row2 { visible: !!(root.d && root.d.audio); icon: "volume"; label: "Audio"; value: root.d ? root.d.audio : "" }

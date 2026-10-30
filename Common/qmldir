@@ -13,7 +13,6 @@ singleton Recorder 1.0 Recorder.qml
 singleton SettingsState 1.0 SettingsState.qml
 MSwitch 1.0 MSwitch.qml
 singleton IdleState 1.0 IdleState.qml
-singleton SysStatus 1.0 SysStatus.qml
 singleton Notifs 1.0 Notifs.qml
 singleton Clipboard 1.0 Clipboard.qml
 singleton Pet 1.0 Pet.qml
