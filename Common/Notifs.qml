@@ -52,6 +52,7 @@ Singleton {
 
     Process {
         command: ["mkdir", "-p", root.historyDir]
+        running: true
         onExited: historyFile.path = root.historyDir + "/notifications.json"
     }
     FileView {
