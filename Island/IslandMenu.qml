@@ -186,6 +186,20 @@ Item {
         onDone: root.done()
     }
 
+    NotificationHistoryView {
+        id: notificationHistory
+        x: root.page === "notifications" ? 20 : root.width * 0.3
+        y: 20
+        width: root.width - 40
+        opacity: root.page === "notifications" ? 1 : 0
+        visible: opacity > 0
+        enabled: root.page === "notifications"
+        Behavior on x { NumberAnimation { duration: 320; easing.type: Easing.OutQuint } }
+        Behavior on opacity { NumberAnimation { duration: 220 } }
+        onBack: root.page = "menu"
+        onDone: root.done()
+    }
+
     CalendarView {
         id: cal
         x: root.page === "cal" ? 20 : root.width * 0.3
