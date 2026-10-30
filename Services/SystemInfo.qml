@@ -318,6 +318,10 @@ Singleton {
     }
 
     Component.onCompleted: {
+        if (Networking.canCheckConnectivity) {
+            Networking.connectivityCheckEnabled = true;
+            Networking.checkConnectivity();
+        }
         refreshNetwork();
         refreshDevices();
         refreshBattery();
