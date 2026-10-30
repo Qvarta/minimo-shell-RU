@@ -117,6 +117,7 @@ Item {
                 sourceSize: Qt.size(art.width * 2, art.height * 2)
             }
         }
+
         Item {
             id: circleMask
             anchors.fill: parent
@@ -126,21 +127,51 @@ Item {
             layer.textureSize: Qt.size(width * 2, height * 2)
             Rectangle { anchors.fill: parent; radius: width / 2; antialiasing: true }
         }
+
         MultiEffect {
+            id: coverRounded
             anchors.fill: parent
-            visible: art.hasArt
+            visible: art.hasArt && !root.radioActive
             source: coverLayer
             maskEnabled: true
             maskSource: circleMask
             maskThresholdMin: 0.5
             maskSpreadAtMin: 1.0
         }
+
+        // Пайплайн для радио — обложка через шейдер кольца
+        ShaderEffect {
+            id: radioRingShader
+            anchors.fill: parent
+            visible: root.radioActive && art.hasArt
+            property var source: ShaderEffectSource {
+                sourceItem: coverLayer
+                hideSource: true
+                live: true
+            }
+            property real time: shaderAnimator.animTime
+            property color bgWidget: Theme.card
+            property vector2d resolution: Qt.vector2d(width, height)
+            property color bgColor1: "#2C7BFF"
+            fragmentShader: Qt.resolvedUrl("../../shaders/ring.qsb")
+
+            Item {
+                id: shaderAnimator
+                property real animTime: 0
+                NumberAnimation on animTime {
+                    loops: Animation.Infinite
+                    from: 0; to: 1000; duration: 60000
+                    running: radioRingShader.visible
+                }
+            }
+        }
+
         Rectangle {
             anchors.centerIn: parent
             width: 7; height: 7; radius: 3.5
             color: Theme.raised; opacity: 0.85
             antialiasing: true
-            visible: art.hasArt
+            visible: art.hasArt && !root.radioActive
         }
     }
 
