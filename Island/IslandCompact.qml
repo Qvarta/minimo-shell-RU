@@ -5,6 +5,7 @@ import Quickshell.Widgets
 import Quickshell
 import Quickshell.Io
 import "../Common"
+import "../Services"
 import "../Character"
 
 // Estado compacto: personaje + hora (HH:mm).
@@ -143,7 +144,7 @@ Item {
             }
         }
         Rectangle {
-            visible: SysStatus.known && !SysStatus.online
+            visible: SystemInfo.known && !SystemInfo.online
             anchors.verticalCenter: parent.verticalCenter
             width: 7; height: 7; radius: 3.5
             color: Theme.recording
