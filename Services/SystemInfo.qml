@@ -47,6 +47,8 @@ Singleton {
     property var previousCpu: null
     property bool cpuReadWarningShown: false
     property bool batteryReadWarningShown: false
+    property string batteryDebugSignature: ""
+    property double batteryDebugLastAt: 0
 
     function gib(bytes) {
         return (Math.max(0, Number(bytes) || 0) / 1073741824).toFixed(1).replace(".", ",");
@@ -186,37 +188,94 @@ Singleton {
     }
 
     function refreshBattery() {
-        const devices = UPower.devices.values;
+        // UPower.devices is an ObjectModel; its values property exposes the
+        // connected UPowerDevice objects as a JavaScript list.
+        const model = UPower.devices;
+        const devices = model ? model.values : [];
+        const display = UPower.displayDevice;
+
+        const describeDevice = device => {
+            if (!device) return null;
+            let type = "unknown";
+            let state = "unknown";
+            try { type = UPowerDeviceType.toString(device.type); } catch (error) {}
+            try { state = UPowerDeviceState.toString(device.state); } catch (error) {}
+            return {
+                type: type,
+                ready: device.ready,
+                isLaptopBattery: device.isLaptopBattery,
+                isPresent: device.isPresent,
+                powerSupply: device.powerSupply,
+                percentage: device.percentage,
+                state: state,
+                timeToEmpty: device.timeToEmpty,
+                timeToFull: device.timeToFull,
+                nativePath: device.nativePath,
+                model: device.model
+            };
+        };
+
+        const deviceDetails = [];
         let battery = null;
         for (let i = 0; i < devices.length; i++) {
             const device = devices[i];
-            if (device && device.isLaptopBattery && device.isPresent !== false && device.ready) {
+            const details = describeDevice(device);
+            deviceDetails.push(details);
+            if (!battery && device && device.isLaptopBattery && device.isPresent !== false && device.ready) {
                 battery = device;
-                break;
             }
         }
-        // Prefer a physical laptop battery, but fall back to UPower's aggregate
-        // DisplayDevice. The latter is intentionally not part of UPower.devices.
-        if (!battery) {
-            const display = UPower.displayDevice;
-            if (display && display.ready && Number.isFinite(Number(display.percentage)))
-                battery = display;
+
+        // displayDevice is a separate aggregate object and is not in devices.
+        if (!battery && display && display.ready && Number.isFinite(Number(display.percentage))) {
+            battery = display;
+        }
+
+        const displayDetails = describeDevice(display);
+        const selectedDetails = describeDevice(battery);
+        const signature = JSON.stringify({
+            count: devices.length,
+            devices: deviceDetails,
+            displayDevice: displayDetails,
+            selected: selectedDetails
+        });
+        const now = Date.now();
+        if (signature !== batteryDebugSignature || now - batteryDebugLastAt >= 15000) {
+            console.info("[SystemInfo][UPower] snapshot:",
+                JSON.stringify({
+                    devicesCount: devices.length,
+                    devices: deviceDetails,
+                    displayDevice: displayDetails,
+                    selected: selectedDetails
+                }));
+            batteryDebugSignature = signature;
+            batteryDebugLastAt = now;
         }
 
         if (!battery) {
             if (!batteryReadWarningShown) {
-                console.info("[SystemInfo] UPower has no ready laptop battery or display device");
+                console.warn("[SystemInfo][UPower] No usable battery selected. " +
+                    "Check whether the daemon is running and whether displayDevice.ready is true.");
                 batteryReadWarningShown = true;
             }
             if (!batteryProcess.running) batteryProcess.running = true;
             return;
         }
 
-        const status = batteryStatus(battery);
+        let status = "Unknown";
+        try {
+            status = batteryStatus(battery);
+        } catch (error) {
+            console.warn("[SystemInfo][UPower] Failed to decode battery state:", error);
+        }
         const seconds = status === "Discharging" ? battery.timeToEmpty : battery.timeToFull;
         const percentage = Number(battery.percentage);
+        if (!Number.isFinite(percentage)) {
+            console.warn("[SystemInfo][UPower] Selected battery has invalid percentage:",
+                battery.percentage, "device:", JSON.stringify(selectedDetails));
+            return;
+        }
         const pct = Math.round(percentage <= 1 ? percentage * 100 : percentage);
-        if (!Number.isFinite(pct)) return;
         batteryReadWarningShown = false;
         res = Object.assign({}, res, {
             battery: {
@@ -225,6 +284,8 @@ Singleton {
                 mins: seconds > 0 ? Math.round(seconds / 60) : null
             }
         });
+        console.info("[SystemInfo][UPower] Using UPower battery:",
+            JSON.stringify({ percentage: pct, status: status, secondsRemaining: seconds }));
     }
 
     function refreshGpu() {
@@ -366,8 +427,8 @@ Singleton {
     Connections {
         target: UPower
         ignoreUnknownSignals: true
-        function onDevicesChanged() { root.refreshBattery() }
-        function onDisplayDeviceChanged() { root.refreshBattery() }
+        function onDevicesChanged() { console.info("[SystemInfo][UPower] devices model changed"); root.refreshBattery() }
+        function onDisplayDeviceChanged() { console.info("[SystemInfo][UPower] displayDevice changed"); root.refreshBattery() }
     }
 
     Component.onCompleted: {
@@ -379,5 +440,6 @@ Singleton {
         refreshDevices();
         refreshBattery();
         console.info("[SystemInfo] Quickshell system information service is running");
+        console.info("[SystemInfo][UPower] Initial state: devices model =", UPower.devices, "displayDevice =", UPower.displayDevice);
     }
 }
