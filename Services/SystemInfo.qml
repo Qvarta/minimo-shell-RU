@@ -1,6 +1,3 @@
-// SPDX-License-Identifier: MIT
-// System information for the Island status panel.
-// Reads Linux procfs/sysfs directly and uses Quickshell's native services.
 pragma Singleton
 import QtQuick
 import Quickshell
@@ -31,7 +28,6 @@ Singleton {
         }
     }
 
-    // Keep the data shape used by StatusPanel stable.
     property var res: ({
         cpu: 0, memUsed: 0, memTotal: 0,
         diskUsed: 0, diskTotal: 0, temp: null, battery: null
@@ -77,7 +73,6 @@ Singleton {
             }
             return;
         }
-        // Linux guest/guest_nice are already included in user/nice; exclude them.
         const values = fields.slice(1, 9).map(Number);
         if (values.some(value => !Number.isFinite(value))) {
             
@@ -194,9 +189,6 @@ Singleton {
             .map(device => device.name || device.address)
             .filter(name => !!name);
 
-        // Quickshell has no compositor-independent public API for enumerating
-        // physical keyboards, mice or USB block devices. Keep these arrays empty
-        // rather than querying Hyprland or presenting guessed device information.
         dev = {
             keyboards: [],
             mice: [],
@@ -230,8 +222,6 @@ Singleton {
     }
 
     function refreshBattery() {
-        // UPower.devices is an ObjectModel; its values property exposes the
-        // connected UPowerDevice objects as a JavaScript list.
         const model = UPower.devices;
         const devices = model ? model.values : [];
         const display = UPower.displayDevice;
@@ -268,7 +258,6 @@ Singleton {
             }
         }
 
-        // displayDevice is a separate aggregate object and is not in devices.
         if (!battery && display && display.ready && Number.isFinite(Number(display.percentage))) {
             battery = display;
         }
@@ -355,8 +344,6 @@ Singleton {
     }
     Process {
         id: temperatureProcess
-        // Enumerate all thermal zones and hwmon sensors; thermal_zone0 is not
-        // necessarily the CPU and many machines expose CPU temperature via hwmon.
         command: ["sh", "-c", "for d in /sys/class/thermal/thermal_zone*; do [ -r \"$d/temp\" ] || continue; t=unknown; [ ! -r \"$d/type\" ] || IFS= read -r t < \"$d/type\"; IFS= read -r v < \"$d/temp\" || continue; printf 'thermal:%s|%s|%s\\n' \"$d\" \"$t\" \"$v\"; done; for d in /sys/class/hwmon/hwmon*; do [ -d \"$d\" ] || continue; for f in \"$d\"/temp*_input; do [ -r \"$f\" ] || continue; n=${f%_input}; label=unknown; [ ! -r \"${n}_label\" ] || IFS= read -r label < \"${n}_label\"; IFS= read -r v < \"$f\" || continue; printf 'hwmon:%s|%s|%s\\n' \"$f\" \"$label\" \"$v\"; done; done"]
         stdout: StdioCollector {
             onStreamFinished: root.parseTemperature(text)
@@ -369,8 +356,6 @@ Singleton {
             onStreamFinished: root.parseDisk(text)
         }
     }
-    // Fallback for systems where UPower is unavailable or does not expose
-    // the internal battery. Reads the standard Linux power_supply sysfs API.
     Process {
         id: batteryProcess
         command: ["sh", "-c", "for d in /sys/class/power_supply/*; do [ -r \"$d/type\" ] || continue; IFS= read -r t < \"$d/type\" || continue; [ \"$t\" = Battery ] || continue; IFS= read -r cap < \"$d/capacity\" || continue; IFS= read -r st < \"$d/status\" || st=Unknown; printf '%s|%s\\n' \"$cap\" \"$st\"; exit 0; done"]
@@ -380,8 +365,6 @@ Singleton {
     }
     Process {
         id: gpuProcess
-        // Keep NVIDIA support optional: avoid Process start warnings on systems
-        // without the proprietary NVIDIA command-line utility.
         command: ["sh", "-c", "command -v nvidia-smi >/dev/null 2>&1 || exit 0; exec nvidia-smi --query-gpu=name,utilization.gpu,temperature.gpu --format=csv,noheader,nounits"]
         stdout: StdioCollector {
             onStreamFinished: root.parseGpu(text)

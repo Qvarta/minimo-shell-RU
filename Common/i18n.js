@@ -411,6 +411,7 @@ var weatherTranslations = {
     "Screenshot saved": ["Captura guardada", "Снимок сохранён"],
     "Copied to the clipboard": ["Copiada al portapapeles", "Скопирован в буфер обмена"],
     "Notifications": ["Notificaciones", "Уведомления"],
+    "free": ["libres", "свободно"],
     "Clear": ["Vaciar", "Очистить"],
     "Notification": ["Notificación", "Уведомление"],
     "No additional text": ["Sin texto adicional", "Нет дополнительного текста"],
