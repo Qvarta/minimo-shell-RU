@@ -158,7 +158,7 @@ Item {
 
         implicitWidth: 220
         implicitHeight: 52
-        width: implicitWidth
+        width: parent.width
         height: implicitHeight
         Rectangle {
             id: background
@@ -243,6 +243,7 @@ Item {
         }
 
         Grid {
+            width: parent.width - 16
             anchors.horizontalCenter: parent.horizontalCenter
             visible: root.buttons.length > 0
             columns: 1
