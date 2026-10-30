@@ -163,8 +163,9 @@ Item {
                 readonly property bool isActive: isSelected || isHovered || isNowPlaying
 
                 Rectangle {
-                    anchors.fill: parent
-                    anchors.margins: root.cellSpacing / 4
+                    width: gridView.cellWidth / 2 + 16
+                    height: width - 16 + 56
+                    anchors.centerIn: parent
                     radius: 14
                     color: delegateContainer.isActive ? Theme.hover : Theme.surface
 
