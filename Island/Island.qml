@@ -252,7 +252,7 @@ PanelWindow {
         width: win.expanded ? Theme.expandedW + menu.navWidth + menu.navGap + menu.navInset * 2
              : win.panel ? Theme.expandedW
              : Math.max(Theme.compactW, compact.implicitWidth + Theme.compactPadX * 2) + Math.abs(rubber) * 1.2
-        height: win.expanded ? Math.min(menu.implicitHeight, Theme.maxExpandedH)
+        height: win.expanded ? Math.min(Math.max(menu.implicitHeight, menu.navHeight + 40), Theme.maxExpandedH)
               : win.panel ? Math.min(win.panelKind === "apps" ? apps.implicitHeight : win.panelKind === "pet" ? pet.implicitHeight : status.implicitHeight, Theme.maxExpandedH)
               : compact.implicitHeight + pull * 0.65   // al tirar hacia abajo: se estira y baja un poco
         x: (win.width - width) / 2 + rubber * 0.5
