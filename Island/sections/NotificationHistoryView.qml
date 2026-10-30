@@ -182,7 +182,7 @@ Item {
                             width: 26; height: 26; radius: 13
                             visible: hover.hovered
                             color: removeMouse.containsMouse ? Theme.field : "transparent"
-                            Icon { anchors.centerIn: parent; name: "close"; size: 14 }
+                            Icon { anchors.centerIn: parent; name: "bell-x"; size: 14 }
                             MouseArea {
                                 id: removeMouse; anchors.fill: parent; hoverEnabled: true
                                 cursorShape: Qt.PointingHandCursor
