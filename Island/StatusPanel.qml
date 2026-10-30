@@ -107,7 +107,7 @@ Item {
         // Con Wi-Fi y todo bien, la fila de Wi-Fi ya lo dice: la de estado solo aparece con
         // cable, sin conexión o con un problema (sin internet, portal).
         Card {
-            visible: !(root.n && root.n.type === "wifi" && Network.hasWifi && SystemInfo.online)
+            visible: !!(root.n && root.n.type) && !(root.n.type === "wifi" && Network.hasWifi && SystemInfo.online)
             Row2 {
                 icon: root.n && root.n.type === "wifi" ? "wifi" : "ethernet"
                 label: !root.n || !root.n.type ? I18n.tr("Not connected") : (root.n.type === "wifi" ? "Internet" : "Ethernet")
