@@ -171,6 +171,20 @@ Singleton {
         return "Not charging";
     }
 
+    function parseSysfsBattery(output) {
+        const fields = output.trim().split("|");
+        if (fields.length < 2 || !fields[0]) return;
+        const pct = Number(fields[0]);
+        if (!Number.isFinite(pct)) return;
+        const rawState = fields[1].trim().toLowerCase();
+        const status = rawState === "charging" ? "Charging"
+            : rawState === "discharging" ? "Discharging"
+            : rawState === "full" ? "Full" : "Not charging";
+        res = Object.assign({}, res, {
+            battery: { pct: Math.max(0, Math.min(100, Math.round(pct))), status: status, mins: null }
+        });
+    }
+
     function refreshBattery() {
         const devices = UPower.devices.values;
         let battery = null;
@@ -194,7 +208,7 @@ Singleton {
                 console.info("[SystemInfo] UPower has no ready laptop battery or display device");
                 batteryReadWarningShown = true;
             }
-            res = Object.assign({}, res, { battery: null });
+            if (!batteryProcess.running) batteryProcess.running = true;
             return;
         }
 
@@ -269,6 +283,15 @@ Singleton {
         command: ["df", "-B1", "--output=used,size", "/"]
         stdout: StdioCollector {
             onStreamFinished: root.parseDisk(text)
+        }
+    }
+    // Fallback for systems where UPower is unavailable or does not expose
+    // the internal battery. Reads the standard Linux power_supply sysfs API.
+    Process {
+        id: batteryProcess
+        command: ["sh", "-c", "for d in /sys/class/power_supply/*; do [ -r \"$d/type\" ] || continue; IFS= read -r t < \"$d/type\" || continue; [ \"$t\" = Battery ] || continue; IFS= read -r cap < \"$d/capacity\" || continue; IFS= read -r st < \"$d/status\" || st=Unknown; printf '%s|%s\\n' \"$cap\" \"$st\"; exit 0; done"]
+        stdout: StdioCollector {
+            onStreamFinished: root.parseSysfsBattery(text)
         }
     }
     Process {
