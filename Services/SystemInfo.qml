@@ -155,15 +155,6 @@ Singleton {
             res = Object.assign({}, res, { memTotal: total, memUsed: Math.max(0, total - available) });
     }
 
-    function parseTemperature() {
-        const type = thermalType.text().trim().toLowerCase();
-        const raw = Number(thermalTemp.text().trim());
-        if (!Number.isFinite(raw) || raw <= 0) return;
-        // thermal_zone0 is not guaranteed to be the CPU on every machine.
-        if (type.includes("cpu") || type.includes("x86_pkg") || type.includes("pkg") || type.includes("soc"))
-            res = Object.assign({}, res, { temp: Math.round(raw / 1000) });
-    }
-
     function refreshDisk() {
         if (!diskProcess.running) diskProcess.running = true;
     }
