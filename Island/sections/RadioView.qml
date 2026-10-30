@@ -14,7 +14,7 @@ Item {
     readonly property bool isPlaying: RadioService.isPlaying
 
     property int currentIndex: 0
-    readonly property int columns: 3
+    readonly property int columns: Math.max(4, Math.min(5, Math.floor((gridView.width + cellSpacing) / 80)))
     readonly property real cellSpacing: 8
 
     function getImageUrl(stationName) {
@@ -148,7 +148,7 @@ Item {
             clip: true
             interactive: contentHeight > height
             cellWidth: Math.floor((width - (root.columns - 1) * root.cellSpacing) / root.columns)
-            cellHeight: cellWidth + 44
+            cellHeight: cellWidth + 32
 
             delegate: Item {
                 id: delegateContainer
@@ -163,8 +163,8 @@ Item {
                 readonly property bool isActive: isSelected || isHovered || isNowPlaying
 
                 Rectangle {
-                    width: gridView.cellWidth / 2 + 16
-                    height: width - 16 + 56
+                    width: gridView.cellWidth - root.cellSpacing
+                    height: width + 40
                     anchors.centerIn: parent
                     radius: 14
                     color: delegateContainer.isActive ? Theme.hover : Theme.surface
