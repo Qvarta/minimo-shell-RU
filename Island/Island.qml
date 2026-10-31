@@ -370,6 +370,12 @@ PanelWindow {
                 if (win.expanded) win.collapse()
                 else { win.panel = false; win.shown = true; hideTimer.stop(); win.expanded = true }
             }
+            else if (cmd.startsWith("tab:")) {
+                // qs -c minimo-shell ipc call island next: cycle through the menu tabs.
+                const tab = cmd.substring(4)
+                win.panel = false; win.shown = true; hideTimer.stop(); win.expanded = true
+                menu.enterTab(tab)
+            }
             else if (cmd === "quickactions") {
                 // Открыть вкладку быстрых действий напрямую через IPC.
                 win.panel = false; win.expanded = true; menu.showQuickActions()
