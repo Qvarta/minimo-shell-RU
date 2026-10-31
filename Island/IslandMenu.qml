@@ -6,6 +6,7 @@ import Quickshell
 import QtQuick.Layouts
 import "../Common"
 import "../Character"
+import "../Services"
 import "sections"
 
 Item {
@@ -40,7 +41,7 @@ Item {
     // The content card follows the active page; navigation is laid out separately below it.
     implicitHeight: activePageHeight + 40
 
-    // readonly property var tabs: ["menu", "clip", "notifications", "cal", "quickactions", "notes", "weather", "radio", "power"]
+    // readonly readonly property var tabs: CharacterBus.islandIpcTabs
     readonly property var tabs: ["menu", "quickactions", "notifications", "clip", "notes", "radio", "power"]
 
     readonly property var tabIcons: ({
