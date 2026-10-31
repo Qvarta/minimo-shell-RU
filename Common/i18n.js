@@ -368,6 +368,8 @@ var weatherTranslations = {
     "Weather": ["Clima", "Погода"],
     "Weather location": ["Ubicación del clima", "Местоположение"],
     "Current location": ["Ubicación actual", "Текущее местоположение"],
+    "Property": ["Propiedad", "Параметр"],
+    "Value": ["Valor", "Значение"],
     "Resolved location": ["Ubicación detectada", "Определённое место"],
     "Coordinates": ["Coordenadas", "Координаты"],
     "Time zone": ["Zona horaria", "Часовой пояс"],
