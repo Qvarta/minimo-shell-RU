@@ -2,7 +2,6 @@
 # Copyright (c) 2026 Diego Ledesma (TRN1) — Minimo OS
 singleton Theme 1.0 Theme.qml
 singleton DisplayState 1.0 DisplayState.qml
-singleton Cursor 1.0 Cursor.qml
 MSlider 1.0 MSlider.qml
 Icon 1.0 Icon.qml
 VectorIcon 1.0 VectorIcon.qml
