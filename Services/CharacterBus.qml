@@ -9,6 +9,8 @@ Singleton {
     id: root
     signal react(string name)
     signal islandCommand(string cmd)
+    readonly property var islandIpcTabs: ["menu", "clip", "notifications", "quickactions", "notes", "radio", "power"]
+    property int islandIpcTabIndex: 0
     signal gaze(real x, real y, int ms)
     signal pet()
     signal typed()
@@ -42,6 +44,11 @@ Singleton {
         function apps(): void { root.islandCommand("apps") }
         function clipboard(): void { root.islandCommand("clipboard") }
         function quickactions(): void { root.islandCommand("quickactions") }
+        function next(): void {
+            const tab = root.islandIpcTabs[root.islandIpcTabIndex]
+            root.islandCommand("tab:" + tab)
+            root.islandIpcTabIndex = (root.islandIpcTabIndex + 1) % root.islandIpcTabs.length
+        }
         // Вкладка питания в острове: qs -c minimo-shell ipc call power toggle
         function power(): void { root.islandCommand("power") }
         function pet(): void { root.islandCommand("pet") }
