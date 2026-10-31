@@ -41,7 +41,7 @@ Item {
     // The content card follows the active page; navigation is laid out separately below it.
     implicitHeight: activePageHeight + 40
 
-    readonly property var tabs: ["menu", "quickactions", "notifications", "clip", "notes", "radio", "power"]
+    readonly property var tabs: CharacterBus.islandIpcTabs
 
     readonly property var tabIcons: ({
         "menu":         "home",
