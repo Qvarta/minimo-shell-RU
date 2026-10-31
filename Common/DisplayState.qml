@@ -14,6 +14,7 @@ Singleton {
     property bool islandAutoHide: true      // ocultar la isla automáticamente
     property bool islandSmartHide: false    // ocultar solo si hay ventanas en el escritorio
     property bool characterAnimated: true   // personaje animado (si no, quieto)
+    property bool navigationVisible: true    // mostrar la navegación de pestañas
     property string theme: "light"          // "light" | "dark"
     property int sleepMinutes: 1            // dormir tras inactividad (1, 2 o 5 min).
     // Idioma: el guardado; si no hay, el del sistema (LANG en… → inglés, ru… → ruso, si no español).
@@ -38,6 +39,7 @@ Singleton {
     // Excluyentes: activar uno apaga el otro.
     function setIslandSmartHide(v) { islandSmartHide = v; if (v) islandAutoHide = false; save() }
     function setCharacterAnimated(v) { characterAnimated = v; save() }
+    function setNavigationVisible(v) { navigationVisible = v; save() }
     function setSleepMinutes(v) { sleepMinutes = v; save() }
     function setTheme(v) { theme = v; save() }
     function setLanguage(v) { language = (v === "en" || v === "ru") ? v : "es"; save() }
@@ -66,6 +68,7 @@ Singleton {
         state.islandAutoHide = root.islandAutoHide
         state.islandSmartHide = root.islandSmartHide
         state.characterAnimated = root.characterAnimated
+        state.navigationVisible = root.navigationVisible
         state.sleepMinutes = root.sleepMinutes
         state.theme = root.theme
         state.language = root.language
@@ -95,6 +98,7 @@ Singleton {
                 root.islandAutoHide = s.islandAutoHide ?? true
                 root.islandSmartHide = (s.islandSmartHide ?? false) && !root.islandAutoHide
                 root.characterAnimated = s.characterAnimated ?? true
+                root.navigationVisible = s.navigationVisible ?? true
                 root.sleepMinutes = s.sleepMinutes ?? 1
                 root.theme = s.theme === "dark" ? "dark" : "light"
                 if (s.language === "es" || s.language === "en" || s.language === "ru") root.language = s.language
