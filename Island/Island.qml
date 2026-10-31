@@ -249,10 +249,10 @@ PanelWindow {
         // Elástico: mientras se arrastra, la píldora se estira y se corre un poco con el dedo.
         readonly property real pull: hoverZone.pulling ? hoverZone.dragDy / (1 + hoverZone.dragDy / 70) : 0
         readonly property real rubber: hoverZone.dragging ? hoverZone.dragDx / (1 + Math.abs(hoverZone.dragDx) / 60) : 0
-        width: win.expanded ? Math.max(Theme.expandedW, menu.navWidth + menu.navInset * 2)
+        width: win.expanded ? (DisplayState.navigationVisible ? Math.max(Theme.expandedW, menu.navWidth + menu.navInset * 2) : Theme.expandedW)
              : win.panel ? Theme.expandedW
              : Math.max(Theme.compactW, compact.implicitWidth + Theme.compactPadX * 2) + Math.abs(rubber) * 1.2
-        height: win.expanded ? Math.min(menu.implicitHeight + menu.navGap + menu.navHeight, Theme.maxExpandedH)
+        height: win.expanded ? Math.min(menu.implicitHeight + (DisplayState.navigationVisible ? menu.navGap + menu.navHeight : 0), Theme.maxExpandedH)
               : win.panel ? Math.min(win.panelKind === "apps" ? apps.implicitHeight : win.panelKind === "pet" ? pet.implicitHeight : status.implicitHeight, Theme.maxExpandedH)
               : compact.implicitHeight + pull * 0.65   // al tirar hacia abajo: se estira y baja un poco
         x: (win.width - width) / 2 + rubber * 0.5
@@ -298,7 +298,7 @@ PanelWindow {
             width: Theme.expandedW
             height: implicitHeight
             anchors.top: parent.top
-            anchors.topMargin: menu.navHeight + menu.navGap
+            anchors.topMargin: DisplayState.navigationVisible ? menu.navHeight + menu.navGap : 0
             open: win.expanded
             opacity: win.expanded ? 1 : 0
             visible: opacity > 0
@@ -316,9 +316,9 @@ PanelWindow {
             tabs: menu.tabs
             tabIcons: menu.tabIcons
             currentPage: menu.page
-            visible: win.expanded
-            opacity: win.expanded ? 1 : 0
-            enabled: win.expanded
+            visible: win.expanded && DisplayState.navigationVisible
+            opacity: win.expanded && DisplayState.navigationVisible ? 1 : 0
+            enabled: win.expanded && DisplayState.navigationVisible
             Behavior on opacity { NumberAnimation { duration: Theme.durFast } }
             onTabSelected: page => menu.enterTab(page)
             onCycleRequested: delta => menu.cyclePage(delta)
