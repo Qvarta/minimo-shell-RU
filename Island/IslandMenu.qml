@@ -41,7 +41,7 @@ Item {
     implicitHeight: activePageHeight + 40
 
     // readonly property var tabs: ["menu", "clip", "notifications", "cal", "quickactions", "notes", "weather", "radio", "power"]
-    readonly property var tabs: ["menu", "clip", "notifications", "quickactions", "notes", "radio", "power"]
+    readonly property var tabs: ["menu", "quickactions", "notifications", "clip", "notes", "radio", "power"]
 
     readonly property var tabIcons: ({
         "menu":         "home",
