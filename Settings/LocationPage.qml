@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Diego Ledesma (TRN1) — Minimo OS
+
 import QtQuick
 import "../Common"
 import "../Services"
