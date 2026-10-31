@@ -4,6 +4,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
+import "../Common"
 
 // Inactividad de TODA la PC (protocolo ext-idle-notify): sin teclado ni mouse en
 // ningún lado durante DisplayState.sleepMinutes, el personaje se duerme. Respeta los
