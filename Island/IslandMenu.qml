@@ -151,31 +151,10 @@ Item {
         Reveal {
             step: 3
             width: parent.width
-            height: mainSliders.visible ? mainSliders.height : 0
-            Item {
-                id: mainSliders
+            height: vol.height
+            VolumeSection {
+                id: vol
                 width: parent.width
-                readonly property var sliders: ["volume", "brightness"]
-                visible: sliders.length > 0
-                readonly property int volAt: sliders.indexOf("volume")
-                readonly property bool volFirst: volAt === 0
-                readonly property real volH: vol.visible ? vol.height : 0
-                readonly property real dispH: disp.visible ? disp.height : 0
-                readonly property real gap: vol.visible && disp.visible ? 8 : 0
-                height: volH + dispH + gap
-                VolumeSection {
-                    id: vol
-                    width: parent.width
-                    visible: ready && mainSliders.volAt >= 0
-                    y: mainSliders.volFirst ? 0 : mainSliders.dispH + mainSliders.gap
-                }
-                DisplaySection {
-                    id: disp
-                    width: parent.width
-                    visible: brightness
-                    y: mainSliders.volFirst ? mainSliders.volH + mainSliders.gap : 0
-                    brightness: mainSliders.sliders.indexOf("brightness") >= 0
-                }
             }
         }
     }
