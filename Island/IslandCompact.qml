@@ -24,20 +24,66 @@ Item {
     readonly property bool notifQuiet: notif !== null && Notifs.fromFocused(notif)
     property bool vpnActive: false
 
-    // VPN is active when an interface whose name contains "amn" is present in ip link output.
-    Process {
-        id: vpnCheck
-        command: ["ip", "link", "show"]
-        stdout: StdioCollector {
-            onStreamFinished: root.vpnActive = text.split("\n").some(line => line.includes("amn"))
+    // Detect active TUN/TAP devices and WireGuard without relying on a specific interface name.
+    property string vpnLinkOutput: ""
+    property string vpnTunOutput: ""
+    property bool vpnLinkReady: false
+    property bool vpnTunReady: false
+
+    function updateVpnState() {
+        if (!vpnLinkReady || !vpnTunReady)
+            return
+
+        try {
+            const links = JSON.parse(vpnLinkOutput)
+            const tunDevices = JSON.parse(vpnTunOutput)
+            const tunNames = new Set(tunDevices.map(device => device.ifname))
+
+            root.vpnActive = links.some(iface => {
+                const isUp = Array.isArray(iface.flags) && iface.flags.includes("UP")
+                const kind = iface.linkinfo ? iface.linkinfo.info_kind : ""
+                return isUp && (kind === "wireguard" || tunNames.has(iface.ifname))
+            })
+        } catch (error) {
+            root.vpnActive = false
         }
     }
-    Component.onCompleted: vpnCheck.running = true
+
+    function refreshVpnState() {
+        vpnLinkReady = false
+        vpnTunReady = false
+        vpnLinkCheck.running = true
+        vpnTunCheck.running = true
+    }
+
+    Process {
+        id: vpnLinkCheck
+        command: ["ip", "-j", "-d", "link", "show"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                root.vpnLinkOutput = text
+                root.vpnLinkReady = true
+                root.updateVpnState()
+            }
+        }
+    }
+    Process {
+        id: vpnTunCheck
+        command: ["ip", "-j", "tuntap", "show"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                root.vpnTunOutput = text
+                root.vpnTunReady = true
+                root.updateVpnState()
+            }
+        }
+    }
+    Component.onCompleted: root.refreshVpnState()
     Timer {
         interval: 2000
         running: true
         repeat: true
-        onTriggered: if (!vpnCheck.running) vpnCheck.running = true
+        onTriggered: if (!vpnLinkCheck.running && !vpnTunCheck.running) root.refreshVpnState()
     }
 
     SystemClock { id: clock; precision: SystemClock.Minutes }
