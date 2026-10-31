@@ -6,7 +6,7 @@ import Quickshell
 import Quickshell.Io
 import "../Common"
 import Quickshell.Hyprland
-import "livewall.js" as LW
+import "../Common/livewall.js" as LW
 
 // Fondo animado con mpvpaper (opcional, AUR): un solo proceso para todos los monitores,
 // decodificación por hardware, sin audio. Para gastar lo mínimo se pausa (IPC de mpv):
@@ -27,8 +27,8 @@ Singleton {
 
     Process { running: true; command: ["sh", "-c", "command -v mpvpaper >/dev/null"]; onExited: code => root.available = code === 0 }
 
-    // Sin bindings en running/command: antes \`running: root.active\` se rompía al asignar
-    // \`player.running = false\` para cambiar de archivo, y después de Quitar ya no arrancaba otro.
+    // Sin bindings en running/command: antes `running: root.active` se rompía al asignar
+    // `player.running = false` para cambiar de archivo, y después de Quitar ya no arrancaba otro.
     // Ahora el ciclo lo decide Common/livewall.js (nunca dos procesos; reinicio tras exited).
     property var lw: LW.initial()
     readonly property string wanted: active ? DisplayState.liveWallpaper : ""
@@ -37,7 +37,7 @@ Singleton {
         const r = LW.want(lw, wanted, Date.now())
         lw = r.state
         if (r.act === "start") {
-            // Borra un socket viejo (de un mpvpaper que murió) y \`exec\`: el PID es el de mpvpaper,
+            // Borra un socket viejo (de un mpvpaper que murió) y `exec`: el PID es el de mpvpaper,
             // así que detener el Process le llega directo a él.
             player.command = ["sh", "-c", 'rm -f "$1"; shift; exec mpvpaper "$@"', "mpvwall", root.sock,
                               "-o", "no-audio loop-file=inf hwdec=auto panscan=1.0 input-ipc-server=" + root.sock, "*", lw.current]
