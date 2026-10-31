@@ -80,6 +80,7 @@ Column {
                 color: Theme.textSecondary
                 font: field.font
             }
+            Keys.onEscapePressed: root.launched()
             Keys.onDownPressed: root.selected = Math.min(root.selected + 1, root.results.length - 1)
             Keys.onUpPressed: root.selected = Math.max(root.selected - 1, 0)
             onAccepted: root.launch(root.results[root.selected])
