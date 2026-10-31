@@ -29,7 +29,113 @@ Column {
         }
     }
 
-    // SectionTitle { text: I18n.tr("Weather location") }
+    Text {
+        width: parent.width
+        text: I18n.tr("Current location")
+        color: Theme.textPrimary
+        font.family: Theme.font
+        font.pixelSize: 14
+        font.weight: Font.DemiBold
+    }
+
+    Rectangle {
+        width: parent.width
+        radius: Theme.radiusField
+        color: Theme.surface
+        implicitHeight: locationDetails.implicitHeight + 24
+
+        Column {
+            id: locationDetails
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.top: parent.top
+            anchors.margins: 12
+            spacing: 10
+
+            Row {
+                width: parent.width
+                spacing: 12
+                Text {
+                    width: 112
+                    text: I18n.tr("Resolved location")
+                    color: Theme.textSecondary
+                    font.family: Theme.font
+                    font.pixelSize: 12
+                }
+                Text {
+                    width: parent.width - 124
+                    text: Weather.stableName !== "" ? Weather.stableName : I18n.tr("Not available")
+                    color: Theme.textPrimary
+                    font.family: Theme.font
+                    font.pixelSize: 12
+                    wrapMode: Text.WordWrap
+                }
+            }
+
+            Row {
+                width: parent.width
+                spacing: 12
+                visible: Weather.displayCoordinates !== ""
+                Text {
+                    width: 112
+                    text: I18n.tr("Coordinates")
+                    color: Theme.textSecondary
+                    font.family: Theme.font
+                    font.pixelSize: 12
+                }
+                Text {
+                    width: parent.width - 124
+                    text: Weather.displayCoordinates
+                    color: Theme.textPrimary
+                    font.family: Theme.font
+                    font.pixelSize: 12
+                    font.features: { "tnum": 1 }
+                }
+            }
+
+            Row {
+                width: parent.width
+                spacing: 12
+                visible: Weather.weather && Weather.weather.timezone
+                Text {
+                    width: 112
+                    text: I18n.tr("Time zone")
+                    color: Theme.textSecondary
+                    font.family: Theme.font
+                    font.pixelSize: 12
+                }
+                Text {
+                    width: parent.width - 124
+                    text: Weather.weather ? String(Weather.weather.timezone) + (Weather.weather.timezone_abbreviation ? " (" + Weather.weather.timezone_abbreviation + ")" : "") : ""
+                    color: Theme.textPrimary
+                    font.family: Theme.font
+                    font.pixelSize: 12
+                    wrapMode: Text.WordWrap
+                }
+            }
+
+            Row {
+                width: parent.width
+                spacing: 12
+                visible: Weather.weather && Weather.weather.elevation !== undefined
+                Text {
+                    width: 112
+                    text: I18n.tr("Elevation")
+                    color: Theme.textSecondary
+                    font.family: Theme.font
+                    font.pixelSize: 12
+                }
+                Text {
+                    width: parent.width - 124
+                    text: Weather.weather && Weather.weather.elevation !== undefined ? Math.round(Number(Weather.weather.elevation)) + " m" : ""
+                    color: Theme.textPrimary
+                    font.family: Theme.font
+                    font.pixelSize: 12
+                    font.features: { "tnum": 1 }
+                }
+            }
+        }
+    }
 
     Text {
         width: parent.width
