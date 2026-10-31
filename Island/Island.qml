@@ -295,10 +295,10 @@ PanelWindow {
         IslandMenu {
             id: menu
             x: (parent.width - width) / 2
-            y: 0
             width: Theme.expandedW
             height: implicitHeight
             anchors.top: parent.top
+            anchors.topMargin: menu.navHeight + menu.navGap
             open: win.expanded
             opacity: win.expanded ? 1 : 0
             visible: opacity > 0
@@ -310,7 +310,7 @@ PanelWindow {
         IslandNavigation {
             id: tabNavigation
             x: (parent.width - width) / 2
-            y: menu.height + menu.navGap
+            y: 0
             width: menu.navWidth
             height: menu.navHeight
             tabs: menu.tabs
