@@ -390,6 +390,8 @@ var weatherTranslations = {
     "Snow showers": ["Chubascos de nieve", "Снегопады"],
     "Thunderstorm": ["Tormenta eléctrica", "Гроза"],
     "Unknown": ["Desconocido", "Неизвестно"],
+    "Show navigation panel": ["Mostrar el panel de navegación", "Показывать панель навигации"],
+    "Displays the tab navigation above the island content.": ["Muestra la navegación de pestañas encima del contenido de la isla.", "Показывает панель вкладок над содержимым острова."],
     "Radio": ["Radio", "Радио"],
     "No radio stations": ["Sin estaciones de radio", "Нет радиостанций"],
     "Pinned": ["Elementos fijados", "Закреплённые элементы"],
