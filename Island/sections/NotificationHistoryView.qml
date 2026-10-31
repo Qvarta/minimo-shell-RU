@@ -3,6 +3,7 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import "../../Common"
+import "../../Services"
 
 // История уведомлений: новые записи сверху, нажатие раскрывает полный текст.
 Item {

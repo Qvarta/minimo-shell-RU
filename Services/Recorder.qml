@@ -4,6 +4,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import "../Common"
 
 // Grabación de pantalla con wf-recorder (salida enfocada, con audio del sistema si
 // hay pactl). Detener envía SIGINT para que el .mp4 se cierre bien.

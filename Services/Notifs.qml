@@ -6,7 +6,6 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Hyprland
 import Quickshell.Services.Notifications
-import "../Services"
 
 // Servidor de notificaciones de Minimo OS (org.freedesktop.Notifications).
 // Las muestra de a una en la isla compacta, en cola (máx. 8), ~5 s cada una.

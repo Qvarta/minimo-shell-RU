@@ -10,3 +10,10 @@ singleton Compositor 1.0 Compositor.qml
 singleton RadioService 1.0 RadioService.qml
 singleton CharacterBus 1.0 CharacterBus.qml
 singleton Cursor 1.0 Cursor.qml
+singleton Clipboard 1.0 Clipboard.qml
+singleton Notifs 1.0 Notifs.qml
+singleton Media 1.0 Media.qml
+singleton Recorder 1.0 Recorder.qml
+singleton LiveWallpaper 1.0 LiveWallpaper.qml
+singleton IdleState 1.0 IdleState.qml
+singleton Launch 1.0 Launch.qml

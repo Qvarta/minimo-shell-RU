@@ -4,6 +4,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import "../Common"
 
 // Abre el navegador / gestor de archivos predeterminados (scripts/open-default.sh).
 // No bloquea: si falla, `error` lleva un mensaje corto que la isla muestra unos segundos.

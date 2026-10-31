@@ -4,8 +4,8 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import "../Common"
 import Quickshell.Hyprland
-import "../Services"
 import "livewall.js" as LW
 
 // Fondo animado con mpvpaper (opcional, AUR): un solo proceso para todos los monitores,
