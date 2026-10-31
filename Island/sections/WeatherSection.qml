@@ -12,7 +12,7 @@ Text {
             return "--"
         const tempPart = `${Math.round(Weather.currentWeather.temperature)} ${Weather.currentWeatherUnits.temperature}`
         const descPart = I18n.tr(Weather.weatherDescriptionFromCode(Weather.currentWeather.weathercode))
-        return ` ${descPart}, ${tempPart}`
+        return `${descPart}, ${tempPart}`
     }
     color: mouse.containsMouse ? Theme.textPrimary : Theme.textSecondary
     font.family: Theme.font
