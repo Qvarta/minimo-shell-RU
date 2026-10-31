@@ -7,14 +7,8 @@ Icon 1.0 Icon.qml
 VectorIcon 1.0 VectorIcon.qml
 singleton Apps 1.0 Apps.qml
 singleton LauncherState 1.0 LauncherState.qml
-singleton Media 1.0 Media.qml
-singleton Recorder 1.0 Recorder.qml
 singleton SettingsState 1.0 SettingsState.qml
 MSwitch 1.0 MSwitch.qml
-singleton IdleState 1.0 IdleState.qml
-singleton Notifs 1.0 Notifs.qml
-singleton Clipboard 1.0 Clipboard.qml
 singleton Pet 1.0 Pet.qml
-singleton LiveWallpaper 1.0 LiveWallpaper.qml
 singleton Notes 1.0 Notes.qml
 singleton I18n 1.0 I18n.qml
