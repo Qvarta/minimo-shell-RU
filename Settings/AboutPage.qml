@@ -74,6 +74,11 @@ Column {
     PillButton {
         anchors.horizontalCenter: parent.horizontalCenter
         icon: "external"; text: I18n.tr("View on GitHub")
+        onClicked: Quickshell.execDetached(["xdg-open", "https://github.com/Qvarta/minimo-shell-RU"])
+    }
+    PillButton {
+        anchors.horizontalCenter: parent.horizontalCenter
+        icon: "external"; text: I18n.tr("View original repository")
         onClicked: Quickshell.execDetached(["xdg-open", "https://github.com/Diegolede/minimo-os"])
     }
 
