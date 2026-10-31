@@ -94,6 +94,14 @@ Column {
             Rectangle { x: 18; width: parent.width - 36; height: 1; color: Theme.track }
             SwitchRow {
                 width: parent.width
+                text: I18n.tr("Show navigation panel")
+                detail: I18n.tr("Displays the tab navigation above the island content.")
+                checked: DisplayState.navigationVisible
+                onToggled: v => DisplayState.setNavigationVisible(v)
+            }
+            Rectangle { x: 18; width: parent.width - 36; height: 1; color: Theme.track }
+            SwitchRow {
+                width: parent.width
                 text: I18n.tr("Animated character")
                 detail: I18n.tr("Follows the mouse, blinks, dances and falls asleep.")
                 checked: DisplayState.characterAnimated
