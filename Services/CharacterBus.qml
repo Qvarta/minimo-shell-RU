@@ -49,13 +49,10 @@ Singleton {
             root.islandCommand("tab:" + tab)
             root.islandIpcTabIndex = (root.islandIpcTabIndex + 1) % root.islandIpcTabs.length
         }
-        // Вкладка питания в острове: qs -c minimo-shell ipc call power toggle
         function power(): void { root.islandCommand("power") }
         function pet(): void { root.islandCommand("pet") }
     }
-    // Вкладка питания в острове (Island/sections/PowerView.qml).
-    // Вызов: qs -c minimo-shell ipc call power toggle
-    // Аналог команды старого окна Power/PowerWindow.qml, которое удалено.
+
     IpcHandler {
         target: "power"
         function toggle(): void { root.islandCommand("power") }
