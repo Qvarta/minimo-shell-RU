@@ -183,8 +183,8 @@ Item {
     MenuButton {
         icon: "settings"
         anchors.top: parent.top; anchors.topMargin: 20
-        anchors.left: parent.left
-        anchors.leftMargin: root.contentX + root.contentWidth - width - 5
+        anchors.right: parent.right
+        anchors.rightMargin: 5
         visible: root.open && root.page === "menu"
         onActivated: { root.done(); SettingsState.show() }
     }
