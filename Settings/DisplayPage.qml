@@ -4,6 +4,8 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import "../Common"
+import "../Widgets"
+import "../Services"
 
 // Pantalla: monitores (resolución/frecuencia y escala) + brillo y saturación.
 // Los cambios se aplican con la API Lua de Hyprland (hyprctl eval 'hl.monitor{…}')
@@ -120,6 +122,19 @@ Column {
         writer.running = true
     }
     Process { id: writer }
+
+    SectionTitle { text: I18n.tr("Brightness") }
+
+    MSlider {
+        width: root.width
+        icon: "sun"
+        from: Brightness.minBrightnessValue
+        to: 1.0
+        // Синхронизация с Brightness: внешние изменения также обновляют положение ползунка.
+        value: Brightness.brightness
+        valueText: Math.round(value * 100) + "%"
+        onMoved: v => Brightness.setBrightness(v)
+    }
 
     SectionTitle { text: I18n.tr("Displays") }
 
