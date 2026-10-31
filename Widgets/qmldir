@@ -1,0 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Diego Ledesma (TRN1) — Minimo OS
+MSlider 1.0 MSlider.qml
+MSwitch 1.0 MSwitch.qml
+VectorIcon 1.0 VectorIcon.qml

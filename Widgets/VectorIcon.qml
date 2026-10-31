@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 import QtQuick
 import QtQuick.VectorImage
+import "../Common"
 
 Item {
     id: root

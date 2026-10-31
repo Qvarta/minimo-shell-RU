@@ -3,6 +3,7 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import "../../Common"
+import "../../Widgets"
 import "../../Services"
 
 // Wi-Fi: fila con red actual, señal e interruptor; al tocarla se despliegan las redes

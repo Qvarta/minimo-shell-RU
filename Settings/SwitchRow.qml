@@ -2,6 +2,7 @@
 
 import QtQuick
 import "../Common"
+import "../Widgets"
 
 Item {
     id: row

@@ -2,13 +2,10 @@
 # Copyright (c) 2026 Diego Ledesma (TRN1) — Minimo OS
 singleton Theme 1.0 Theme.qml
 singleton DisplayState 1.0 DisplayState.qml
-MSlider 1.0 MSlider.qml
 Icon 1.0 Icon.qml
-VectorIcon 1.0 VectorIcon.qml
 singleton Apps 1.0 Apps.qml
 singleton LauncherState 1.0 LauncherState.qml
 singleton SettingsState 1.0 SettingsState.qml
-MSwitch 1.0 MSwitch.qml
 singleton Pet 1.0 Pet.qml
 singleton Notes 1.0 Notes.qml
 singleton I18n 1.0 I18n.qml

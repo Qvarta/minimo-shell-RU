@@ -3,6 +3,7 @@
 import QtQuick
 import Quickshell.Services.Pipewire
 import "../../Common"
+import "../../Widgets"
 
 // Volumen del sink por defecto (Pipewire nativo). Clic en el icono: silenciar.
 MSlider {
