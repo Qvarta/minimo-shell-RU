@@ -6,7 +6,7 @@
 # Muchas apps (Steam/libappindicator, Electron) ignoran Activate, así que después de
 # pedírselo desde QML seguimos esta cadena: ventana existente → enfocarla;
 # si no hay → relanzar (las apps de instancia única muestran la ventana que ya tienen).
-import json, os, subprocess, sys, time
+import json, os, shutil, subprocess, sys, time
 
 def run(*a, timeout=4):
     try:
@@ -46,8 +46,7 @@ def item_pid():
     return 0
 
 def family(pid):
-    """El PID y todos sus descendientes: la ventana de Steam la dibuja un nieto
-    (steamwebhelper) y las de Electron, procesos hijos."""
+    """El PID y todos sus descendientes: Steam y Electron dibujan ventanas en procesos hijos."""
     kids = {}
     try:
         for p in os.listdir("/proc"):
@@ -74,7 +73,47 @@ def comm(pid):
     except Exception:
         return ""
 
-def find_window(pid):
+def compositor():
+    """Detect the active compositor without assuming Hyprland just because hyprctl is installed."""
+    if os.environ.get("NIRI_SOCKET") and shutil.which("niri"):
+        return "niri"
+    if os.environ.get("HYPRLAND_INSTANCE_SIGNATURE"):
+        return "hyprland"
+    if shutil.which("niri"):
+        try:
+            response = json.loads(run("niri", "msg", "--json", "focused-window"))
+            if "Ok" in response and "FocusedWindow" in response["Ok"]:
+                return "niri"
+        except Exception:
+            pass
+    if shutil.which("hyprctl"):
+        return "hyprland"
+    return ""
+
+def niri_windows():
+    """Return niri's JSON window list, accepting its IPC response envelope."""
+    try:
+        response = json.loads(run("niri", "msg", "--json", "windows"))
+        if isinstance(response, list):
+            return response
+        if isinstance(response, dict):
+            payload = response.get("Ok", response)
+            if isinstance(payload, dict):
+                return payload.get("Windows", payload.get("windows", []))
+    except Exception:
+        pass
+    return []
+
+def find_niri_window(pid):
+    windows = niri_windows()
+    fam = family(pid) if pid else set()
+    keys = {k for k in (item_id.lower(), entry.lower().removesuffix(".desktop"), comm(pid)) if k}
+    hit = [w for w in windows if w.get("pid") in fam]
+    if not hit:
+        hit = [w for w in windows if (w.get("app_id") or "").lower() in keys]
+    return max(hit, key=lambda w: bool(w.get("is_focused"))) if hit else None
+
+def find_hyprland_window(pid):
     try:
         clients = json.loads(run("hyprctl", "clients", "-j") or "[]")
     except ValueError:
@@ -94,29 +133,37 @@ if quit_mode:
     import signal
     pid = item_pid()
     me = {os.getpid(), os.getppid()}
-    if pid <= 1 or pid in me or comm(pid) in ("qs", "quickshell", "systemd", "hyprland"):
+    if pid <= 1 or pid in me or comm(pid) in ("qs", "quickshell", "systemd", "hyprland", "niri"):
         log(f"{item_id}: no se cierra (pid {pid})")
         sys.exit(1)
     os.kill(pid, signal.SIGTERM)
     log(f"{item_id}: SIGTERM a {pid} ({comm(pid)})")
     sys.exit(0)
+
 time.sleep(0.6)   # darle tiempo al Activate que ya mandó QML
 pid = item_pid()
-c = find_window(pid)
+wm = compositor()
+c = find_niri_window(pid) if wm == "niri" else find_hyprland_window(pid) if wm == "hyprland" else None
 if c:
-    addr = c["address"]
-    if (c.get("workspace") or {}).get("name", "").startswith("special:"):
-        try:
-            cur = json.loads(run("hyprctl", "activeworkspace", "-j") or "{}").get("id", 1)
-        except ValueError:
-            cur = 1
-        run("hyprctl", "dispatch", 'hl.dsp.window.move({ workspace = "%s", follow = true, window = "address:%s" })' % (cur, addr))
-    run("hyprctl", "dispatch", 'hl.dsp.focus({ window = "address:%s" })' % addr)
-    log(f"{item_id}: ventana {addr} enfocada")
-    sys.exit(0)
+    if wm == "niri":
+        window_id = c.get("id")
+        focused = run("niri", "msg", "action", "focus-window", "--id", str(window_id)) if window_id is not None else ""
+        if focused:
+            log(f"{item_id}: ventana niri {window_id} enfocada")
+            sys.exit(0)
+    else:
+        addr = c["address"]
+        if (c.get("workspace") or {}).get("name", "").startswith("special:"):
+            try:
+                cur = json.loads(run("hyprctl", "activeworkspace", "-j") or "{}").get("id", 1)
+            except ValueError:
+                cur = 1
+            run("hyprctl", "dispatch", 'hl.dsp.window.move({ workspace = "%s", follow = true, window = "address:%s" })' % (cur, addr))
+        run("hyprctl", "dispatch", 'hl.dsp.focus({ window = "address:%s" })' % addr)
+        log(f"{item_id}: ventana {addr} enfocada")
+        sys.exit(0)
 
 # Sin ventana: relanzar (las apps de instancia única muestran la ventana que ya tienen).
-import shutil
 if comm(pid) in ("qs", "quickshell"):
     sys.exit(0)
 name = (entry or comm(pid) or item_id).lower().removesuffix(".desktop")
