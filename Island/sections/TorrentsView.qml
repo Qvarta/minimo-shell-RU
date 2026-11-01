@@ -62,7 +62,7 @@ Item {
         case 5: status = "queued"; break
         case 6: status = "seeding"; break
         }
-        if (finished && status === "idle")
+        if (finished && status === "queued")
             status = "completed"
         return status
     }
@@ -147,6 +147,8 @@ Item {
             return
         root.loading = true
         root.errorMessage = ""
+        startCheckTimer.attempts = 0
+        startCheckTimer.start()
         startProcess.running = true
     }
 
@@ -258,10 +260,8 @@ Item {
         command: ["transmission-daemon"]
         running: false
         onExited: (exitCode, exitStatus) => {
-            if (exitCode === 0) {
-                startCheckTimer.attempts = 0
-                startCheckTimer.start()
-            } else {
+            if (exitCode !== 0) {
+                startCheckTimer.stop()
                 root.loading = false
                 root.errorMessage = I18n.tr("Could not start Transmission")
             }
