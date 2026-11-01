@@ -202,6 +202,7 @@ Item {
                             Rectangle {
                                 id: iconPlaceholder
                                 anchors.fill: parent; radius: 12; color: Theme.field
+                                visible: stationImageSource.status !== Image.Ready
                                 Icon { anchors.centerIn: parent; name: "music"; size: Math.min(parent.width * 0.4, 34); tone: "gray" }
                             }
 
@@ -212,22 +213,14 @@ Item {
                                 fillMode: Image.PreserveAspectCrop
                                 smooth: true; cache: true; asynchronous: true
                                 visible: false
-                                onStatusChanged: {
-                                    if (status === Image.Ready) {
-                                        iconPlaceholder.visible = false
-                                        stationImage.visible = !delegateContainer.isNowPlaying
-                                    } else if (status === Image.Error) {
-                                        iconPlaceholder.visible = true
-                                        stationImage.visible = false
-                                    }
-                                }
                             }
                             Image {
                                 id: stationImage
                                 anchors.fill: parent
                                 source: stationImageSource.source
                                 fillMode: Image.PreserveAspectCrop
-                                smooth: true; visible: false
+                                smooth: true
+                                visible: !delegateContainer.isNowPlaying && stationImageSource.status === Image.Ready
                             }
                             ShaderEffect {
                                 id: playingShader
