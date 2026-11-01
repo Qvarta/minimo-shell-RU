@@ -75,13 +75,19 @@ Item {
 
     function opened() { search.reset() }
 
+    function resetToMenu() {
+        page = "menu"
+        stage = 0
+        notes.reset()
+    }
+
     property int stage: 0
     Timer {
         id: stagger; interval: 45; repeat: true
         running: root.open && root.stage < 6
         onTriggered: root.stage++
     }
-    onOpenChanged: if (!open) { stage = 0; page = "menu"; notes.reset() }
+    onOpenChanged: if (!open) resetToMenu()
 
     SystemClock { id: clock; precision: SystemClock.Minutes }
 
