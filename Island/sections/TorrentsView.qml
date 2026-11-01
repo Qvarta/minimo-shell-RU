@@ -15,7 +15,6 @@ Item {
     signal done()
 
     property bool daemonRunning: false
-    property bool checkingDaemon: false
     property bool loading: false
     property string errorMessage: ""
     property var listOutput: []
@@ -218,7 +217,6 @@ Item {
         command: ["transmission-remote", "--session-info"]
         running: false
         onExited: (exitCode, exitStatus) => {
-            root.checkingDaemon = false
             root.loading = false
             if (exitCode === 0) {
                 root.daemonRunning = true
@@ -386,7 +384,7 @@ Item {
                 height: 28
                 radius: 14
                 color: refreshMouse.containsMouse ? Theme.hover : Theme.surface
-                Icon { anchors.centerIn: parent; name: "refresh"; size: 16 }
+                Text { anchors.centerIn: parent; text: "↻"; color: Theme.textPrimary; font.pixelSize: 18 }
                 MouseArea {
                     id: refreshMouse
                     anchors.fill: parent
