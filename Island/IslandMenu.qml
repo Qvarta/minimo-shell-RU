@@ -35,7 +35,6 @@ Item {
         : page === "notes" ? notes.implicitHeight
         : page === "weather" ? weather.implicitHeight
         : page === "radio" ? radio.implicitHeight
-        : page === "torrents" ? torrents.implicitHeight
         : page === "power" ? power.implicitHeight
         : col.implicitHeight
 
@@ -53,7 +52,6 @@ Item {
         "notes":        "note",
         "weather":      "clear-day",
         "radio":        "music",
-        "torrents":     "download",
         "power":        "logout"
     })
 
@@ -289,20 +287,6 @@ Item {
         opacity: root.page === "radio" ? 1 : 0
         visible: opacity > 0
         enabled: root.page === "radio"
-        Behavior on x { NumberAnimation { duration: 320; easing.type: Easing.OutQuint } }
-        Behavior on opacity { NumberAnimation { duration: 220 } }
-        onBack: root.page = "menu"
-        onDone: root.done()
-    }
-
-    TorrentsView {
-        id: torrents
-        x: root.page === "torrents" ? root.contentX : root.width + 20
-        y: 20
-        width: root.contentWidth
-        opacity: root.page === "torrents" ? 1 : 0
-        visible: opacity > 0
-        enabled: root.page === "torrents"
         Behavior on x { NumberAnimation { duration: 320; easing.type: Easing.OutQuint } }
         Behavior on opacity { NumberAnimation { duration: 220 } }
         onBack: root.page = "menu"
