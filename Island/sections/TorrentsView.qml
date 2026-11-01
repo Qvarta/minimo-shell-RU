@@ -371,7 +371,7 @@ Item {
                 width: parent.width - refreshButton.width - 8
                 anchors.verticalCenter: parent.verticalCenter
                 text: root.daemonRunning
-                    ? I18n.tr("Transmission daemon is running") + " · " + I18n.tr("%1 active", torrentModel.count)
+                    ? I18n.tr("Transmission daemon is running") + " · " + I18n.tr("%1 torrents", torrentModel.count)
                     : I18n.tr("Transmission daemon is not running")
                 color: root.daemonRunning ? Theme.textSecondary : Theme.danger
                 font.family: Theme.font
