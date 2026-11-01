@@ -9,7 +9,7 @@ Singleton {
     id: root
     signal react(string name)
     signal islandCommand(string cmd)
-    readonly property var islandIpcTabs: ["menu", "quickactions", "notifications", "clip", "notes", "radio", "torrents", "power"]
+    readonly property var islandIpcTabs: ["menu", "quickactions", "notifications", "clip", "notes", "radio", "power"]
     property int islandIpcTabIndex: 0
     signal gaze(real x, real y, int ms)
     signal pet()
