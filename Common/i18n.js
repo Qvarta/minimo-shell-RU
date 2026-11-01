@@ -398,7 +398,7 @@ var weatherTranslations = {
     "Rain": ["Lluvia", "Дождь"],
     "Snow": ["Nieve", "Снег"],
     "Rain showers": ["Chubascos", "Ливни"],
-    "Snow showers": ["Chubascos de nieve", "Снегопады"],
+    "Snow showers": ["Chubascos de nieve", "Снег"],
     "Thunderstorm": ["Tormenta eléctrica", "Гроза"],
     "Unknown": ["Desconocido", "Неизвестно"],
     "View original repository": ["Ver repositorio original", "Открыть оригинальный репозиторий"],
