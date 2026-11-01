@@ -6,8 +6,7 @@ import Quickshell
 import "../../Common"
 import "../../Services"
 
-// Панель быстрых действий (радио, снимок экрана, заметки, буфер обмена),
-// открываемая из ActionsSection.
+// Панель быстрых действий
 Item {
     id: root
     signal back()
@@ -20,11 +19,12 @@ Item {
     readonly property var builtins: [
         { id: "radio", label: I18n.tr("Radio"), icon: "music" },
         { id: "capture", label: I18n.tr("Screenshot"), icon: "capture" },
-        { id: "notes", label: I18n.tr("Notes"), icon: "note" },
-        { id: "clipboard", label: I18n.tr("Clipboard"), icon: "clipboard" },
-        { id: "power", label: I18n.tr("Energy"), icon: "power" },
+        // { id: "notes", label: I18n.tr("Notes"), icon: "note" },
+        // { id: "clipboard", label: I18n.tr("Clipboard"), icon: "clipboard" },
+        // { id: "power", label: I18n.tr("Energy"), icon: "power" },
     ]
-    readonly property var buttons: ["radio", "capture", "notes", "clipboard", "power"]
+    // readonly property var buttons: ["radio", "capture", "notes", "clipboard", "power"]
+    readonly property var buttons: ["radio", "capture"]
     property int currentIndex: 0
 
     function moveSelection(delta) {
@@ -33,8 +33,6 @@ Item {
         currentIndex = (currentIndex + delta + buttons.length) % buttons.length
     }
 
-    // QuickActionsView is embedded in IslandMenu, whose parent keeps its own focus.
-    // Claim focus whenever this page becomes active so arrow/Enter keys reach us.
     focus: enabled
 
     function requestKeyboardFocus() {
@@ -42,8 +40,7 @@ Item {
             if (root.enabled && root.visible)
                 root.forceActiveFocus()
         })
-        // Повторная попытка: Island.qml запускает unfocusLater (150 мс), который
-        // возвращает фокус на pill после открытия через IPC "quickactions".
+
         refocusTimer.restart()
     }
 
