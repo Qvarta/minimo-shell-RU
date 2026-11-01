@@ -441,7 +441,7 @@ var weatherTranslations = {
     "Unknown status": ["Estado desconocido", "Неизвестный статус"],
     "Transmission daemon is not running": ["El servicio de Transmission no está en ejecución", "Демон Transmission не запущен"],
     "Transmission daemon is running": ["El servicio de Transmission está en ejecución", "Демон Transmission запущен"],
-    "%1 active": ["%1 activos", "Активных: %1"],
+    "%1 torrents": ["%1 torrents", "Торрентов: %1"],
     "Add torrent": ["Agregar torrent", "Добавить торрент"],
     "Paste a magnet link…": ["Pegá un enlace magnet…", "Вставьте magnet-ссылку…"],
     "Add magnet": ["Agregar magnet", "Добавить magnet"],
