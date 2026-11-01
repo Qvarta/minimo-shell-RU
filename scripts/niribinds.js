@@ -44,7 +44,6 @@ function parseCombo(combo) {
     return ordered.join(" + ");
 }
 
-// Finds the binds block without parsing the rest of KDL.
 function getBindsLines(source) {
     const lines = source.split("\n");
     let start = -1;
@@ -61,7 +60,6 @@ function getBindsLines(source) {
     let depth = 0;
     for (let i = start; i < lines.length; i++) {
         const line = lines[i];
-        // Braces in quoted arguments are not part of the block structure.
         let quote = "";
         for (let j = 0; j < line.length; j++) {
             const ch = line[j];
@@ -82,7 +80,6 @@ function getBindsLines(source) {
 }
 
 function parseLine(line) {
-    // In the supported shortcut format, // after } is the visible description.
     let commentAt = line.indexOf("//");
     const code = (commentAt < 0 ? line : line.substring(0, commentAt)).trim();
     const comment = commentAt < 0 ? "" : line.substring(commentAt + 2).trim();
@@ -91,7 +88,6 @@ function parseLine(line) {
     const close = code.lastIndexOf("}");
     if (open < 1 || close < open) return null;
 
-    // Header can contain KDL options (e.g. cooldown-ms=150); only key tokens are used.
     const headerParts = code.substring(0, open).trim().split(" ");
     const keyParts = [];
     for (let i = 0; i < headerParts.length; i++) {

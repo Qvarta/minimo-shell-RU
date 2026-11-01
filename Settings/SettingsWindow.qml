@@ -57,7 +57,7 @@ PanelWindow {
     Rectangle {
         id: card
         width: Math.min(920, win.width - 80)
-        height: Math.min(640, win.height - 80)
+        height: Math.min(690, win.height - 80)
         anchors.centerIn: parent
         radius: 28
         color: Theme.card
