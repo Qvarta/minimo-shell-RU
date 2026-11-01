@@ -71,15 +71,17 @@ Column {
               + I18n.tr(": a floating island and a happy character. Nothing more than needed.")
         color: Theme.textPrimary; font.family: Theme.font; font.pixelSize: 14
     }
-    PillButton {
+    Row {
         anchors.horizontalCenter: parent.horizontalCenter
-        icon: "external"; text: I18n.tr("View on GitHub")
-        onClicked: Quickshell.execDetached(["xdg-open", "https://github.com/Qvarta/minimo-shell-RU"])
-    }
-    PillButton {
-        anchors.horizontalCenter: parent.horizontalCenter
-        icon: "external"; text: I18n.tr("View original repository")
-        onClicked: Quickshell.execDetached(["xdg-open", "https://github.com/Diegolede/minimo-os"])
+        spacing: 8
+        PillButton {
+            icon: "external"; text: I18n.tr("View on GitHub")
+            onClicked: Quickshell.execDetached(["xdg-open", "https://github.com/Qvarta/minimo-shell-RU"])
+        }
+        PillButton {
+            icon: "external"; text: I18n.tr("View original repository")
+            onClicked: Quickshell.execDetached(["xdg-open", "https://github.com/Diegolede/minimo-os"])
+        }
     }
 
     Rectangle {
