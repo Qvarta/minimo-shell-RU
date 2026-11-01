@@ -77,6 +77,7 @@ Item {
 
     function resetToMenu() {
         page = "menu"
+        CharacterBus.islandIpcTabIndex = 0
         stage = 0
         notes.reset()
     }
