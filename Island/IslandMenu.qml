@@ -53,7 +53,7 @@ Item {
         "notes":        "note",
         "weather":      "clear-day",
         "radio":        "music",
-        "torrents":     "play",
+        "torrents":     "download",
         "power":        "logout"
     })
 
