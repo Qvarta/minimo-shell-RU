@@ -53,7 +53,7 @@ PanelWindow {
 
     mask: Region { x: win.open ? 0 : hoverZone.x; y: 0; width: win.open ? win.width : hoverZone.width; height: win.open ? win.height : hoverZone.height }
 
-    function collapse() { expanded = false; panel = false }
+    function collapse() { menu.resetToMenu(); expanded = false; panel = false }
 
     // Auto-ocultar
     Timer {
@@ -362,7 +362,7 @@ PanelWindow {
         target: CharacterBus
         function onIslandCommand(cmd) {
             if (cmd === "show") { win.shown = true; hideTimer.stop() }
-            else if (cmd === "hide") { win.expanded = false; win.shown = false }
+            else if (cmd === "hide") { win.collapse(); win.shown = false }
             else if (cmd === "open") win.expanded = true
             else if (cmd === "toggle") {
                 // qs -c minimo-shell ipc call island toggle: abre el menú de la isla
