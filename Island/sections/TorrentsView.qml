@@ -116,14 +116,15 @@ Item {
     function runTorrentAction(args) {
         if (!root.daemonRunning) {
             root.errorMessage = I18n.tr("Transmission daemon is not running")
-            return
+            return false
         }
         if (actionProcess.running)
-            return
+            return false
 
         root.loading = true
         root.actionCommand = ["transmission-remote"].concat(args)
         actionProcess.running = true
+        return true
     }
 
     function addMagnet() {
@@ -132,8 +133,8 @@ Item {
             root.errorMessage = I18n.tr("Enter a valid magnet link")
             return
         }
-        root.runTorrentAction(["-a", magnet])
-        magnetInput.text = ""
+        if (root.runTorrentAction(["-a", magnet]))
+            magnetInput.text = ""
     }
 
     function addTorrentFile(path) {
